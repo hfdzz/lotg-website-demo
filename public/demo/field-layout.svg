@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" role="img" aria-labelledby="title desc">
+  <title id="title">Sample field layout</title>
+  <desc id="desc">A simple football field illustration for seeded demo content.</desc>
+  <rect width="1200" height="740" fill="#1c7c54"/>
+  <rect x="60" y="60" width="1080" height="620" rx="14" fill="none" stroke="#f4f1de" stroke-width="10"/>
+  <line x1="600" y1="60" x2="600" y2="680" stroke="#f4f1de" stroke-width="8"/>
+  <circle cx="600" cy="370" r="92" fill="none" stroke="#f4f1de" stroke-width="8"/>
+  <circle cx="600" cy="370" r="6" fill="#f4f1de"/>
+  <rect x="60" y="220" width="140" height="300" fill="none" stroke="#f4f1de" stroke-width="8"/>
+  <rect x="1000" y="220" width="140" height="300" fill="none" stroke="#f4f1de" stroke-width="8"/>
+  <rect x="60" y="280" width="48" height="180" fill="none" stroke="#f4f1de" stroke-width="8"/>
+  <rect x="1092" y="280" width="48" height="180" fill="none" stroke="#f4f1de" stroke-width="8"/>
+  <circle cx="180" cy="370" r="6" fill="#f4f1de"/>
+  <circle cx="1020" cy="370" r="6" fill="#f4f1de"/>
+  <path d="M200 290 A84 84 0 0 1 200 450" fill="none" stroke="#f4f1de" stroke-width="8"/>
+  <path d="M1000 290 A84 84 0 0 0 1000 450" fill="none" stroke="#f4f1de" stroke-width="8"/>
+</svg>
