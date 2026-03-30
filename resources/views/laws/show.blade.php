@@ -1,9 +1,24 @@
 @extends('layouts.app')
 
 @section('title', 'Law '.$law->law_number)
+@section('body_class', 'has-mobile-law-context')
+@section('mobile_header_title', 'Law '.$law->law_number.': '.$law->displayTitle())
+@section('mobile_law_context', 'Law '.$law->law_number.': '.$law->displayTitle())
 
 @section('content')
     <a class="back-link" href="{{ route('laws.index') }}">Back to all laws</a>
+
+    @section('mobile_law_prev')
+        @if ($previousLaw)
+            {{ route('laws.show', $previousLaw) }}
+        @endif
+    @endsection
+
+    @section('mobile_law_next')
+        @if ($nextLaw)
+            {{ route('laws.show', $nextLaw) }}
+        @endif
+    @endsection
 
     <div class="law-detail-shell">
         <section class="hero">

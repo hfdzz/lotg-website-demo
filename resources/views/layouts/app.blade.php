@@ -42,6 +42,158 @@
                 padding: 2rem 0 4rem;
             }
 
+            .mobile-header {
+                display: none;
+            }
+
+            .mobile-header-shell {
+                position: fixed;
+                inset: 0 0 auto 0;
+                z-index: 50;
+                padding: 0;
+                pointer-events: none;
+                transform: translateY(0);
+                transition: transform 0.18s ease;
+            }
+
+            .mobile-header-shell.is-hidden {
+                transform: translateY(calc(-100% - 0.5rem));
+            }
+
+            .mobile-header-bar {
+                width: 100%;
+                margin: 0;
+                pointer-events: auto;
+            }
+
+            .mobile-header-bar {
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                gap: 0.75rem;
+                align-items: center;
+                padding: 0.7rem 0.9rem;
+                border-bottom: 1px solid rgba(110, 37, 24, 0.14);
+                background: rgba(255, 250, 242, 0.94);
+                box-shadow: 0 14px 28px rgba(31, 41, 51, 0.10);
+                backdrop-filter: blur(10px);
+            }
+
+            .mobile-logo-link {
+                display: inline-flex;
+                text-decoration: none;
+            }
+
+            .mobile-logo {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 3rem;
+                height: 2rem;
+                border-radius: 0.45rem;
+                background: linear-gradient(135deg, #a53f2b, #d98a52);
+                color: #fffaf2;
+                font-size: 0.78rem;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                box-shadow: inset 0 0 0 1px rgba(255, 250, 242, 0.35);
+            }
+
+            .mobile-header-title {
+                display: block;
+                overflow: hidden;
+                border: 0;
+                background: transparent;
+                color: var(--accent-dark);
+                text-align: left;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                font-size: 0.95rem;
+                font-weight: 700;
+                padding: 0;
+                touch-action: manipulation;
+            }
+
+            .mobile-header-action {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 3.2rem;
+                padding: 0.55rem 0.8rem;
+                border: 1px solid rgba(110, 37, 24, 0.12);
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.86);
+                color: var(--accent-dark);
+                font-size: 1rem;
+                font-weight: 700;
+                touch-action: manipulation;
+            }
+
+            .mobile-header-panel {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 45;
+                padding-top: 3.95rem;
+                background: rgba(245, 239, 228, 0.98);
+                backdrop-filter: blur(10px);
+            }
+
+            .mobile-header-tray {
+                display: grid;
+                gap: 0.85rem;
+                width: 100%;
+                height: calc(100vh - 4rem);
+                margin: 0;
+                padding: 0.9rem;
+                overflow-y: auto;
+                pointer-events: auto;
+            }
+
+            .mobile-header-shell.is-open .mobile-header-panel {
+                display: grid;
+            }
+
+            .mobile-nav-links {
+                display: grid;
+                gap: 0.55rem;
+            }
+
+            .mobile-nav-link {
+                display: block;
+                padding: 0.8rem 0.9rem;
+                border: 1px solid rgba(110, 37, 24, 0.10);
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.78);
+                color: var(--accent-dark);
+                text-decoration: none;
+                font-weight: 700;
+                touch-action: manipulation;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .mobile-search-form {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 0.55rem;
+                align-items: center;
+            }
+
+            .mobile-search-form input {
+                min-width: 0;
+                margin-top: 0;
+            }
+
+            .mobile-search-form button {
+                width: 3rem;
+                min-width: 3rem;
+                height: 3rem;
+                padding: 0;
+                font-size: 1.1rem;
+                line-height: 1;
+            }
+
             .hero {
                 margin-bottom: 2rem;
                 padding: 2rem;
@@ -52,18 +204,43 @@
             }
 
             .nav {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.75rem;
-                align-items: center;
-                justify-content: space-between;
+                display: block;
                 margin-bottom: 1rem;
+            }
+
+            .nav-panel {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                gap: 1rem;
+                align-items: center;
             }
 
             .nav-links {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 0.75rem;
+            }
+
+            .nav-brand {
+                display: inline-flex;
+                justify-self: center;
+                text-decoration: none;
+            }
+
+            .nav-brand-mark {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 4.5rem;
+                height: 3rem;
+                border-radius: 0.8rem;
+                background: linear-gradient(135deg, #a53f2b, #d98a52);
+                color: #fffaf2;
+                font-size: 1rem;
+                font-weight: 800;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                box-shadow: inset 0 0 0 1px rgba(255, 250, 242, 0.28);
             }
 
             .nav-link {
@@ -579,16 +756,105 @@
                 gap: 1rem;
             }
 
+            .mobile-law-context {
+                display: none;
+            }
+
+            .mobile-law-context-bar {
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                gap: 0.6rem;
+                align-items: center;
+                width: 100%;
+                margin: 0;
+                padding: 0.45rem 0.7rem;
+                border-bottom: 1px solid rgba(110, 37, 24, 0.12);
+                background: rgba(255, 250, 242, 0.96);
+                box-shadow: 0 12px 24px rgba(31, 41, 51, 0.08);
+                backdrop-filter: blur(10px);
+            }
+
+            .mobile-law-context-title {
+                overflow: hidden;
+                border: 0;
+                background: transparent;
+                color: var(--accent-dark);
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                text-align: center;
+                font-size: 0.92rem;
+                font-weight: 700;
+                padding: 0;
+                touch-action: manipulation;
+                text-decoration: none;
+            }
+
+            .mobile-law-context-side {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2rem;
+                height: 2rem;
+                padding: 0;
+                border: 1px solid rgba(110, 37, 24, 0.12);
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.86);
+                color: var(--accent-dark);
+                font-size: 1rem;
+                font-weight: 700;
+                cursor: default;
+            }
+
+            .mobile-law-context-side[aria-disabled="true"] {
+                opacity: 0.45;
+            }
+
+            .mobile-law-context-side.is-link {
+                cursor: pointer;
+                text-decoration: none;
+            }
+
             @media (max-width: 700px) {
+                body {
+                    padding-top: 4.05rem;
+                }
+
+                body.has-mobile-law-context {
+                    padding-top: 6.95rem;
+                }
+
                 .shell {
                     width: min(100% - 1rem, 1100px);
                     padding-top: 1rem;
                 }
 
-                .nav,
-                .search-form {
-                    align-items: stretch;
-                    flex-direction: column;
+                .mobile-header {
+                    display: block;
+                }
+
+                .mobile-header-title,
+                .mobile-header-action,
+                .mobile-nav-link,
+                .mobile-law-context-title,
+                .mobile-law-context-side {
+                    font-size: 1rem;
+                }
+
+                .mobile-law-context {
+                    display: block;
+                    position: fixed;
+                    inset: 3.95rem 0 auto 0;
+                    z-index: 44;
+                    padding: 0;
+                    transition: top 0.18s ease;
+                }
+
+                html.mobile-header-hidden .mobile-law-context {
+                    top: 0;
+                }
+
+                .nav {
+                    display: none;
                 }
 
                 .search-form input {
@@ -642,31 +908,157 @@
             }
         </style>
     </head>
-    <body>
-        <div class="shell">
-            <nav class="nav">
-                <div class="nav-links">
-                    <a class="nav-link" href="{{ route('laws.index') }}">Laws</a>
-                    <a class="nav-link" href="{{ route('updates.index') }}">Updates</a>
-                    <a class="nav-link" href="{{ route('search.index') }}">Search</a>
-                    @auth
-                        <a class="nav-link" href="{{ route('admin.laws.index') }}">Admin</a>
-                        <form action="{{ route('logout') }}" method="post" style="display: inline-flex;">
-                            @csrf
-                            <button type="submit">Logout</button>
-                        </form>
-                    @else
-                        <a class="nav-link" href="{{ route('login') }}">Admin login</a>
-                    @endauth
+    <body class="@yield('body_class')">
+        <div class="mobile-header" aria-hidden="false">
+            <div class="mobile-header-shell" data-mobile-header>
+                <div class="mobile-header-bar">
+                    <a href="{{ route('laws.index') }}" class="mobile-logo-link" aria-label="Go to Laws home">
+                        <div class="mobile-logo" aria-hidden="true">PSSI</div>
+                    </a>
+                    <button type="button" class="mobile-header-title" data-scroll-top>
+                        @yield('mobile_header_title', trim($__env->yieldContent('title', 'LotG')))
+                    </button>
+                    <button type="button" class="mobile-header-action" data-mobile-menu-toggle aria-expanded="false">Menu</button>
                 </div>
 
-                <form class="search-form" action="{{ route('search.index') }}" method="get">
-                    <input type="search" name="q" value="{{ request('q') }}" placeholder="Search laws, sections, or body text">
-                    <button type="submit">Search</button>
-                </form>
+                <div class="mobile-header-panel" data-mobile-tray>
+                    <div class="mobile-header-tray">
+                    <form class="search-form mobile-search-form" action="{{ route('search.index') }}" method="get">
+                        <input type="search" name="q" value="{{ request('q') }}" placeholder="Search laws, sections, or body text">
+                        <button type="submit" aria-label="Search">&#128269;</button>
+                    </form>
+
+                    <div class="mobile-nav-links">
+                        <a class="mobile-nav-link" href="{{ route('laws.index') }}">Laws</a>
+                        <a class="mobile-nav-link" href="{{ route('updates.index') }}">Updates</a>
+                        <a class="mobile-nav-link" href="{{ route('search.index') }}">Search page</a>
+                        @auth
+                            <a class="mobile-nav-link" href="{{ route('admin.laws.index') }}">Admin</a>
+                            <form action="{{ route('logout') }}" method="post">
+                                @csrf
+                                <button type="submit">Logout</button>
+                            </form>
+                        @else
+                            <a class="mobile-nav-link" href="{{ route('login') }}">Admin login</a>
+                        @endauth
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @php
+            $mobileLawPrev = trim($__env->yieldContent('mobile_law_prev'));
+            $mobileLawNext = trim($__env->yieldContent('mobile_law_next'));
+        @endphp
+
+        @hasSection('mobile_law_context')
+            <div class="mobile-law-context">
+                <div class="mobile-law-context-bar">
+                    @if ($mobileLawPrev !== '')
+                        <a href="{{ $mobileLawPrev }}" class="mobile-law-context-side is-link" aria-label="Previous law">&lsaquo;</a>
+                    @else
+                        <button type="button" class="mobile-law-context-side" aria-disabled="true">&lsaquo;</button>
+                    @endif
+                    <button type="button" class="mobile-law-context-title" data-scroll-top>@yield('mobile_law_context')</button>
+                    @if ($mobileLawNext !== '')
+                        <a href="{{ $mobileLawNext }}" class="mobile-law-context-side is-link" aria-label="Next law">&rsaquo;</a>
+                    @else
+                        <button type="button" class="mobile-law-context-side" aria-disabled="true">&rsaquo;</button>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        <div class="shell">
+            <nav class="nav">
+                <div class="nav-panel">
+                    <div class="nav-links">
+                        <a class="nav-link" href="{{ route('laws.index') }}">Laws</a>
+                        <a class="nav-link" href="{{ route('updates.index') }}">Updates</a>
+                        <a class="nav-link" href="{{ route('search.index') }}">Search</a>
+                        @auth
+                            <a class="nav-link" href="{{ route('admin.laws.index') }}">Admin</a>
+                            <form action="{{ route('logout') }}" method="post" style="display: inline-flex;">
+                                @csrf
+                                <button type="submit">Logout</button>
+                            </form>
+                        @else
+                            <a class="nav-link" href="{{ route('login') }}">Admin login</a>
+                        @endauth
+                    </div>
+
+                    <a href="{{ route('laws.index') }}" class="nav-brand" aria-label="Go to Laws home">
+                        <span class="nav-brand-mark">PSSI</span>
+                    </a>
+
+                    <form class="search-form" action="{{ route('search.index') }}" method="get">
+                        <input type="search" name="q" value="{{ request('q') }}" placeholder="Search laws, sections, or body text">
+                        <button type="submit">Search</button>
+                    </form>
+                </div>
             </nav>
 
             @yield('content')
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const mobileHeader = document.querySelector('[data-mobile-header]');
+                const toggleButton = document.querySelector('[data-mobile-menu-toggle]');
+                const scrollTopButtons = Array.from(document.querySelectorAll('[data-scroll-top]'));
+                const root = document.documentElement;
+
+                if (! mobileHeader || ! toggleButton) {
+                    return;
+                }
+
+                let lastScrollY = window.scrollY;
+
+                const setTrayOpen = (open) => {
+                    mobileHeader.classList.toggle('is-open', open);
+                    toggleButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    toggleButton.textContent = open ? 'Close' : 'Menu';
+                };
+
+                toggleButton.addEventListener('click', function () {
+                    setTrayOpen(! mobileHeader.classList.contains('is-open'));
+                });
+
+                scrollTopButtons.forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                });
+
+                window.addEventListener('scroll', function () {
+                    const currentScrollY = window.scrollY;
+                    const isMobile = window.innerWidth <= 700;
+
+                    if (! isMobile) {
+                        mobileHeader.classList.remove('is-hidden');
+                        root.classList.remove('mobile-header-hidden');
+                        return;
+                    }
+
+                    if (mobileHeader.classList.contains('is-open')) {
+                        mobileHeader.classList.remove('is-hidden');
+                        root.classList.remove('mobile-header-hidden');
+                        lastScrollY = currentScrollY;
+                        return;
+                    }
+
+                    if (currentScrollY < 12 || currentScrollY < lastScrollY) {
+                        mobileHeader.classList.remove('is-hidden');
+                        root.classList.remove('mobile-header-hidden');
+                    } else if (currentScrollY > lastScrollY + 8) {
+                        mobileHeader.classList.add('is-hidden');
+                        root.classList.add('mobile-header-hidden');
+                    }
+
+                    lastScrollY = currentScrollY;
+                }, { passive: true });
+            });
+        </script>
     </body>
 </html>

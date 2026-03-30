@@ -26,12 +26,19 @@ class LawController extends Controller
 
         $language = (string) $request->query('lang', $this->defaultLanguage());
         $tree = $treeBuilder->build($law, $language);
+        $orderedLaws = Law::published()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'law_number', 'slug', 'sort_order', 'status']);
+        $currentIndex = $orderedLaws->search(fn (Law $item) => $item->id === $law->id);
 
         return view('laws.show', [
             'law' => $law,
             'language' => $language,
             'tree' => $tree,
             'tableOfContents' => $treeBuilder->buildTableOfContents($tree),
+            'previousLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex - 1) : null,
+            'nextLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex + 1) : null,
         ]);
     }
 
