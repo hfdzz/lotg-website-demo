@@ -54,7 +54,7 @@
             @foreach ($node['media_assets'] as $mediaAsset)
                 @if ($node['node_type'] === 'image' && $mediaAsset->file_path)
                     <figure class="media-frame">
-                        <img src="{{ asset($mediaAsset->file_path) }}" alt="{{ $mediaAsset->caption ?? $title ?? 'Illustration' }}">
+                        <img src="{{ $mediaAsset->publicUrl() }}" alt="{{ $mediaAsset->caption ?? $title ?? 'Illustration' }}">
                         @if ($mediaAsset->caption || $mediaAsset->credit)
                             <figcaption class="media-caption">
                                 {{ $mediaAsset->caption }}

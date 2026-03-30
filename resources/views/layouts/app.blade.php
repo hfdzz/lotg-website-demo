@@ -98,6 +98,49 @@
                 cursor: pointer;
             }
 
+            input,
+            select,
+            textarea,
+            button {
+                font: inherit;
+            }
+
+            input:not([type="checkbox"]):not([type="radio"]),
+            select,
+            textarea {
+                width: 100%;
+                margin-top: 0.35rem;
+                padding: 0.75rem 0.9rem;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.94);
+                color: var(--ink);
+            }
+
+            textarea {
+                resize: vertical;
+            }
+
+            input[type="checkbox"],
+            input[type="radio"] {
+                width: auto;
+                margin-right: 0.4rem;
+            }
+
+            button {
+                display: inline-flex;
+                width: fit-content;
+                align-items: center;
+                justify-content: center;
+                padding: 0.8rem 1.1rem;
+                border: 0;
+                border-radius: 999px;
+                background: var(--accent);
+                color: #fffaf2;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
             .eyebrow {
                 margin: 0 0 0.75rem;
                 color: var(--accent);
@@ -264,6 +307,7 @@
                     <a class="nav-link" href="{{ route('laws.index') }}">Laws</a>
                     <a class="nav-link" href="{{ route('updates.index') }}">Updates</a>
                     <a class="nav-link" href="{{ route('search.index') }}">Search</a>
+                    <a class="nav-link" href="{{ route('admin.laws.index') }}">Admin</a>
                 </div>
 
                 <form class="search-form" action="{{ route('search.index') }}" method="get">

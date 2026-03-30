@@ -16,6 +16,12 @@ class Law extends Model
         'status',
     ];
 
+    protected $casts = [
+        'id' => 'integer',
+        'edition_id' => 'integer',
+        'sort_order' => 'integer',
+    ];
+
     public function contentNodes(): HasMany
     {
         return $this->hasMany(ContentNode::class);

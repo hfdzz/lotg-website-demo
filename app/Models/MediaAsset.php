@@ -23,4 +23,21 @@ class MediaAsset extends Model
             ->withPivot(['sort_order'])
             ->withTimestamps();
     }
+
+    public function publicUrl(): ?string
+    {
+        if (! $this->file_path) {
+            return null;
+        }
+
+        if (str_starts_with($this->file_path, 'http://') || str_starts_with($this->file_path, 'https://')) {
+            return $this->file_path;
+        }
+
+        if (str_starts_with($this->file_path, 'demo/')) {
+            return asset($this->file_path);
+        }
+
+        return asset('storage/'.$this->file_path);
+    }
 }

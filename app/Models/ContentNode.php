@@ -20,6 +20,10 @@ class ContentNode extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',
+        'law_id' => 'integer',
+        'parent_id' => 'integer',
+        'sort_order' => 'integer',
         'is_published' => 'boolean',
         'settings_json' => 'array',
     ];
