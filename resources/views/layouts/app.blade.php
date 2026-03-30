@@ -47,6 +47,57 @@
                 box-shadow: 0 18px 60px rgba(110, 37, 24, 0.08);
             }
 
+            .nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+            }
+
+            .nav-links {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+
+            .nav-link {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.7rem 1rem;
+                border: 1px solid rgba(110, 37, 24, 0.14);
+                border-radius: 999px;
+                background: rgba(255, 250, 242, 0.86);
+                text-decoration: none;
+                font-weight: 700;
+                color: var(--accent-dark);
+            }
+
+            .search-form {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+            }
+
+            .search-form input {
+                min-width: min(22rem, 55vw);
+                padding: 0.75rem 0.9rem;
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.9);
+            }
+
+            .search-form button {
+                padding: 0.75rem 1rem;
+                border: 0;
+                border-radius: 999px;
+                background: var(--accent);
+                color: #fffaf2;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
             .eyebrow {
                 margin: 0 0 0.75rem;
                 color: var(--accent);
@@ -96,6 +147,28 @@
             .law-meta {
                 color: var(--muted);
                 font-size: 0.95rem;
+            }
+
+            .result-list {
+                display: grid;
+                gap: 1rem;
+            }
+
+            .result-card {
+                padding: 1rem 1.1rem;
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                background: rgba(255, 255, 255, 0.82);
+            }
+
+            .result-card h3,
+            .result-card h4 {
+                margin: 0 0 0.5rem;
+            }
+
+            .empty-state {
+                color: var(--muted);
+                line-height: 1.7;
             }
 
             .node {
@@ -165,6 +238,17 @@
                     padding-top: 1rem;
                 }
 
+                .nav,
+                .search-form {
+                    align-items: stretch;
+                    flex-direction: column;
+                }
+
+                .search-form input {
+                    min-width: 0;
+                    width: 100%;
+                }
+
                 .hero,
                 .card,
                 .node {
@@ -175,6 +259,19 @@
     </head>
     <body>
         <div class="shell">
+            <nav class="nav">
+                <div class="nav-links">
+                    <a class="nav-link" href="{{ route('laws.index') }}">Laws</a>
+                    <a class="nav-link" href="{{ route('updates.index') }}">Updates</a>
+                    <a class="nav-link" href="{{ route('search.index') }}">Search</a>
+                </div>
+
+                <form class="search-form" action="{{ route('search.index') }}" method="get">
+                    <input type="search" name="q" value="{{ request('q') }}" placeholder="Search laws, sections, or body text">
+                    <button type="submit">Search</button>
+                </form>
+            </nav>
+
             @yield('content')
         </div>
     </body>

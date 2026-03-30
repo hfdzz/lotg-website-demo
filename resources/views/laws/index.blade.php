@@ -17,7 +17,7 @@
             <a class="law-link card" href="{{ route('laws.show', $law) }}">
                 <p class="eyebrow">Law {{ $law->law_number }}</p>
                 <h2>Law {{ $law->law_number }}</h2>
-                <p class="law-meta">Slug: {{ $law->slug }}</p>
+                <p class="law-meta">Open the structured law page with nested sections, media, and future admin-ready content blocks.</p>
             </a>
         @empty
             <div class="card">
