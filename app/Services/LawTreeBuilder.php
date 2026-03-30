@@ -40,6 +40,7 @@ class LawTreeBuilder
                     'sort_order' => $node->sort_order,
                     'depth' => $depth,
                     'heading_tag' => $this->headingTagFor($node->node_type, $depth),
+                    'anchor_id' => $this->anchorIdFor($node->id, $translation?->title, $node->node_type),
                     'settings' => $node->settings_json ?? [],
                     'translation' => $translation,
                     'title' => $translation?->title,
@@ -92,5 +93,14 @@ class LawTreeBuilder
             ->filter()
             ->values()
             ->all();
+    }
+
+    protected function anchorIdFor(int $nodeId, ?string $title, string $nodeType): string
+    {
+        $base = str($title ?: $nodeType)
+            ->lower()
+            ->slug();
+
+        return trim($base !== '' ? $base.'-'.$nodeId : 'node-'.$nodeId, '-');
     }
 }

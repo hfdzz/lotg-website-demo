@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\LawAdminController;
 use App\Http\Controllers\Admin\NodeAdminController;
 use App\Http\Controllers\ChangelogController;
@@ -12,7 +13,16 @@ Route::get('/laws/{law:slug}', [LawController::class, 'show'])->name('laws.show'
 Route::get('/updates', [ChangelogController::class, 'index'])->name('updates.index');
 Route::get('/search', [SearchController::class, 'index'])->name('search.index');
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+});
+
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [LawAdminController::class, 'index'])->name('laws.index');
     Route::post('/laws', [LawAdminController::class, 'store'])->name('laws.store');
     Route::get('/laws/{law}/edit', [LawAdminController::class, 'edit'])->name('laws.edit');

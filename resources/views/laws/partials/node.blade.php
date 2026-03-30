@@ -1,6 +1,6 @@
 <article class="node" data-type="{{ $node['node_type'] }}" data-depth="{{ $node['depth'] }}">
     @if ($node['title'])
-        @include('laws.partials.title', ['tag' => $node['heading_tag'], 'title' => $node['title']])
+        @include('laws.partials.title', ['tag' => $node['heading_tag'], 'title' => $node['title'], 'anchorId' => $node['anchor_id']])
     @endif
 
     @if ($node['body_html'])

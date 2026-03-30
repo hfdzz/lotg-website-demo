@@ -74,6 +74,11 @@
                 color: var(--accent-dark);
             }
 
+            .nav-meta {
+                color: var(--muted);
+                font-size: 0.9rem;
+            }
+
             .search-form {
                 display: flex;
                 gap: 0.5rem;
@@ -460,6 +465,16 @@
                 font-weight: 700;
             }
 
+            .auth-shell {
+                width: min(480px, 100%);
+                margin: 4rem auto;
+            }
+
+            .auth-card {
+                display: grid;
+                gap: 1rem;
+            }
+
             @media (max-width: 700px) {
                 .shell {
                     width: min(100% - 1rem, 1100px);
@@ -509,7 +524,15 @@
                     <a class="nav-link" href="{{ route('laws.index') }}">Laws</a>
                     <a class="nav-link" href="{{ route('updates.index') }}">Updates</a>
                     <a class="nav-link" href="{{ route('search.index') }}">Search</a>
-                    <a class="nav-link" href="{{ route('admin.laws.index') }}">Admin</a>
+                    @auth
+                        <a class="nav-link" href="{{ route('admin.laws.index') }}">Admin</a>
+                        <form action="{{ route('logout') }}" method="post" style="display: inline-flex;">
+                            @csrf
+                            <button type="submit">Logout</button>
+                        </form>
+                    @else
+                        <a class="nav-link" href="{{ route('login') }}">Admin login</a>
+                    @endauth
                 </div>
 
                 <form class="search-form" action="{{ route('search.index') }}" method="get">
