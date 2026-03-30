@@ -52,6 +52,33 @@ class LawTreeBuilder
             ->all();
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $tree
+     * @return array<int, array<string, mixed>>
+     */
+    public function buildTableOfContents(array $tree): array
+    {
+        $items = [];
+
+        foreach ($tree as $node) {
+            $children = $this->buildTableOfContents($node['children'] ?? []);
+
+            if ($node['node_type'] !== 'section' || ! ($node['title'] ?? null)) {
+                $items = array_merge($items, $children);
+                continue;
+            }
+
+            $items[] = [
+                'title' => $node['title'],
+                'anchor_id' => $node['anchor_id'],
+                'depth' => $node['depth'],
+                'children' => $children,
+            ];
+        }
+
+        return $items;
+    }
+
     protected function headingTagFor(string $nodeType, int $depth): string
     {
         if ($nodeType !== 'section') {

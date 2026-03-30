@@ -25,11 +25,13 @@ class LawController extends Controller
         abort_unless($law->status === 'published', 404);
 
         $language = (string) $request->query('lang', $this->defaultLanguage());
+        $tree = $treeBuilder->build($law, $language);
 
         return view('laws.show', [
             'law' => $law,
             'language' => $language,
-            'tree' => $treeBuilder->build($law, $language),
+            'tree' => $tree,
+            'tableOfContents' => $treeBuilder->buildTableOfContents($tree),
         ]);
     }
 

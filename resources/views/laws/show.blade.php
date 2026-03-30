@@ -19,12 +19,25 @@
             </div>
         </section>
 
-        <section class="card law-content">
-            @forelse ($tree as $node)
-                @include('laws.partials.node', ['node' => $node])
-            @empty
-                <p class="law-meta">This law has no published content yet.</p>
-            @endforelse
-        </section>
+        <div class="law-detail-grid">
+            @if (count($tableOfContents) > 0)
+                <aside class="card toc-card">
+                    <div>
+                        <p class="eyebrow">Contents</p>
+                        <h2 class="toc-title">On this page</h2>
+                    </div>
+
+                    @include('laws.partials.toc', ['items' => $tableOfContents])
+                </aside>
+            @endif
+
+            <section class="card law-content">
+                @forelse ($tree as $node)
+                    @include('laws.partials.node', ['node' => $node])
+                @empty
+                    <p class="law-meta">This law has no published content yet.</p>
+                @endforelse
+            </section>
+        </div>
     </div>
 @endsection

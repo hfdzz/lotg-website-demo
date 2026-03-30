@@ -239,6 +239,13 @@
                 gap: 1.5rem;
             }
 
+            .law-detail-grid {
+                display: grid;
+                gap: 1.5rem;
+                align-items: start;
+                grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+            }
+
             .law-detail-meta {
                 display: flex;
                 flex-wrap: wrap;
@@ -453,6 +460,44 @@
                 gap: 1.5rem;
             }
 
+            .toc-card {
+                position: sticky;
+                top: 1rem;
+                display: grid;
+                gap: 1rem;
+            }
+
+            .toc-title {
+                margin: 0;
+                color: var(--accent-dark);
+                font-size: 1.1rem;
+            }
+
+            .toc-list {
+                display: grid;
+                gap: 0.4rem;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .toc-list .toc-list {
+                margin-top: 0.45rem;
+                padding-left: 1rem;
+                border-left: 1px solid rgba(165, 63, 43, 0.14);
+            }
+
+            .toc-link {
+                display: inline-block;
+                color: var(--accent-dark);
+                text-decoration: none;
+                line-height: 1.45;
+            }
+
+            .toc-link:hover {
+                text-decoration: underline;
+            }
+
             .law-content > .node + .node {
                 margin-top: 0;
             }
@@ -496,6 +541,14 @@
                 .card,
                 .node {
                     padding: 1rem;
+                }
+
+                .law-detail-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .toc-card {
+                    position: static;
                 }
 
                 .law-grid {
