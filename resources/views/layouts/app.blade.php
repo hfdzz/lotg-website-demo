@@ -328,15 +328,14 @@
             .node {
                 position: relative;
                 margin-top: 1.1rem;
-                padding: 1rem 0 0 1.25rem;
-                border-left: 3px solid rgba(165, 63, 43, 0.16);
+                padding: 0.95rem 0 0 0;
             }
 
             .node[data-type="section"] {
                 margin-top: 2.4rem;
                 padding: 1.5rem 1.5rem 0.45rem 1.5rem;
-                border-left-width: 5px;
                 border-radius: 0 22px 22px 0;
+                border-top: 1px solid rgba(165, 63, 43, 0.12);
                 background: linear-gradient(180deg, rgba(255, 247, 238, 0.98), rgba(255, 255, 255, 0.84));
                 box-shadow: 0 10px 26px rgba(82, 96, 109, 0.06);
             }
@@ -347,11 +346,12 @@
 
             .node[data-depth="1"] {
                 margin-top: 1.4rem;
+                margin-left: 0.4rem;
             }
 
             .node[data-depth="2"],
             .node[data-depth="3"] {
-                border-left-color: rgba(82, 96, 109, 0.14);
+                margin-left: 0.6rem;
             }
 
             .node-title {
@@ -465,6 +465,7 @@
             }
 
             .law-content {
+                padding: 0.5rem;
                 display: grid;
                 gap: 1.5rem;
             }
@@ -619,11 +620,18 @@
 
                 .node {
                     padding-top: 0.85rem;
-                    padding-left: 0.9rem;
+                    padding-left: 0;
+                    margin-left: 0;
                 }
 
                 .node[data-type="section"] {
                     padding: 1rem;
+                }
+
+                .node[data-depth="1"],
+                .node[data-depth="2"],
+                .node[data-depth="3"] {
+                    margin-left: 0.2rem;
                 }
 
                 .media-grid {
