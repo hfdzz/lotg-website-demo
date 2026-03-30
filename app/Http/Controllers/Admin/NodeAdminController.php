@@ -23,7 +23,7 @@ class NodeAdminController extends Controller
         return view('admin.nodes.edit', [
             'law' => $law,
             'node' => $node,
-            'translation' => $node->translationFor('en'),
+            'translation' => $node->translationFor($this->defaultLanguage()),
             'parentOptions' => $this->buildParentOptions($law, $node),
         ]);
     }
@@ -124,7 +124,7 @@ class NodeAdminController extends Controller
         ContentNodeTranslation::updateOrCreate(
             [
                 'content_node_id' => $node->id,
-                'language_code' => 'en',
+                'language_code' => $this->defaultLanguage(),
             ],
             [
                 'title' => $validated['title'] ?: null,
@@ -322,7 +322,7 @@ class NodeAdminController extends Controller
         $items = [];
 
         foreach (($childrenByParent->get($parentId) ?? collect())->sortBy('sort_order') as $node) {
-            $translation = $node->translationFor('en');
+            $translation = $node->translationFor($this->defaultLanguage());
 
             $items[] = [
                 'id' => $node->id,
@@ -333,5 +333,10 @@ class NodeAdminController extends Controller
         }
 
         return $items;
+    }
+
+    protected function defaultLanguage(): string
+    {
+        return config('app.fallback_locale', 'en');
     }
 }

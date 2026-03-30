@@ -41,21 +41,9 @@
 
     <section class="card">
         <h2>Existing nodes</h2>
-        <div class="result-list" style="margin-top: 1rem;">
-            @forelse ($nodes as $node)
-                @php
-                    $translation = $node->translationFor('en');
-                    $title = $translation?->title ?: ucfirst(str_replace('_', ' ', $node->node_type));
-                @endphp
-                <article class="result-card">
-                    <p class="eyebrow">{{ strtoupper($node->node_type) }}</p>
-                    <h3><a href="{{ route('admin.nodes.edit', [$law, $node]) }}">{{ $title }}</a></h3>
-                    <p class="law-meta">
-                        Parent: {{ $node->parent_id ?: 'root' }} |
-                        Sort: {{ $node->sort_order }} |
-                        Published: {{ $node->is_published ? 'yes' : 'no' }}
-                    </p>
-                </article>
+        <div style="margin-top: 1rem;">
+            @forelse ($nodeTree as $node)
+                @include('admin.laws.partials.node-tree-item', ['law' => $law, 'node' => $node])
             @empty
                 <p class="empty-state">No nodes yet for this law.</p>
             @endforelse

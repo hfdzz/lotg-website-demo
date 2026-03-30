@@ -10,7 +10,7 @@ class ChangelogController extends Controller
 {
     public function index(Request $request): View
     {
-        $language = (string) $request->query('lang', 'en');
+        $language = (string) $request->query('lang', $this->defaultLanguage());
 
         $entries = ChangelogEntry::published()
             ->where('language_code', $language)
@@ -22,5 +22,10 @@ class ChangelogController extends Controller
             'entries' => $entries,
             'language' => $language,
         ]);
+    }
+
+    protected function defaultLanguage(): string
+    {
+        return config('app.fallback_locale', 'en');
     }
 }

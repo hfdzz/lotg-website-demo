@@ -36,4 +36,26 @@ class Law extends Model
     {
         return $query->where('status', 'published');
     }
+
+    public function displayTitle(): string
+    {
+        $prefix = 'law-'.$this->law_number.'-';
+
+        if ($this->slug && str_starts_with($this->slug, $prefix)) {
+            return str($this->slug)
+                ->after($prefix)
+                ->replace('-', ' ')
+                ->title()
+                ->value();
+        }
+
+        if ($this->slug) {
+            return str($this->slug)
+                ->replace('-', ' ')
+                ->title()
+                ->value();
+        }
+
+        return 'Law '.$this->law_number;
+    }
 }

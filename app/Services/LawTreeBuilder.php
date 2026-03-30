@@ -32,17 +32,65 @@ class LawTreeBuilder
             ->sortBy('sort_order')
             ->values()
             ->map(function ($node) use ($childrenByParent, $depth, $languageCode) {
+                $translation = $node->translationFor($languageCode);
+
                 return [
                     'id' => $node->id,
                     'node_type' => $node->node_type,
                     'sort_order' => $node->sort_order,
                     'depth' => $depth,
+                    'heading_tag' => $this->headingTagFor($node->node_type, $depth),
                     'settings' => $node->settings_json ?? [],
-                    'translation' => $node->translationFor($languageCode),
-                    'media_assets' => $node->mediaAssets->values(),
+                    'translation' => $translation,
+                    'title' => $translation?->title,
+                    'body_html' => $translation?->body_html,
+                    'media_items' => $this->buildMediaItems($node->mediaAssets),
                     'children' => $this->buildBranch($childrenByParent, $node->id, $depth + 1, $languageCode),
                 ];
             })
+            ->all();
+    }
+
+    protected function headingTagFor(string $nodeType, int $depth): string
+    {
+        if ($nodeType !== 'section') {
+            return 'h3';
+        }
+
+        return match (min($depth, 3)) {
+            0 => 'h2',
+            1 => 'h3',
+            2 => 'h4',
+            default => 'h5',
+        };
+    }
+
+    protected function buildMediaItems(Collection $mediaAssets): array
+    {
+        return $mediaAssets
+            ->map(function ($mediaAsset) {
+                if ($mediaAsset->asset_type === 'image' && $mediaAsset->publicUrl()) {
+                    return [
+                        'kind' => 'image',
+                        'src' => $mediaAsset->publicUrl(),
+                        'caption' => $mediaAsset->caption,
+                        'credit' => $mediaAsset->credit,
+                    ];
+                }
+
+                if ($mediaAsset->asset_type === 'video' && $mediaAsset->youtubeEmbedUrl()) {
+                    return [
+                        'kind' => 'video',
+                        'src' => $mediaAsset->youtubeEmbedUrl(),
+                        'caption' => $mediaAsset->caption,
+                        'credit' => $mediaAsset->credit,
+                    ];
+                }
+
+                return null;
+            })
+            ->filter()
+            ->values()
             ->all();
     }
 }

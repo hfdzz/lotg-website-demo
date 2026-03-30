@@ -48,16 +48,9 @@ class LawAdminController extends Controller
             'contentNodes.mediaAssets',
         ]);
 
-        $nodes = $law->contentNodes
-            ->sortBy([
-                ['parent_id', 'asc'],
-                ['sort_order', 'asc'],
-            ])
-            ->values();
-
         return view('admin.laws.edit', [
             'law' => $law,
-            'nodes' => $nodes,
+            'nodeTree' => $this->buildNodeTree($law),
             'parentOptions' => $this->buildParentOptions($law),
         ]);
     }
@@ -93,6 +86,44 @@ class LawAdminController extends Controller
     }
 
     /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildNodeTree(Law $law): array
+    {
+        $law->loadMissing('contentNodes.translations');
+
+        $childrenByParent = $law->contentNodes
+            ->sortBy('sort_order')
+            ->groupBy('parent_id');
+
+        return $this->buildNodeTreeBranch($childrenByParent, null, 0);
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection<int, \Illuminate\Support\Collection<int, \App\Models\ContentNode>> $childrenByParent
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildNodeTreeBranch($childrenByParent, ?int $parentId, int $depth): array
+    {
+        return (($childrenByParent->get($parentId) ?? collect())->sortBy('sort_order'))
+            ->map(function ($node) use ($childrenByParent, $depth) {
+                $translation = $node->translationFor($this->defaultLanguage());
+
+                return [
+                    'id' => $node->id,
+                    'title' => $translation?->title ?: ucfirst(str_replace('_', ' ', $node->node_type)),
+                    'node_type' => $node->node_type,
+                    'sort_order' => $node->sort_order,
+                    'is_published' => $node->is_published,
+                    'depth' => $depth,
+                    'children' => $this->buildNodeTreeBranch($childrenByParent, $node->id, $depth + 1),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
      * @param \Illuminate\Support\Collection<int, \Illuminate\Support\Collection<int, \App\Models\ContentNode>> $childrenByParent
      * @return array<int, array<string, mixed>>
      */
@@ -101,7 +132,7 @@ class LawAdminController extends Controller
         $items = [];
 
         foreach (($childrenByParent->get($parentId) ?? collect())->sortBy('sort_order') as $node) {
-            $translation = $node->translationFor('en');
+            $translation = $node->translationFor($this->defaultLanguage());
 
             $items[] = [
                 'id' => $node->id,
@@ -112,5 +143,10 @@ class LawAdminController extends Controller
         }
 
         return $items;
+    }
+
+    protected function defaultLanguage(): string
+    {
+        return config('app.fallback_locale', 'en');
     }
 }

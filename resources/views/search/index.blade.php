@@ -18,36 +18,55 @@
         @else
             <p class="law-meta">Results for "{{ $query }}" in {{ strtoupper($language) }}</p>
 
-            <div class="result-list" style="margin-top: 1rem;">
-                @forelse ($lawMatches as $law)
-                    <article class="result-card">
-                        <p class="eyebrow">Law match</p>
-                        <h2><a href="{{ route('laws.show', $law) }}">Law {{ $law->law_number }}</a></h2>
-                        <p class="law-meta">Matched by law number.</p>
-                    </article>
-                @empty
-                @endforelse
-
-                @forelse ($contentMatches as $translation)
-                    <article class="result-card">
-                        <p class="eyebrow">Content match</p>
-                        <h3>
-                            <a href="{{ route('laws.show', $translation->contentNode->law) }}">
-                                Law {{ $translation->contentNode->law->law_number }}
-                            </a>
-                        </h3>
-                        @if ($translation->title)
-                            <h4>{{ $translation->title }}</h4>
+            @if ($lawMatches->isEmpty() && $contentMatches->isEmpty())
+                <p class="empty-state" style="margin-top: 1rem;">No published matches found for "{{ $query }}".</p>
+            @else
+                <div style="margin-top: 1rem;">
+                    <section class="result-section">
+                        <h2 class="result-section-title">Law matches</h2>
+                        @if ($lawMatches->isEmpty())
+                            <p class="empty-state">No direct law-number matches.</p>
+                        @else
+                            <div class="result-list">
+                                @foreach ($lawMatches as $law)
+                                    <article class="result-card">
+                                        <p class="eyebrow">Law {{ $law->law_number }}</p>
+                                        <h3><a class="result-link" href="{{ route('laws.show', $law) }}">{{ $law->displayTitle() }}</a></h3>
+                                        <p class="law-slug">{{ $law->slug }}</p>
+                                        <p class="law-meta">Open the full law detail page.</p>
+                                    </article>
+                                @endforeach
+                            </div>
                         @endif
-                        <p class="law-meta">{{ $translation->search_excerpt }}</p>
-                    </article>
-                @empty
-                @endforelse
+                    </section>
 
-                @if ($lawMatches->isEmpty() && $contentMatches->isEmpty())
-                    <p class="empty-state">No published matches found for "{{ $query }}".</p>
-                @endif
-            </div>
+                    <section class="result-section">
+                        <h2 class="result-section-title">Content matches</h2>
+                        @if ($contentMatches->isEmpty())
+                            <p class="empty-state">No section title or body matches.</p>
+                        @else
+                            <div class="result-list">
+                                @foreach ($contentMatches as $translation)
+                                    <article class="result-card">
+                                        <p class="eyebrow">In law {{ $translation->contentNode->law->law_number }}</p>
+                                        <h3>
+                                            <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law) }}">
+                                                {{ $translation->title ?: $translation->contentNode->law->displayTitle() }}
+                                            </a>
+                                        </h3>
+                                        <p class="law-meta">{{ $translation->search_excerpt }}</p>
+                                        <p class="law-meta">
+                                            <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law) }}">
+                                                Go to {{ $translation->contentNode->law->displayTitle() }}
+                                            </a>
+                                        </p>
+                                    </article>
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
+                </div>
+            @endif
         @endif
     </section>
 @endsection

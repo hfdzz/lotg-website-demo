@@ -15,9 +15,15 @@
     <section class="law-grid">
         @forelse ($laws as $law)
             <a class="law-link card" href="{{ route('laws.show', $law) }}">
-                <p class="eyebrow">Law {{ $law->law_number }}</p>
-                <h2>Law {{ $law->law_number }}</h2>
-                <p class="law-meta">Open the structured law page with nested sections, media, and future admin-ready content blocks.</p>
+                <span class="law-number">Law {{ $law->law_number }}</span>
+                <div>
+                    <h2>{{ $law->displayTitle() }}</h2>
+                    <p class="law-slug">{{ $law->slug }}</p>
+                </div>
+                <p class="law-meta">
+                    Open the law detail page to read nested sections, supporting text, and related media examples.
+                </p>
+                <span class="law-link-cta">View law <span aria-hidden="true">-></span></span>
             </a>
         @empty
             <div class="card">

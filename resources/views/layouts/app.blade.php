@@ -173,11 +173,13 @@
 
             .law-grid {
                 display: grid;
-                gap: 1rem;
+                gap: 1.1rem;
+                grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
             }
 
             .law-link {
-                display: block;
+                display: grid;
+                gap: 0.9rem;
                 text-decoration: none;
                 transition: transform 0.15s ease, box-shadow 0.15s ease;
             }
@@ -187,14 +189,83 @@
                 box-shadow: 0 16px 36px rgba(82, 96, 109, 0.10);
             }
 
+            .law-link h2 {
+                margin: 0;
+                font-size: 1.45rem;
+                line-height: 1.15;
+            }
+
+            .law-number {
+                display: inline-flex;
+                width: fit-content;
+                align-items: center;
+                padding: 0.35rem 0.65rem;
+                border-radius: 999px;
+                background: rgba(165, 63, 43, 0.10);
+                color: var(--accent-dark);
+                font-size: 0.85rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .law-slug {
+                font-family: "Courier New", monospace;
+                font-size: 0.88rem;
+                color: #7b6a5f;
+            }
+
+            .law-link-cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                color: var(--accent-dark);
+                font-weight: 700;
+            }
+
             .law-meta {
                 color: var(--muted);
                 font-size: 0.95rem;
+                line-height: 1.65;
+            }
+
+            .law-detail-shell {
+                display: grid;
+                gap: 1.5rem;
+            }
+
+            .law-detail-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-top: 1rem;
+            }
+
+            .law-detail-pill {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.45rem 0.75rem;
+                border: 1px solid rgba(110, 37, 24, 0.12);
+                border-radius: 999px;
+                background: rgba(255, 250, 242, 0.88);
+                color: var(--accent-dark);
+                font-size: 0.88rem;
+                font-weight: 700;
             }
 
             .result-list {
                 display: grid;
                 gap: 1rem;
+            }
+
+            .result-section + .result-section {
+                margin-top: 1.5rem;
+            }
+
+            .result-section-title {
+                margin: 0 0 0.85rem;
+                font-size: 1.2rem;
+                color: var(--accent-dark);
             }
 
             .result-card {
@@ -204,9 +275,33 @@
                 background: rgba(255, 255, 255, 0.82);
             }
 
+            .result-card h2,
+            .result-card h3,
+            .result-card h4 {
+                line-height: 1.2;
+            }
+
             .result-card h3,
             .result-card h4 {
                 margin: 0 0 0.5rem;
+            }
+
+            .result-link {
+                color: var(--accent-dark);
+                text-decoration: none;
+            }
+
+            .result-link:hover {
+                text-decoration: underline;
+            }
+
+            .tree-node {
+                margin-top: 0.75rem;
+                border-left: 4px solid rgba(165, 63, 43, 0.18);
+            }
+
+            .tree-node-children {
+                margin-top: 0.35rem;
             }
 
             .empty-state {
@@ -215,32 +310,103 @@
             }
 
             .node {
-                margin-top: 1.25rem;
-                padding: 1.25rem;
-                border-left: 4px solid rgba(165, 63, 43, 0.18);
-                border-radius: 0 16px 16px 0;
-                background: rgba(255, 255, 255, 0.58);
+                position: relative;
+                margin-top: 1.1rem;
+                padding: 1rem 0 0 1.25rem;
+                border-left: 3px solid rgba(165, 63, 43, 0.16);
             }
 
             .node[data-type="section"] {
-                background: linear-gradient(180deg, rgba(255, 247, 238, 0.95), rgba(255, 255, 255, 0.78));
+                margin-top: 2rem;
+                padding: 1.35rem 1.35rem 0.25rem 1.35rem;
+                border-left-width: 5px;
+                border-radius: 0 22px 22px 0;
+                background: linear-gradient(180deg, rgba(255, 247, 238, 0.98), rgba(255, 255, 255, 0.84));
+                box-shadow: 0 10px 26px rgba(82, 96, 109, 0.06);
+            }
+
+            .node[data-depth="0"] {
+                margin-top: 0;
+            }
+
+            .node[data-depth="1"] {
+                margin-top: 1.4rem;
+            }
+
+            .node[data-depth="2"],
+            .node[data-depth="3"] {
+                border-left-color: rgba(82, 96, 109, 0.14);
             }
 
             .node-title {
-                margin: 0 0 0.75rem;
+                margin: 0 0 0.85rem;
                 color: var(--accent-dark);
-                line-height: 1.15;
+                line-height: 1.12;
+                letter-spacing: -0.01em;
+            }
+
+            h2.node-title {
+                font-size: clamp(1.75rem, 3vw, 2.35rem);
+                padding-bottom: 0.6rem;
+                border-bottom: 1px solid rgba(165, 63, 43, 0.18);
+            }
+
+            h3.node-title {
+                font-size: clamp(1.35rem, 2vw, 1.7rem);
+            }
+
+            h4.node-title {
+                font-size: 1.15rem;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #8b3b2b;
+            }
+
+            h5.node-title {
+                font-size: 1rem;
+                color: #7c4b3f;
             }
 
             .node-body {
                 color: var(--ink);
-                line-height: 1.75;
+                max-width: 72ch;
+                font-size: 1.03rem;
+                line-height: 1.82;
+            }
+
+            .node-body > *:first-child {
+                margin-top: 0;
+            }
+
+            .node-body > *:last-child {
+                margin-bottom: 0;
+            }
+
+            .node-body p,
+            .node-body ul,
+            .node-body ol,
+            .node-body blockquote {
+                margin: 0 0 1rem;
+            }
+
+            .node-body ul,
+            .node-body ol {
+                padding-left: 1.25rem;
+            }
+
+            .node-body li + li {
+                margin-top: 0.45rem;
+            }
+
+            .node-body strong {
+                color: #12202b;
             }
 
             .media-grid {
                 display: grid;
                 gap: 1rem;
-                margin-top: 1rem;
+                margin-top: 1.15rem;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             }
 
             .media-frame {
@@ -248,6 +414,7 @@
                 border: 1px solid var(--line);
                 border-radius: 18px;
                 background: #ffffff;
+                box-shadow: 0 10px 24px rgba(31, 41, 51, 0.07);
             }
 
             .media-frame img,
@@ -255,6 +422,12 @@
                 width: 100%;
                 border: 0;
                 display: block;
+            }
+
+            .media-frame img {
+                height: auto;
+                object-fit: cover;
+                background: #f2ede4;
             }
 
             .media-frame iframe {
@@ -265,6 +438,18 @@
                 padding: 0.9rem 1rem 1rem;
                 color: var(--muted);
                 font-size: 0.95rem;
+                line-height: 1.6;
+                border-top: 1px solid rgba(217, 205, 184, 0.7);
+                background: rgba(248, 243, 234, 0.7);
+            }
+
+            .law-content {
+                display: grid;
+                gap: 1.5rem;
+            }
+
+            .law-content > .node + .node {
+                margin-top: 0;
             }
 
             .back-link {
@@ -296,6 +481,23 @@
                 .card,
                 .node {
                     padding: 1rem;
+                }
+
+                .law-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .node {
+                    padding-top: 0.85rem;
+                    padding-left: 0.9rem;
+                }
+
+                .node[data-type="section"] {
+                    padding: 1rem;
+                }
+
+                .media-grid {
+                    grid-template-columns: 1fr;
                 }
             }
         </style>
