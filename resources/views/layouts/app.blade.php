@@ -28,6 +28,10 @@
                 color: var(--ink);
             }
 
+            html {
+                scroll-behavior: smooth;
+            }
+
             a {
                 color: inherit;
             }
@@ -329,8 +333,8 @@
             }
 
             .node[data-type="section"] {
-                margin-top: 2rem;
-                padding: 1.35rem 1.35rem 0.25rem 1.35rem;
+                margin-top: 2.4rem;
+                padding: 1.5rem 1.5rem 0.45rem 1.5rem;
                 border-left-width: 5px;
                 border-radius: 0 22px 22px 0;
                 background: linear-gradient(180deg, rgba(255, 247, 238, 0.98), rgba(255, 255, 255, 0.84));
@@ -379,6 +383,10 @@
                 color: #7c4b3f;
             }
 
+            .node-title[id] {
+                scroll-margin-top: 1.5rem;
+            }
+
             .node-body {
                 color: var(--ink);
                 max-width: 72ch;
@@ -417,7 +425,8 @@
             .media-grid {
                 display: grid;
                 gap: 1rem;
-                margin-top: 1.15rem;
+                margin-top: 1.35rem;
+                margin-bottom: 0.75rem;
                 grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             }
 
@@ -460,9 +469,13 @@
                 gap: 1.5rem;
             }
 
+            .law-detail-mobile-toc {
+                display: none;
+            }
+
             .toc-card {
                 position: sticky;
-                top: 1rem;
+                top: 1.25rem;
                 display: grid;
                 gap: 1rem;
             }
@@ -473,9 +486,33 @@
                 font-size: 1.1rem;
             }
 
+            .toc-summary {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                cursor: pointer;
+                list-style: none;
+                font-weight: 700;
+                color: var(--accent-dark);
+            }
+
+            .toc-summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .toc-summary::after {
+                content: "+";
+                font-size: 1.1rem;
+            }
+
+            details[open] > .toc-summary::after {
+                content: "-";
+            }
+
             .toc-list {
                 display: grid;
-                gap: 0.4rem;
+                gap: 0.3rem;
                 margin: 0;
                 padding: 0;
                 list-style: none;
@@ -483,19 +520,40 @@
 
             .toc-list .toc-list {
                 margin-top: 0.45rem;
-                padding-left: 1rem;
+                padding-left: 1.15rem;
                 border-left: 1px solid rgba(165, 63, 43, 0.14);
             }
 
             .toc-link {
-                display: inline-block;
+                display: block;
+                padding: 0.45rem 0.6rem;
+                border-radius: 10px;
                 color: var(--accent-dark);
                 text-decoration: none;
                 line-height: 1.45;
+                transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
             }
 
             .toc-link:hover {
-                text-decoration: underline;
+                background: rgba(165, 63, 43, 0.10);
+                color: #7b2f20;
+                transform: translateX(2px);
+            }
+
+            .toc-link.is-active {
+                background: rgba(165, 63, 43, 0.14);
+                color: #6e2518;
+                font-weight: 700;
+                box-shadow: inset 3px 0 0 rgba(165, 63, 43, 0.55);
+            }
+
+            .toc-item[data-depth="1"] > .toc-link {
+                padding-left: 0.75rem;
+            }
+
+            .toc-item[data-depth="2"] > .toc-link,
+            .toc-item[data-depth="3"] > .toc-link {
+                color: #7b5347;
             }
 
             .law-content > .node + .node {
@@ -547,8 +605,12 @@
                     grid-template-columns: 1fr;
                 }
 
+                .law-detail-mobile-toc {
+                    display: block;
+                }
+
                 .toc-card {
-                    position: static;
+                    display: none;
                 }
 
                 .law-grid {
@@ -566,6 +628,8 @@
 
                 .media-grid {
                     grid-template-columns: 1fr;
+                    margin-top: 1rem;
+                    margin-bottom: 0.4rem;
                 }
             }
         </style>
