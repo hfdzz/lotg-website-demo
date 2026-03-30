@@ -4,8 +4,10 @@
     <p class="law-meta">
         Sort: {{ $node['sort_order'] }} |
         Published: {{ $node['is_published'] ? 'yes' : 'no' }} |
-        Depth: {{ $node['depth'] }}
+        Depth: {{ $node['depth'] }} |
+        Children: {{ $node['child_count'] }}
     </p>
+    <p class="law-meta"><a class="result-link" href="{{ route('admin.nodes.edit', [$law, $node['id']]) }}">Edit this node</a></p>
 </article>
 
 @if ($node['children'])

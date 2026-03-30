@@ -10,6 +10,7 @@
 
 <label>
     <div class="law-meta">Parent node</div>
+    <div class="nav-meta">Choose the section this node belongs under. Leave it at root for top-level content.</div>
     <select name="parent_id">
         <option value="">Root level</option>
         @foreach ($parentOptions as $option)
@@ -20,6 +21,7 @@
 
 <label>
     <div class="law-meta">Node type</div>
+    <div class="nav-meta">Use `section` for headings, `rich_text` for prose, `image` for a single image block, and `video_group` for one or more video links.</div>
     <select name="node_type">
         @foreach (['section', 'rich_text', 'image', 'video_group'] as $type)
             <option value="{{ $type }}" @selected(old('node_type', $node?->node_type ?? 'section') === $type)>{{ $type }}</option>
@@ -29,6 +31,7 @@
 
 <label>
     <div class="law-meta">Sort order</div>
+    <div class="nav-meta">Lower numbers appear first among sibling nodes under the same parent.</div>
     <input type="number" min="0" name="sort_order" value="{{ old('sort_order', $node?->sort_order ?? 0) }}">
 </label>
 
@@ -36,6 +39,8 @@
     <input type="checkbox" name="is_published" value="1" @checked(old('is_published', $node?->is_published ?? true))>
     Publish this node
 </label>
+
+<div class="nav-meta">If unpublished, the node stays in admin but does not appear on the public law page.</div>
 
 <label>
     <div class="law-meta">Title (EN)</div>
@@ -58,6 +63,7 @@
 
 <div class="card" style="padding: 1rem;">
     <h3 style="margin-top: 0;">Image fields</h3>
+    <p class="nav-meta" style="margin-top: 0;">Used only when the node type is `image`.</p>
     <label>
         <div class="law-meta">Upload image</div>
         <input type="file" name="image_file" accept="image/*">
@@ -81,6 +87,7 @@
 
 <div class="card" style="padding: 1rem;">
     <h3 style="margin-top: 0;">Video fields</h3>
+    <p class="nav-meta" style="margin-top: 0;">Used only when the node type is `video_group`.</p>
     <label>
         <div class="law-meta">YouTube URLs, one per line</div>
         <textarea name="video_urls" rows="5">{{ old('video_urls', $videoUrls) }}</textarea>

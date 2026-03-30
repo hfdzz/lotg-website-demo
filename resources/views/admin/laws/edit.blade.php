@@ -32,6 +32,7 @@
 
     <section class="card" style="margin-bottom: 1rem;">
         <h2>Create node</h2>
+        <p class="nav-meta">Start with sections, then add child sections or content blocks beneath them. Parent labels include node type and current sort order to make hierarchy safer to read.</p>
         <form action="{{ route('admin.nodes.store', $law) }}" method="post" enctype="multipart/form-data" style="display: grid; gap: 1rem; margin-top: 1rem;">
             @csrf
             @include('admin.partials.node-fields', ['node' => null, 'translation' => null, 'parentOptions' => $parentOptions])

@@ -12,6 +12,12 @@
             Keep this lean: structure, one English translation, and media attachments that fit the
             selected node type.
         </p>
+        <div class="law-detail-meta">
+            <span class="law-detail-pill">Type: {{ strtoupper($node->node_type) }}</span>
+            <span class="law-detail-pill">Parent: {{ $currentParentLabel }}</span>
+            <span class="law-detail-pill">Sort: {{ $node->sort_order }}</span>
+            <span class="law-detail-pill">Public: {{ $node->is_published ? 'yes' : 'no' }}</span>
+        </div>
     </section>
 
     @if (session('status'))

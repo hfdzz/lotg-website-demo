@@ -25,6 +25,7 @@ class NodeAdminController extends Controller
             'node' => $node,
             'translation' => $node->translationFor($this->defaultLanguage()),
             'parentOptions' => $this->buildParentOptions($law, $node),
+            'currentParentLabel' => $this->currentParentLabel($law, $node),
         ]);
     }
 
@@ -302,15 +303,36 @@ class NodeAdminController extends Controller
      */
     protected function buildParentOptions(Law $law, ContentNode $currentNode): array
     {
-        $law->loadMissing('contentNodes.translations');
-
         $excludedIds = $this->descendantIds($currentNode)->push($currentNode->id)->all();
-        $childrenByParent = $law->contentNodes
+        $childrenByParent = $law->loadMissing('contentNodes.translations')->contentNodes
             ->reject(fn (ContentNode $node) => in_array($node->id, $excludedIds, true))
             ->sortBy('sort_order')
             ->groupBy('parent_id');
 
         return $this->flattenNodes($childrenByParent, null, 0);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildParentOptionsForLaw(Law $law): array
+    {
+        $childrenByParent = $law->loadMissing('contentNodes.translations')->contentNodes
+            ->sortBy('sort_order')
+            ->groupBy('parent_id');
+
+        return $this->flattenNodes($childrenByParent, null, 0);
+    }
+
+    protected function currentParentLabel(Law $law, ContentNode $node): string
+    {
+        if (! $node->parent_id) {
+            return 'Root level';
+        }
+
+        $parent = collect($this->buildParentOptionsForLaw($law))->firstWhere('id', $node->parent_id);
+
+        return $parent['label'] ?? 'Unknown parent';
     }
 
     /**
@@ -326,7 +348,10 @@ class NodeAdminController extends Controller
 
             $items[] = [
                 'id' => $node->id,
-                'label' => str_repeat('-- ', $depth).($translation?->title ?: ucfirst(str_replace('_', ' ', $node->node_type)).' #'.$node->id),
+                'label' => str_repeat('-- ', $depth)
+                    .'['.strtoupper($node->node_type).'] '
+                    .($translation?->title ?: ucfirst(str_replace('_', ' ', $node->node_type)).' #'.$node->id)
+                    .' (sort '.$node->sort_order.')',
             ];
 
             $items = array_merge($items, $this->flattenNodes($childrenByParent, $node->id, $depth + 1));

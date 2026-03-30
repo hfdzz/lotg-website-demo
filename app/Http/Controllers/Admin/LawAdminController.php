@@ -116,6 +116,7 @@ class LawAdminController extends Controller
                     'sort_order' => $node->sort_order,
                     'is_published' => $node->is_published,
                     'depth' => $depth,
+                    'child_count' => (($childrenByParent->get($node->id) ?? collect())->count()),
                     'children' => $this->buildNodeTreeBranch($childrenByParent, $node->id, $depth + 1),
                 ];
             })
@@ -136,7 +137,10 @@ class LawAdminController extends Controller
 
             $items[] = [
                 'id' => $node->id,
-                'label' => str_repeat('-- ', $depth).($translation?->title ?: ucfirst(str_replace('_', ' ', $node->node_type)).' #'.$node->id),
+                'label' => str_repeat('-- ', $depth)
+                    .'['.strtoupper($node->node_type).'] '
+                    .($translation?->title ?: ucfirst(str_replace('_', ' ', $node->node_type)).' #'.$node->id)
+                    .' (sort '.$node->sort_order.')',
             ];
 
             $items = array_merge($items, $this->flattenNodes($childrenByParent, $node->id, $depth + 1));
