@@ -15,14 +15,14 @@
     </section>
 
     @if (session('status'))
-        <div class="card" style="margin-bottom: 1rem;">
+        <div class="card surface-note">
             <strong>{{ session('status') }}</strong>
         </div>
     @endif
 
-    <section class="card" style="margin-bottom: 1rem;">
+    <section class="card section-card">
         <h2>Law settings</h2>
-        <form action="{{ route('admin.laws.update', $law) }}" method="post" style="display: grid; gap: 1rem; margin-top: 1rem;">
+        <form action="{{ route('admin.laws.update', $law) }}" method="post" class="stack-form">
             @csrf
             @method('patch')
             @include('admin.partials.law-fields', ['law' => $law])
@@ -30,10 +30,10 @@
         </form>
     </section>
 
-    <section class="card" style="margin-bottom: 1rem;">
+    <section class="card section-card">
         <h2>Create node</h2>
         <p class="nav-meta">Start with sections, then add child sections or content blocks beneath them. Parent labels include node type and current sort order to make hierarchy safer to read.</p>
-        <form action="{{ route('admin.nodes.store', $law) }}" method="post" enctype="multipart/form-data" style="display: grid; gap: 1rem; margin-top: 1rem;">
+        <form action="{{ route('admin.nodes.store', $law) }}" method="post" enctype="multipart/form-data" class="stack-form">
             @csrf
             @include('admin.partials.node-fields', ['node' => null, 'translation' => null, 'parentOptions' => $parentOptions])
             <button type="submit">Create node</button>
@@ -42,7 +42,7 @@
 
     <section class="card">
         <h2>Existing nodes</h2>
-        <div style="margin-top: 1rem;">
+        <div class="stack-top">
             @forelse ($nodeTree as $node)
                 @include('admin.laws.partials.node-tree-item', ['law' => $law, 'node' => $node])
             @empty

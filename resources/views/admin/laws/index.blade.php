@@ -13,14 +13,14 @@
     </section>
 
     @if (session('status'))
-        <div class="card" style="margin-bottom: 1rem;">
+        <div class="card surface-note">
             <strong>{{ session('status') }}</strong>
         </div>
     @endif
 
-    <section class="card" style="margin-bottom: 1rem;">
+    <section class="card section-card">
         <h2>Create law</h2>
-        <form action="{{ route('admin.laws.store') }}" method="post" style="display: grid; gap: 1rem; margin-top: 1rem;">
+        <form action="{{ route('admin.laws.store') }}" method="post" class="stack-form">
             @csrf
             @include('admin.partials.law-fields', ['law' => null])
             <button type="submit">Create law</button>
@@ -29,7 +29,7 @@
 
     <section class="card">
         <h2>Existing laws</h2>
-        <div class="result-list" style="margin-top: 1rem;">
+        <div class="result-list stack-top">
             @forelse ($laws as $law)
                 <article class="result-card">
                     <p class="eyebrow">Law {{ $law->law_number }}</p>

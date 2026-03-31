@@ -21,14 +21,14 @@
     </section>
 
     @if (session('status'))
-        <div class="card" style="margin-bottom: 1rem;">
+        <div class="card surface-note">
             <strong>{{ session('status') }}</strong>
         </div>
     @endif
 
-    <section class="card" style="margin-bottom: 1rem;">
+    <section class="card section-card">
         <h2>Node settings</h2>
-        <form action="{{ route('admin.nodes.update', [$law, $node]) }}" method="post" enctype="multipart/form-data" style="display: grid; gap: 1rem; margin-top: 1rem;">
+        <form action="{{ route('admin.nodes.update', [$law, $node]) }}" method="post" enctype="multipart/form-data" class="stack-form">
             @csrf
             @method('patch')
             @include('admin.partials.node-fields', ['node' => $node, 'translation' => $translation, 'parentOptions' => $parentOptions])
@@ -39,7 +39,7 @@
     <section class="card">
         <h2>Delete node</h2>
         <p class="law-meta">Deleting a node removes its descendants recursively in the application layer.</p>
-        <form action="{{ route('admin.nodes.destroy', [$law, $node]) }}" method="post" style="margin-top: 1rem;">
+        <form action="{{ route('admin.nodes.destroy', [$law, $node]) }}" method="post" class="stack-top">
             @csrf
             @method('delete')
             <button type="submit">Delete node</button>

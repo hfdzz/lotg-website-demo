@@ -35,9 +35,9 @@
         </section>
 
         @if (count($tableOfContents) > 0)
-            <details class="card law-detail-mobile-toc">
+            <details class="law-detail-mobile-toc">
                 <summary class="toc-summary">Table of contents</summary>
-                <div style="margin-top: 1rem;">
+                <div class="stack-top">
                     @include('laws.partials.toc', ['items' => $tableOfContents])
                 </div>
             </details>
@@ -45,7 +45,7 @@
 
         <div class="law-detail-grid">
             @if (count($tableOfContents) > 0)
-                <aside class="card toc-card">
+                <aside class="toc-card">
                     <div>
                         <p class="eyebrow">Contents</p>
                         <h2 class="toc-title">On this page</h2>
@@ -55,53 +55,13 @@
                 </aside>
             @endif
 
-            <section class="card law-content">
+            <section class="law-content">
                 @forelse ($tree as $node)
                     @include('laws.partials.node', ['node' => $node])
                 @empty
-                    <p class="law-meta">This law has no published content yet.</p>
+                    <p class="law-meta law-content-empty">This law has no published content yet.</p>
                 @endforelse
             </section>
         </div>
     </div>
-
-    @if (count($tableOfContents) > 0)
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const tocLinks = Array.from(document.querySelectorAll('.toc-link[data-anchor]'));
-                const headings = tocLinks
-                    .map((link) => document.getElementById(link.dataset.anchor))
-                    .filter(Boolean);
-
-                if (! headings.length) {
-                    return;
-                }
-
-                const setActive = (id) => {
-                    tocLinks.forEach((link) => {
-                        link.classList.toggle('is-active', link.dataset.anchor === id);
-                    });
-                };
-
-                const observer = new IntersectionObserver((entries) => {
-                    const visible = entries
-                        .filter((entry) => entry.isIntersecting)
-                        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-
-                    if (visible.length > 0) {
-                        setActive(visible[0].target.id);
-                    }
-                }, {
-                    rootMargin: '-20% 0px -65% 0px',
-                    threshold: [0, 1],
-                });
-
-                headings.forEach((heading) => observer.observe(heading));
-
-                if (headings[0]) {
-                    setActive(headings[0].id);
-                }
-            });
-        </script>
-    @endif
 @endsection

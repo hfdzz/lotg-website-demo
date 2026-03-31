@@ -19,9 +19,9 @@
             <p class="law-meta">Results for "{{ $query }}" in {{ strtoupper($language) }}</p>
 
             @if ($lawMatches->isEmpty() && $contentMatches->isEmpty())
-                <p class="empty-state" style="margin-top: 1rem;">No published matches found for "{{ $query }}".</p>
+                <p class="empty-state stack-top">No published matches found for "{{ $query }}".</p>
             @else
-                <div style="margin-top: 1rem;">
+                <div class="stack-top">
                     <section class="result-section">
                         <h2 class="result-section-title">Law matches</h2>
                         @if ($lawMatches->isEmpty())

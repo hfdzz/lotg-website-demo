@@ -61,9 +61,9 @@
     </select>
 </label>
 
-<div class="card" style="padding: 1rem;">
-    <h3 style="margin-top: 0;">Image fields</h3>
-    <p class="nav-meta" style="margin-top: 0;">Used only when the node type is `image`.</p>
+<div class="card">
+    <h3>Image fields</h3>
+    <p class="nav-meta">Used only when the node type is `image`.</p>
     <label>
         <div class="law-meta">Upload image</div>
         <input type="file" name="image_file" accept="image/*">
@@ -85,9 +85,9 @@
     </label>
 </div>
 
-<div class="card" style="padding: 1rem;">
-    <h3 style="margin-top: 0;">Video fields</h3>
-    <p class="nav-meta" style="margin-top: 0;">Used only when the node type is `video_group`.</p>
+<div class="card">
+    <h3>Video fields</h3>
+    <p class="nav-meta">Used only when the node type is `video_group`.</p>
     <label>
         <div class="law-meta">YouTube URLs, one per line</div>
         <textarea name="video_urls" rows="5">{{ old('video_urls', $videoUrls) }}</textarea>
