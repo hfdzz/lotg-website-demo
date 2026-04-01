@@ -20,25 +20,33 @@
         </div>
     @endif
 
-    <section class="card section-card">
-        <h2>Law settings</h2>
-        <form action="{{ route('admin.laws.update', $law) }}" method="post" class="stack-form">
-            @csrf
-            @method('patch')
-            @include('admin.partials.law-fields', ['law' => $law])
-            <button type="submit">Save law</button>
-        </form>
-    </section>
+    <details class="card collapse-card">
+        <summary class="collapse-summary">
+            <h2>Law settings</h2>
+        </summary>
+        <div class="collapse-body">
+            <form action="{{ route('admin.laws.update', $law) }}" method="post" class="stack-form">
+                @csrf
+                @method('patch')
+                @include('admin.partials.law-fields', ['law' => $law])
+                <button type="submit">Save law</button>
+            </form>
+        </div>
+    </details>
 
-    <section class="card section-card">
-        <h2>Create node</h2>
-        <p class="nav-meta">Start with sections, then add child sections or content blocks beneath them. Parent labels include node type and current sort order to make hierarchy safer to read.</p>
-        <form action="{{ route('admin.nodes.store', $law) }}" method="post" enctype="multipart/form-data" class="stack-form">
-            @csrf
-            @include('admin.partials.node-fields', ['node' => null, 'translation' => null, 'parentOptions' => $parentOptions])
-            <button type="submit">Create node</button>
-        </form>
-    </section>
+    <details class="card collapse-card">
+        <summary class="collapse-summary">
+            <h2>Create node</h2>
+        </summary>
+        <div class="collapse-body">
+            <p class="nav-meta">Start with sections, then add child sections or content blocks beneath them. Parent labels include node type and current sort order to make hierarchy safer to read.</p>
+            <form action="{{ route('admin.nodes.store', $law) }}" method="post" enctype="multipart/form-data" class="stack-form">
+                @csrf
+                @include('admin.partials.node-fields', ['node' => null, 'translation' => null, 'parentOptions' => $parentOptions])
+                <button type="submit">Create node</button>
+            </form>
+        </div>
+    </details>
 
     <section class="card">
         <h2>Existing nodes</h2>

@@ -26,15 +26,19 @@
         </div>
     @endif
 
-    <section class="card section-card">
-        <h2>Node settings</h2>
-        <form action="{{ route('admin.nodes.update', [$law, $node]) }}" method="post" enctype="multipart/form-data" class="stack-form">
-            @csrf
-            @method('patch')
-            @include('admin.partials.node-fields', ['node' => $node, 'translation' => $translation, 'parentOptions' => $parentOptions])
-            <button type="submit">Save node</button>
-        </form>
-    </section>
+    <details class="card collapse-card">
+        <summary class="collapse-summary">
+            <h2>Node settings</h2>
+        </summary>
+        <div class="collapse-body">
+            <form action="{{ route('admin.nodes.update', [$law, $node]) }}" method="post" enctype="multipart/form-data" class="stack-form">
+                @csrf
+                @method('patch')
+                @include('admin.partials.node-fields', ['node' => $node, 'translation' => $translation, 'parentOptions' => $parentOptions])
+                <button type="submit">Save node</button>
+            </form>
+        </div>
+    </details>
 
     <section class="card">
         <h2>Delete node</h2>

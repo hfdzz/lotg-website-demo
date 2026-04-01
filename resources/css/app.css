@@ -149,6 +149,45 @@ button:hover {
     margin-bottom: 1rem;
 }
 
+.collapse-card {
+    margin-bottom: 1rem;
+}
+
+.collapse-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+    list-style: none;
+    color: var(--ink);
+}
+
+.collapse-summary::-webkit-details-marker {
+    display: none;
+}
+
+.collapse-summary::after {
+    content: "+";
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.collapse-card[open] .collapse-summary::after {
+    content: "-";
+}
+
+.collapse-summary h2 {
+    margin: 0;
+}
+
+.collapse-body {
+    margin-top: 1rem;
+}
+
 .stack-form {
     display: grid;
     gap: 1rem;

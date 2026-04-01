@@ -18,14 +18,18 @@
         </div>
     @endif
 
-    <section class="card section-card">
-        <h2>Create law</h2>
-        <form action="{{ route('admin.laws.store') }}" method="post" class="stack-form">
-            @csrf
-            @include('admin.partials.law-fields', ['law' => null])
-            <button type="submit">Create law</button>
-        </form>
-    </section>
+    <details class="card collapse-card">
+        <summary class="collapse-summary">
+            <h2>Create law</h2>
+        </summary>
+        <div class="collapse-body">
+            <form action="{{ route('admin.laws.store') }}" method="post" class="stack-form">
+                @csrf
+                @include('admin.partials.law-fields', ['law' => null])
+                <button type="submit">Create law</button>
+            </form>
+        </div>
+    </details>
 
     <section class="card">
         <h2>Existing laws</h2>
