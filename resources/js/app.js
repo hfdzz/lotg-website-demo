@@ -26,7 +26,8 @@ function setupMobileHeader() {
         toggleButton.innerHTML = open ? '&times;' : '&#9776;';
     };
 
-    toggleButton.addEventListener('click', () => {
+    toggleButton.addEventListener('click', (event) => {
+        event.stopPropagation();
         setTrayOpen(!mobileHeader.classList.contains('is-open'));
     });
 
@@ -81,10 +82,10 @@ function setupMobileHeader() {
                 return;
             }
 
-            if (currentScrollY < 12 || currentScrollY < lastScrollY) {
+            if (currentScrollY <= 12 || currentScrollY + 6 < lastScrollY) {
                 mobileHeader.classList.remove('is-hidden');
                 root.classList.remove('mobile-header-hidden');
-            } else if (currentScrollY > lastScrollY + 8) {
+            } else if (currentScrollY > lastScrollY + 6) {
                 mobileHeader.classList.add('is-hidden');
                 root.classList.add('mobile-header-hidden');
             }

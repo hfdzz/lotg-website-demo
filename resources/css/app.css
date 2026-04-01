@@ -24,7 +24,8 @@ body {
     margin: 0;
     background: var(--page-bg);
     color: var(--ink);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 }
 
 body.menu-open {
@@ -62,7 +63,6 @@ input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
     width: 100%;
-    margin-top: 0.35rem;
     padding: 0.8rem 0.95rem;
     border: 1px solid var(--line-strong);
     border-radius: 12px;
@@ -477,8 +477,14 @@ h5.node-title {
 .media-grid {
     display: grid;
     gap: 1rem;
-    margin: 1.25rem 0 1.5rem;
+    margin: 1.1rem 0 1.4rem;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.video-stack {
+    display: grid;
+    gap: 1.25rem;
+    margin: 1.4rem 0 1.75rem;
 }
 
 .media-frame {
@@ -503,6 +509,10 @@ h5.node-title {
 
 .media-frame iframe {
     aspect-ratio: 16 / 9;
+}
+
+.video-frame {
+    width: 100%;
 }
 
 .media-caption {
@@ -633,6 +643,10 @@ h5.node-title {
     min-width: min(22rem, 55vw);
 }
 
+.search-form button[type="submit"] {
+    border-radius: 12px;
+}
+
 .mobile-header {
     display: none;
 }
@@ -641,7 +655,6 @@ h5.node-title {
     position: fixed;
     inset: 0 0 auto 0;
     z-index: 60;
-    pointer-events: none;
     transform: translateY(0);
     transition: transform 0.18s ease;
 }
@@ -704,10 +717,17 @@ h5.node-title {
 .mobile-header-panel {
     display: none;
     position: fixed;
-    inset: 0;
-    z-index: 55;
-    padding-top: 4.4rem;
+    top: 4.4rem;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 59;
     background: rgba(255, 255, 255, 0.98);
+    pointer-events: auto;
+}
+
+.mobile-header-shell.is-open .mobile-header-panel {
+    display: block;
 }
 
 .mobile-header-shell.is-open .mobile-header-panel {
@@ -716,10 +736,20 @@ h5.node-title {
 
 .mobile-header-tray {
     display: grid;
+    grid-template-rows: auto 1fr;
     gap: 0.9rem;
     height: calc(100vh - 4.4rem);
     padding: 1rem;
     overflow-y: auto;
+    background-color: rgba(8, 38, 64, 0.768);
+}
+.mobile-header-shell.is-open {
+    pointer-events: auto;
+}
+
+.mobile-header-panel,
+.mobile-header-tray {
+    pointer-events: auto;
 }
 
 .mobile-search-form {
@@ -727,10 +757,20 @@ h5.node-title {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.55rem;
     align-items: center;
+    width: 100%;
 }
 
 .mobile-search-form input {
     min-width: 0;
+    width: 100%;
+    margin-top: 0;
+    font-size: 1rem;
+    margin-top: 0;
+}
+
+.mobile-search-form input {
+    min-width: 0;
+    width: 100%;
     margin-top: 0;
     font-size: 1rem;
 }
@@ -742,26 +782,40 @@ h5.node-title {
     padding: 0;
     font-size: 1.05rem;
     line-height: 1;
+    padding: 0.4rem;
+    border: 1px solid var(--line-strong);
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .mobile-nav-links {
-    display: grid;
-    gap: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .mobile-nav-link {
     display: block;
-    overflow: hidden;
-    padding: 0.8rem 0;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
     color: var(--ink);
     font-weight: 700;
     text-decoration: none;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.35;
+
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .mobile-nav-link:hover {
     color: var(--accent);
+    border-color: rgba(0, 87, 168, 0.22);
+    background: var(--surface-muted);
 }
 
 .mobile-law-context {
@@ -826,13 +880,52 @@ h5.node-title {
     border-color: rgba(0, 87, 168, 0.22);
 }
 
+.mobile-nav-form {
+    margin: 0;
+}
+
+.mobile-nav-button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+}
+
+.mobile-header-tray > * {
+    min-width: 0;
+}
+
+
+@media (max-width: 1100px) {
+    body {
+        padding-top: 4.4rem;
+    }
+
+    .shell {
+        width: min(100%, 1160px);
+        padding: 1rem 1rem 3rem;
+    }
+
+    .nav {
+        display: none;
+    }
+
+    .mobile-header {
+        display: block;
+    }
+
+    html.mobile-header-hidden .mobile-law-context {
+        top: 0;
+    }
+}
+
 @media (max-width: 700px) {
     body {
         padding-top: 4.4rem;
     }
 
     body.has-mobile-law-context {
-        padding-top: 7.75rem;
+        padding-top: 8.5rem;
     }
 
     .shell {
@@ -882,6 +975,10 @@ h5.node-title {
     .law-grid,
     .media-grid {
         grid-template-columns: 1fr;
+    }
+
+    .video-stack {
+        margin: 1.2rem 0 1.5rem;
     }
 
     .hero {
