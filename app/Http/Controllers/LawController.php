@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Law;
 use App\Services\LawTreeBuilder;
+use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -24,7 +25,7 @@ class LawController extends Controller
     {
         abort_unless($law->status === 'published', 404);
 
-        $language = (string) $request->query('lang', $this->defaultLanguage());
+        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $tree = $treeBuilder->build($law, $language);
         $orderedLaws = Law::published()
             ->orderBy('sort_order')
@@ -40,10 +41,5 @@ class LawController extends Controller
             'previousLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex - 1) : null,
             'nextLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex + 1) : null,
         ]);
-    }
-
-    protected function defaultLanguage(): string
-    {
-        return config('app.fallback_locale', 'en');
     }
 }

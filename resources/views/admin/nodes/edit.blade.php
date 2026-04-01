@@ -9,7 +9,7 @@
         <p class="eyebrow">Admin</p>
         <h1>Edit node #{{ $node->id }}</h1>
         <p>
-            Keep this lean: structure, one English translation, and media attachments that fit the
+            Keep this lean: structure, Indonesian and English translations, and media attachments that fit the
             selected node type.
         </p>
         <div class="law-detail-meta">
@@ -34,7 +34,7 @@
             <form action="{{ route('admin.nodes.update', [$law, $node]) }}" method="post" enctype="multipart/form-data" class="stack-form">
                 @csrf
                 @method('patch')
-                @include('admin.partials.node-fields', ['node' => $node, 'translation' => $translation, 'parentOptions' => $parentOptions])
+                @include('admin.partials.node-fields', ['node' => $node, 'translationsByLanguage' => $translationsByLanguage, 'languages' => $languages, 'parentOptions' => $parentOptions])
                 <button type="submit">Save node</button>
             </form>
         </div>

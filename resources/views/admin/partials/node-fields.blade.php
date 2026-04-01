@@ -1,6 +1,8 @@
 @php
     $mediaAssets = $node?->mediaAssets ?? collect();
     $imageAsset = $mediaAssets->firstWhere('asset_type', 'image');
+    $translationsByLanguage = $translationsByLanguage ?? collect();
+    $languages = $languages ?? \App\Support\LotgLanguage::supported();
     $videoUrls = $mediaAssets
         ->where('asset_type', 'video')
         ->pluck('external_url')
@@ -55,24 +57,34 @@
 
 <div class="nav-meta">If unpublished, the node stays in admin but does not appear on the public law page.</div>
 
-<label>
-    <div class="law-meta">Title (EN)</div>
-    <input type="text" name="title" value="{{ old('title', $translation?->title) }}">
-</label>
+@foreach ($languages as $languageCode => $languageLabel)
+    @php
+        $translation = $translationsByLanguage->get($languageCode);
+    @endphp
 
-<label>
-    <div class="law-meta">Body HTML (EN)</div>
-    <textarea name="body_html" rows="10">{{ old('body_html', $translation?->body_html) }}</textarea>
-</label>
+    <div class="card">
+        <h3>{{ $languageLabel }} translation</h3>
 
-<label>
-    <div class="law-meta">Translation status</div>
-    <select name="translation_status">
-        @foreach (['draft', 'published'] as $status)
-            <option value="{{ $status }}" @selected(old('translation_status', $translation?->status ?? 'published') === $status)>{{ ucfirst($status) }}</option>
-        @endforeach
-    </select>
-</label>
+        <label>
+            <div class="law-meta">Title ({{ strtoupper($languageCode) }})</div>
+            <input type="text" name="title_{{ $languageCode }}" value="{{ old('title_'.$languageCode, $translation?->title) }}">
+        </label>
+
+        <label>
+            <div class="law-meta">Body HTML ({{ strtoupper($languageCode) }})</div>
+            <textarea name="body_html_{{ $languageCode }}" rows="10">{{ old('body_html_'.$languageCode, $translation?->body_html) }}</textarea>
+        </label>
+
+        <label>
+            <div class="law-meta">Translation status ({{ strtoupper($languageCode) }})</div>
+            <select name="translation_status_{{ $languageCode }}">
+                @foreach (['draft', 'published'] as $status)
+                    <option value="{{ $status }}" @selected(old('translation_status_'.$languageCode, $translation?->status ?? 'published') === $status)>{{ ucfirst($status) }}</option>
+                @endforeach
+            </select>
+        </label>
+    </div>
+@endforeach
 
 <div class="card">
     <h3>Image fields</h3>

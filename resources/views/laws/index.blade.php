@@ -3,6 +3,9 @@
 @section('title', 'Laws of the Game')
 
 @section('content')
+    @php
+        $language = \App\Support\LotgLanguage::normalize(request('lang'));
+    @endphp
     <section class="hero">
         <p class="eyebrow">LotG v0.5</p>
         <h1>Laws of the Game</h1>
@@ -14,7 +17,7 @@
 
     <section class="law-grid">
         @forelse ($laws as $law)
-            <a class="law-link card" href="{{ route('laws.show', $law) }}">
+            <a class="law-link card" href="{{ route('laws.show', $law).'?lang='.$language }}">
                 <span class="law-number">Law {{ $law->law_number }}</span>
                 <div>
                     <h2>{{ $law->displayTitle() }}</h2>

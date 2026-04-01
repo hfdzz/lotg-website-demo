@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChangelogEntry;
+use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -10,7 +11,7 @@ class ChangelogController extends Controller
 {
     public function index(Request $request): View
     {
-        $language = (string) $request->query('lang', $this->defaultLanguage());
+        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
 
         $entries = ChangelogEntry::published()
             ->where('language_code', $language)
@@ -22,10 +23,5 @@ class ChangelogController extends Controller
             'entries' => $entries,
             'language' => $language,
         ]);
-    }
-
-    protected function defaultLanguage(): string
-    {
-        return config('app.fallback_locale', 'en');
     }
 }

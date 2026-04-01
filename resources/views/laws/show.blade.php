@@ -6,17 +6,17 @@
 @section('mobile_law_context', 'Law '.$law->law_number.': '.$law->displayTitle())
 
 @section('content')
-    <a class="back-link" href="{{ route('laws.index') }}">Back to all laws</a>
+    <a class="back-link" href="{{ route('laws.index', ['lang' => $language]) }}">Back to all laws</a>
 
     @section('mobile_law_prev')
         @if ($previousLaw)
-            {{ route('laws.show', $previousLaw) }}
+            {{ route('laws.show', $previousLaw).'?lang='.$language }}
         @endif
     @endsection
 
     @section('mobile_law_next')
         @if ($nextLaw)
-            {{ route('laws.show', $nextLaw) }}
+            {{ route('laws.show', $nextLaw).'?lang='.$language }}
         @endif
     @endsection
 
@@ -29,7 +29,7 @@
                 and related video examples where available.
             </p>
             <div class="law-detail-meta">
-                <span class="law-detail-pill">Language: {{ strtoupper($language) }}</span>
+                <span class="law-detail-pill">Language: {{ \App\Support\LotgLanguage::label($language) }}</span>
                 <span class="law-detail-pill">Slug: {{ $law->slug }}</span>
             </div>
         </section>

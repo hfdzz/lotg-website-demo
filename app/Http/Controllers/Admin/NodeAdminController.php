@@ -7,6 +7,7 @@ use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
 use App\Models\Law;
 use App\Models\MediaAsset;
+use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,8 @@ class NodeAdminController extends Controller
         return view('admin.nodes.edit', [
             'law' => $law,
             'node' => $node,
-            'translation' => $node->translationFor($this->defaultLanguage()),
+            'translationsByLanguage' => $node->translations->keyBy('language_code'),
+            'languages' => LotgLanguage::supported(),
             'parentOptions' => $this->buildParentOptions($law, $node),
             'currentParentLabel' => $this->currentParentLabel($law, $node),
         ]);
@@ -110,9 +112,12 @@ class NodeAdminController extends Controller
             ],
             'node_type' => ['required', 'in:section,rich_text,image,video_group,resource_list'],
             'sort_order' => ['required', 'integer', 'min:0'],
-            'title' => ['nullable', 'string', 'max:255'],
-            'body_html' => ['nullable', 'string'],
-            'translation_status' => ['required', 'in:draft,published'],
+            'title_id' => ['nullable', 'string', 'max:255'],
+            'body_html_id' => ['nullable', 'string'],
+            'translation_status_id' => ['required', 'in:draft,published'],
+            'title_en' => ['nullable', 'string', 'max:255'],
+            'body_html_en' => ['nullable', 'string'],
+            'translation_status_en' => ['required', 'in:draft,published'],
             'video_urls' => ['nullable', 'string'],
             'resource_lines' => ['nullable', 'string'],
             'resource_files' => ['nullable', 'array'],
@@ -127,17 +132,19 @@ class NodeAdminController extends Controller
 
     protected function syncTranslation(ContentNode $node, array $validated): void
     {
-        ContentNodeTranslation::updateOrCreate(
-            [
-                'content_node_id' => $node->id,
-                'language_code' => $this->defaultLanguage(),
-            ],
-            [
-                'title' => $validated['title'] ?: null,
-                'body_html' => $validated['body_html'] ?: null,
-                'status' => $validated['translation_status'],
-            ]
-        );
+        foreach (array_keys(LotgLanguage::supported()) as $language) {
+            ContentNodeTranslation::updateOrCreate(
+                [
+                    'content_node_id' => $node->id,
+                    'language_code' => $language,
+                ],
+                [
+                    'title' => $validated['title_'.$language] ?: null,
+                    'body_html' => $validated['body_html_'.$language] ?: null,
+                    'status' => $validated['translation_status_'.$language],
+                ]
+            );
+        }
     }
 
     protected function syncMedia(Request $request, ContentNode $node): void
@@ -409,7 +416,7 @@ class NodeAdminController extends Controller
         $items = [];
 
         foreach (($childrenByParent->get($parentId) ?? collect())->sortBy('sort_order') as $node) {
-            $translation = $node->translationFor($this->defaultLanguage());
+            $translation = $node->translationFor(LotgLanguage::default());
 
             $items[] = [
                 'id' => $node->id,
@@ -486,8 +493,4 @@ class NodeAdminController extends Controller
             : 'file';
     }
 
-    protected function defaultLanguage(): string
-    {
-        return config('app.fallback_locale', 'en');
-    }
 }

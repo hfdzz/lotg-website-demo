@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 
 class LawTreeBuilder
 {
-    public function build(Law $law, string $languageCode = 'en'): array
+    public function build(Law $law, string $languageCode = 'id'): array
     {
         $nodes = $law->publishedContentNodes()
             ->with([

@@ -703,6 +703,17 @@ h5.node-title {
     color: var(--accent);
 }
 
+.nav-link.is-active,
+.mobile-nav-link.is-active {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.nav-link.is-active {
+    border-color: rgba(0, 87, 168, 0.22);
+    background: var(--accent-soft);
+}
+
 .search-form {
     display: flex;
     gap: 0.5rem;

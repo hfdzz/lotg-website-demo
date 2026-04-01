@@ -31,7 +31,7 @@
                                 @foreach ($lawMatches as $law)
                                     <article class="result-card">
                                         <p class="eyebrow">Law {{ $law->law_number }}</p>
-                                        <h3><a class="result-link" href="{{ route('laws.show', $law) }}">{{ $law->displayTitle() }}</a></h3>
+                                        <h3><a class="result-link" href="{{ route('laws.show', $law).'?lang='.$language }}">{{ $law->displayTitle() }}</a></h3>
                                         <p class="law-slug">{{ $law->slug }}</p>
                                         <p class="law-meta">Open the full law detail page.</p>
                                     </article>
@@ -50,13 +50,13 @@
                                     <article class="result-card">
                                         <p class="eyebrow">In law {{ $translation->contentNode->law->law_number }}</p>
                                         <h3>
-                                            <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law) }}">
+                                            <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law).'?lang='.$language }}">
                                                 {{ $translation->title ?: $translation->contentNode->law->displayTitle() }}
                                             </a>
                                         </h3>
                                         <p class="law-meta">{{ $translation->search_excerpt }}</p>
                                         <p class="law-meta">
-                                            <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law) }}">
+                                            <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law).'?lang='.$language }}">
                                                 Go to {{ $translation->contentNode->law->displayTitle() }}
                                             </a>
                                         </p>

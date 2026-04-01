@@ -7,6 +7,7 @@ use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
 use App\Models\Law;
 use App\Models\MediaAsset;
+use App\Support\LotgLanguage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -95,6 +96,18 @@ class LotgSeeder extends Seeder
 
             ChangelogEntry::updateOrCreate(
                 [
+                    'language_code' => 'id',
+                    'title' => 'Initial LotG sample structure',
+                ],
+                [
+                    'body' => 'Seeded two public law examples with nested sections, richer text, image media, and YouTube video embeds for admin workflow testing.',
+                    'sort_order' => 1,
+                    'published_at' => now(),
+                ]
+            );
+
+            ChangelogEntry::updateOrCreate(
+                [
                     'language_code' => 'en',
                     'title' => 'Initial LotG sample structure',
                 ],
@@ -115,8 +128,8 @@ class LotgSeeder extends Seeder
         ?int $parentId,
         string $nodeType,
         int $sortOrder,
-        ?string $title,
-        ?string $bodyHtml,
+        string|array|null $title,
+        string|array|null $bodyHtml,
         ?array $settings = null
     ): ContentNode {
         $node = ContentNode::create([
@@ -128,13 +141,15 @@ class LotgSeeder extends Seeder
             'settings_json' => $settings,
         ]);
 
-        ContentNodeTranslation::create([
-            'content_node_id' => $node->id,
-            'language_code' => 'en',
-            'title' => $title,
-            'body_html' => $bodyHtml,
-            'status' => 'published',
-        ]);
+        foreach (array_keys(LotgLanguage::supported()) as $languageCode) {
+            ContentNodeTranslation::create([
+                'content_node_id' => $node->id,
+                'language_code' => $languageCode,
+                'title' => is_array($title) ? ($title[$languageCode] ?? $title['id'] ?? $title['en'] ?? null) : $title,
+                'body_html' => is_array($bodyHtml) ? ($bodyHtml[$languageCode] ?? $bodyHtml['id'] ?? $bodyHtml['en'] ?? null) : $bodyHtml,
+                'status' => 'published',
+            ]);
+        }
 
         return $node;
     }
