@@ -32,6 +32,21 @@
                 <span class="law-detail-pill">Language: {{ \App\Support\LotgLanguage::label($language) }}</span>
                 <span class="law-detail-pill">Slug: {{ $law->slug }}</span>
             </div>
+            <div class="law-hero-nav">
+                @if ($previousLaw)
+                    <a class="law-nav-link" href="{{ route('laws.show', $previousLaw).'?lang='.$language }}">
+                        <span class="law-nav-label">Previous law</span>
+                        <span>Law {{ $previousLaw->law_number }}</span>
+                    </a>
+                @endif
+
+                @if ($nextLaw)
+                    <a class="law-nav-link" href="{{ route('laws.show', $nextLaw).'?lang='.$language }}">
+                        <span class="law-nav-label">Next law</span>
+                        <span>Law {{ $nextLaw->law_number }}</span>
+                    </a>
+                @endif
+            </div>
         </section>
 
         @if (count($tableOfContents) > 0)
@@ -46,6 +61,12 @@
         <div class="law-detail-grid">
             @if (count($tableOfContents) > 0)
                 <aside class="toc-card">
+                    <div>
+                        <p class="eyebrow">Law {{ $law->law_number }}</p>
+                        <p class="toc-law-title">{{ $law->displayTitle() }}</p>
+                        <p class="toc-law-meta">{{ \App\Support\LotgLanguage::label($language) }}</p>
+                    </div>
+
                     <div>
                         <p class="eyebrow">Contents</p>
                         <h2 class="toc-title">On this page</h2>

@@ -2,6 +2,7 @@ import './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
     setupMobileHeader();
+    setupSearchPopover();
     setupTableOfContentsTracking();
 });
 
@@ -138,4 +139,30 @@ function setupTableOfContentsTracking() {
     if (headings[0]) {
         setActive(headings[0].id);
     }
+}
+
+function setupSearchPopover() {
+    const popovers = Array.from(document.querySelectorAll('.search-popover'));
+
+    if (!popovers.length) {
+        return;
+    }
+
+    document.addEventListener('click', (event) => {
+        popovers.forEach((popover) => {
+            if (!(popover instanceof HTMLElement)) {
+                return;
+            }
+
+            if (!popover.contains(event.target)) {
+                popover.removeAttribute('open');
+            }
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            popovers.forEach((popover) => popover.removeAttribute('open'));
+        }
+    });
 }
