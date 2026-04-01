@@ -53,6 +53,43 @@ class MediaAsset extends Model
         return $youtubeId ? 'https://www.youtube.com/embed/'.$youtubeId : null;
     }
 
+    public function resourceUrl(): ?string
+    {
+        if ($this->storage_type === 'upload') {
+            return $this->publicUrl();
+        }
+
+        return $this->external_url;
+    }
+
+    public function resourceLabel(): string
+    {
+        if ($this->caption) {
+            return $this->caption;
+        }
+
+        if ($this->storage_type === 'upload' && $this->file_path) {
+            return basename($this->file_path);
+        }
+
+        if ($this->external_url) {
+            return $this->external_url;
+        }
+
+        return 'Resource';
+    }
+
+    public function resourceKindLabel(): string
+    {
+        return match ($this->asset_type) {
+            'document' => 'Document',
+            'external_link' => 'External link',
+            'video_link' => 'Video link',
+            'file' => 'File',
+            default => ucfirst(str_replace('_', ' ', $this->asset_type)),
+        };
+    }
+
     public static function parseYouTubeId(?string $url): ?string
     {
         if (! $url) {

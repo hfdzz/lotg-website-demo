@@ -45,7 +45,8 @@ class LawTreeBuilder
                     'translation' => $translation,
                     'title' => $translation?->title,
                     'body_html' => $translation?->body_html,
-                    'media_items' => $this->buildMediaItems($node->mediaAssets),
+                    'media_items' => $this->buildMediaItems($node->mediaAssets, $node->node_type),
+                    'resource_items' => $this->buildResourceItems($node->mediaAssets, $node->node_type),
                     'children' => $this->buildBranch($childrenByParent, $node->id, $depth + 1, $languageCode),
                 ];
             })
@@ -93,8 +94,12 @@ class LawTreeBuilder
         };
     }
 
-    protected function buildMediaItems(Collection $mediaAssets): array
+    protected function buildMediaItems(Collection $mediaAssets, string $nodeType): array
     {
+        if (! in_array($nodeType, ['image', 'video_group'], true)) {
+            return [];
+        }
+
         return $mediaAssets
             ->map(function ($mediaAsset) {
                 if ($mediaAsset->asset_type === 'image' && $mediaAsset->publicUrl()) {
@@ -116,6 +121,34 @@ class LawTreeBuilder
                 }
 
                 return null;
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    protected function buildResourceItems(Collection $mediaAssets, string $nodeType): array
+    {
+        if ($nodeType !== 'resource_list') {
+            return [];
+        }
+
+        return $mediaAssets
+            ->map(function ($mediaAsset) {
+                $url = $mediaAsset->resourceUrl();
+
+                if (! $url) {
+                    return null;
+                }
+
+                return [
+                    'kind' => $mediaAsset->asset_type,
+                    'url' => $url,
+                    'label' => $mediaAsset->resourceLabel(),
+                    'meta' => $mediaAsset->resourceKindLabel(),
+                    'credit' => $mediaAsset->credit,
+                    'is_external' => str_starts_with($url, 'http://') || str_starts_with($url, 'https://'),
+                ];
             })
             ->filter()
             ->values()

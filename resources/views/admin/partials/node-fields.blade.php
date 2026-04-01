@@ -6,6 +6,19 @@
         ->pluck('external_url')
         ->filter()
         ->implode("\n");
+    $resourceLineItems = $mediaAssets
+        ->whereIn('asset_type', ['document', 'external_link', 'video_link'])
+        ->map(function ($asset) {
+            $label = $asset->caption ?: $asset->external_url;
+            $type = $asset->asset_type;
+
+            return $type.' | '.$label.' | '.$asset->external_url;
+        })
+        ->implode("\n");
+    $uploadedResourceAssets = $mediaAssets
+        ->whereIn('asset_type', ['document', 'file'])
+        ->where('storage_type', 'upload')
+        ->values();
 @endphp
 
 <label>
@@ -21,9 +34,9 @@
 
 <label>
     <div class="law-meta">Node type</div>
-    <div class="nav-meta">Use `section` for headings, `rich_text` for prose, `image` for a single image block, and `video_group` for one or more video links.</div>
+    <div class="nav-meta">Use `section` for headings, `rich_text` for prose, `image` for a single image block, `video_group` for embedded videos, and `resource_list` for linked-only references and files.</div>
     <select name="node_type">
-        @foreach (['section', 'rich_text', 'image', 'video_group'] as $type)
+        @foreach (['section', 'rich_text', 'image', 'video_group', 'resource_list'] as $type)
             <option value="{{ $type }}" @selected(old('node_type', $node?->node_type ?? 'section') === $type)>{{ $type }}</option>
         @endforeach
     </select>
@@ -92,6 +105,36 @@
         <div class="law-meta">YouTube URLs, one per line</div>
         <textarea name="video_urls" rows="5">{{ old('video_urls', $videoUrls) }}</textarea>
     </label>
+</div>
+
+<div class="card">
+    <h3>Resource list fields</h3>
+    <p class="nav-meta">Used only when the node type is `resource_list`.</p>
+    <label>
+        <div class="law-meta">Linked resources</div>
+        <div class="nav-meta">One per line. Format: `type | label | url` or `label | url`. Types can be `document`, `external_link`, or `video_link`.</div>
+        <textarea name="resource_lines" rows="6">{{ old('resource_lines', $resourceLineItems) }}</textarea>
+    </label>
+
+    <label>
+        <div class="law-meta">Upload files</div>
+        <div class="nav-meta">Files added here appear as downloadable links in the resource list.</div>
+        <input type="file" name="resource_files[]" multiple>
+    </label>
+
+    @if ($uploadedResourceAssets->isNotEmpty())
+        <div>
+            <div class="law-meta">Existing uploaded files</div>
+            <div class="stack-top">
+                @foreach ($uploadedResourceAssets as $asset)
+                    <label>
+                        <input type="checkbox" name="remove_resource_asset_ids[]" value="{{ $asset->id }}">
+                        Remove {{ $asset->caption ?: basename($asset->file_path) }}
+                    </label>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </div>
 
 @if ($errors->any())

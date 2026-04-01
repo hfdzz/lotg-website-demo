@@ -108,12 +108,17 @@ class NodeAdminController extends Controller
                     }
                 },
             ],
-            'node_type' => ['required', 'in:section,rich_text,image,video_group'],
+            'node_type' => ['required', 'in:section,rich_text,image,video_group,resource_list'],
             'sort_order' => ['required', 'integer', 'min:0'],
             'title' => ['nullable', 'string', 'max:255'],
             'body_html' => ['nullable', 'string'],
             'translation_status' => ['required', 'in:draft,published'],
             'video_urls' => ['nullable', 'string'],
+            'resource_lines' => ['nullable', 'string'],
+            'resource_files' => ['nullable', 'array'],
+            'resource_files.*' => ['nullable', 'file', 'max:10240'],
+            'remove_resource_asset_ids' => ['nullable', 'array'],
+            'remove_resource_asset_ids.*' => ['integer'],
             'image_caption' => ['nullable', 'string'],
             'image_credit' => ['nullable', 'string', 'max:255'],
             'image_file' => ['nullable', 'image', 'max:5120'],
@@ -145,6 +150,12 @@ class NodeAdminController extends Controller
 
         if ($node->node_type === 'video_group') {
             $this->syncVideoMedia($request, $node);
+
+            return;
+        }
+
+        if ($node->node_type === 'resource_list') {
+            $this->syncResourceMedia($request, $node);
 
             return;
         }
@@ -225,15 +236,69 @@ class NodeAdminController extends Controller
         $node->mediaAssets()->sync($syncPayload);
     }
 
-    protected function settingsFromRequest(Request $request): ?array
+    protected function syncResourceMedia(Request $request, ContentNode $node): void
     {
-        if ($request->input('node_type') !== 'video_group') {
-            return null;
+        $existingAssets = $node->mediaAssets()->get();
+        $removeAssetIds = collect($request->input('remove_resource_asset_ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $keptUploadAssets = $existingAssets
+            ->filter(fn (MediaAsset $asset) => $asset->storage_type === 'upload' && ! in_array($asset->id, $removeAssetIds, true))
+            ->values();
+
+        $this->purgeNodeMedia($node, $keptUploadAssets->pluck('id')->all());
+
+        $assetsForSync = collect();
+
+        foreach ($this->parseResourceLines((string) $request->input('resource_lines')) as $resource) {
+            $assetsForSync->push(MediaAsset::create([
+                'asset_type' => $resource['asset_type'],
+                'storage_type' => 'external',
+                'external_url' => $resource['url'],
+                'caption' => $resource['label'],
+            ]));
         }
 
-        return [
-            'layout' => 'stacked',
-        ];
+        foreach ($keptUploadAssets as $asset) {
+            $assetsForSync->push($asset);
+        }
+
+        foreach ($request->file('resource_files', []) as $uploadedFile) {
+            $path = $uploadedFile->store('lotg-resources', 'public');
+
+            $assetsForSync->push(MediaAsset::create([
+                'asset_type' => $this->uploadedFileAssetType($uploadedFile->getClientOriginalName()),
+                'storage_type' => 'upload',
+                'file_path' => $path,
+                'caption' => $uploadedFile->getClientOriginalName(),
+            ]));
+        }
+
+        $syncPayload = [];
+
+        foreach ($assetsForSync->values() as $index => $asset) {
+            $syncPayload[$asset->id] = ['sort_order' => $index + 1];
+        }
+
+        $node->mediaAssets()->sync($syncPayload);
+    }
+
+    protected function settingsFromRequest(Request $request): ?array
+    {
+        if ($request->input('node_type') === 'video_group') {
+            return [
+                'layout' => 'stacked',
+            ];
+        }
+
+        if ($request->input('node_type') === 'resource_list') {
+            return [
+                'layout' => 'list',
+            ];
+        }
+
+        return null;
     }
 
     protected function deleteNodeRecursively(ContentNode $node): void
@@ -358,6 +423,67 @@ class NodeAdminController extends Controller
         }
 
         return $items;
+    }
+
+    /**
+     * @return array<int, array{asset_type: string, label: string, url: string}>
+     */
+    protected function parseResourceLines(string $resourceLines): array
+    {
+        return collect(preg_split('/\r\n|\r|\n/', $resourceLines))
+            ->map(fn ($line) => trim((string) $line))
+            ->filter()
+            ->map(function (string $line) {
+                $parts = array_map('trim', explode('|', $line));
+
+                if (count($parts) >= 3) {
+                    [$type, $label, $url] = [$parts[0], $parts[1], $parts[2]];
+                } elseif (count($parts) === 2) {
+                    [$label, $url] = [$parts[0], $parts[1]];
+                    $type = '';
+                } else {
+                    return null;
+                }
+
+                if ($label === '' || $url === '') {
+                    return null;
+                }
+
+                return [
+                    'asset_type' => $this->normalizeResourceAssetType($type, $url),
+                    'label' => $label,
+                    'url' => $url,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    protected function normalizeResourceAssetType(string $type, string $url): string
+    {
+        $normalized = str($type)->lower()->replace(' ', '_')->value();
+
+        if (in_array($normalized, ['document', 'external_link', 'video_link', 'file'], true)) {
+            return $normalized;
+        }
+
+        if (MediaAsset::parseYouTubeId($url)) {
+            return 'video_link';
+        }
+
+        if (preg_match('/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i', $url)) {
+            return 'document';
+        }
+
+        return 'external_link';
+    }
+
+    protected function uploadedFileAssetType(string $filename): string
+    {
+        return preg_match('/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i', $filename)
+            ? 'document'
+            : 'file';
     }
 
     protected function defaultLanguage(): string

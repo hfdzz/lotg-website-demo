@@ -106,6 +106,7 @@ class LotgSeeder extends Seeder
             );
 
             $this->seedLawTwo();
+            $this->seedLawThree();
         });
     }
 
@@ -259,5 +260,179 @@ class LotgSeeder extends Seeder
         $sectionCompetitionNotes = $this->makeNode($law->id, null, 'section', 5, 'Competition notes', null);
         $this->makeNode($law->id, $sectionCompetitionNotes->id, 'section', 1, 'Youth competitions', null);
         $this->makeNode($law->id, $sectionCompetitionNotes->id, 'section', 2, 'Training adaptations', null);
+    }
+
+    protected function seedLawThree(): void
+    {
+        $law = Law::updateOrCreate(
+            ['slug' => 'law-3-the-players'],
+            [
+                'law_number' => '3',
+                'sort_order' => 3,
+                'status' => 'published',
+            ]
+        );
+
+        $law->contentNodes()->delete();
+
+        $sectionPrinciples = $this->makeNode($law->id, null, 'section', 1, 'Core principles', null);
+        $this->makeNode(
+            $law->id,
+            $sectionPrinciples->id,
+            'rich_text',
+            1,
+            null,
+            '<p>Each match is played by two teams, and each team should begin with the required number of players under the competition rules. The purpose of this seeded law is to exercise the full structured publishing model with realistic long-form content, nested sections, embedded media, and linked resources on the same page.</p><p>In practice, administrators often need to mix explanatory guidance, supporting diagrams, official circulars, and training references. This example is intentionally more complete so you can validate reading comfort, editorial rhythm, and admin workflow without hunting across multiple sample laws.</p>'
+        );
+
+        $sectionEligibility = $this->makeNode($law->id, null, 'section', 2, 'Eligibility and team sheet', null);
+        $subsectionStarting = $this->makeNode($law->id, $sectionEligibility->id, 'section', 1, 'Starting players', null);
+        $this->makeNode(
+            $law->id,
+            $subsectionStarting->id,
+            'rich_text',
+            1,
+            null,
+            '<p>Only players listed and approved before kickoff may start the match. Match officials should be able to confirm player identity, shirt number, and any competition-specific eligibility requirements quickly and consistently.</p><p>Where competitions require digital team sheets, staff should still confirm that the submitted list matches the players physically present in the technical area. Clear record-keeping reduces avoidable disputes and makes later disciplinary review easier.</p>'
+        );
+
+        $subsectionSubstitutes = $this->makeNode($law->id, $sectionEligibility->id, 'section', 2, 'Substitutes and substituted players', null);
+        $this->makeNode(
+            $law->id,
+            $subsectionSubstitutes->id,
+            'rich_text',
+            1,
+            null,
+            '<p>Substitutes should be clearly identified and remain subject to competition rules on participation, re-entry, and conduct. A clean content structure is especially useful here because the public page may need to combine broad legal wording with local implementation guidance, referee reminders, and reference material.</p><ul><li>List substitutes before kickoff.</li><li>Record every substitution event accurately.</li><li>Keep technical-area procedures consistent across matches.</li></ul>'
+        );
+
+        $sectionPracticalAdministration = $this->makeNode($law->id, null, 'section', 3, 'Practical administration', null);
+        $subsectionChecks = $this->makeNode($law->id, $sectionPracticalAdministration->id, 'section', 1, 'Pre-match checks', null);
+        $this->makeNode(
+            $law->id,
+            $subsectionChecks->id,
+            'rich_text',
+            1,
+            null,
+            '<p>Before kickoff, officials and competition staff should verify player equipment, team sheets, benches, and communication channels. This section has no media attached so the page still contains plain reading stretches between richer blocks.</p>'
+        );
+
+        $subsectionBench = $this->makeNode($law->id, $sectionPracticalAdministration->id, 'section', 2, 'Bench organization', null);
+        $this->makeNode(
+            $law->id,
+            $subsectionBench->id,
+            'rich_text',
+            1,
+            null,
+            '<p>Good bench organization supports smoother substitution management and clearer control of support staff. Competitions may supplement the law with local competition notes on accreditation, seating zones, and document handling, which makes linked resource lists particularly useful.</p>'
+        );
+
+        $sectionVisualExamples = $this->makeNode($law->id, null, 'section', 4, 'Visual examples', null);
+        $this->makeNode(
+            $law->id,
+            $sectionVisualExamples->id,
+            'rich_text',
+            1,
+            null,
+            '<p>This section combines a diagram and embedded video examples to validate the page layout under heavier editorial use. It should help you review whether spacing remains comfortable when text, images, and video all appear within the same law.</p>'
+        );
+
+        $fieldImage = MediaAsset::updateOrCreate(
+            ['file_path' => 'demo/field-layout.svg'],
+            [
+                'asset_type' => 'image',
+                'storage_type' => 'upload',
+                'caption' => 'Illustrative layout showing player entry and bench-side reference areas.',
+                'credit' => 'LotG demo asset',
+            ]
+        );
+
+        $imageNode = $this->makeNode($law->id, $sectionVisualExamples->id, 'image', 2, 'Player area reference diagram', null);
+        $imageNode->mediaAssets()->sync([
+            $fieldImage->id => ['sort_order' => 1],
+        ]);
+
+        $videoNode = $this->makeNode($law->id, $sectionVisualExamples->id, 'video_group', 3, 'Match operations clips', null, [
+            'layout' => 'stacked',
+        ]);
+
+        $videoAssets = [
+            MediaAsset::updateOrCreate(
+                ['external_url' => 'https://www.youtube.com/watch?v=ysz5S6PUM-U'],
+                [
+                    'asset_type' => 'video',
+                    'storage_type' => 'youtube',
+                    'caption' => 'Arrival and verification example.',
+                ]
+            ),
+            MediaAsset::updateOrCreate(
+                ['external_url' => 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'],
+                [
+                    'asset_type' => 'video',
+                    'storage_type' => 'youtube',
+                    'caption' => 'Substitution workflow example.',
+                ]
+            ),
+        ];
+
+        $videoNode->mediaAssets()->sync([
+            $videoAssets[0]->id => ['sort_order' => 1],
+            $videoAssets[1]->id => ['sort_order' => 2],
+        ]);
+
+        $sectionReferences = $this->makeNode($law->id, null, 'section', 5, 'Reference materials', null);
+        $this->makeNode(
+            $law->id,
+            $sectionReferences->id,
+            'rich_text',
+            1,
+            null,
+            '<p>Some supporting material works better as linked references than embedded content. This lets editors attach official circulars, downloadable forms, or linked video references without forcing everything into the reading flow.</p>'
+        );
+
+        $resourceNode = $this->makeNode($law->id, $sectionReferences->id, 'resource_list', 2, 'Useful resources', null, [
+            'layout' => 'list',
+        ]);
+
+        $resourceAssets = [
+            MediaAsset::create([
+                'asset_type' => 'document',
+                'storage_type' => 'external',
+                'external_url' => 'https://example.com/documents/team-sheet-guidance.pdf',
+                'caption' => 'Team sheet guidance PDF',
+            ]),
+            MediaAsset::create([
+                'asset_type' => 'external_link',
+                'storage_type' => 'external',
+                'external_url' => 'https://example.com/competition/player-management',
+                'caption' => 'Competition player management page',
+            ]),
+            MediaAsset::create([
+                'asset_type' => 'video_link',
+                'storage_type' => 'external',
+                'external_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'caption' => 'Linked training clip',
+            ]),
+            MediaAsset::updateOrCreate(
+                ['file_path' => 'demo/logo_pssi_tulisan.png'],
+                [
+                    'asset_type' => 'file',
+                    'storage_type' => 'upload',
+                    'caption' => 'Sample downloadable federation asset',
+                ]
+            ),
+        ];
+
+        $resourceNode->mediaAssets()->sync([
+            $resourceAssets[0]->id => ['sort_order' => 1],
+            $resourceAssets[1]->id => ['sort_order' => 2],
+            $resourceAssets[2]->id => ['sort_order' => 3],
+            $resourceAssets[3]->id => ['sort_order' => 4],
+        ]);
+
+        $sectionStructureOnly = $this->makeNode($law->id, null, 'section', 6, 'Special competition structure', null);
+        $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 1, 'Youth match exceptions', null);
+        $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 2, 'Tournament reporting flow', null);
+        $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 3, 'Post-match administration', null);
     }
 }
