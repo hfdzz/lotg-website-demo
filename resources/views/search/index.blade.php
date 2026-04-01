@@ -1,39 +1,35 @@
 @extends('layouts.app')
 
-@section('title', 'Search')
+@section('title', __('site.search.title'))
 
 @section('content')
     <section class="hero">
-        <p class="eyebrow">Basic search</p>
-        <h1>Search the laws</h1>
-        <p>
-            This v0.5 search stays intentionally simple: law number, section title, and body text
-            through regular SQL queries, with no external search engine required.
-        </p>
+        <p class="eyebrow">{{ __('site.search.eyebrow') }}</p>
+        <h1>{{ __('site.search.hero_title') }}</h1>
+        <p>{{ __('site.search.hero_intro') }}</p>
     </section>
 
     <section class="card">
         @if ($query === '')
-            <p class="empty-state">Enter a search term above to look through published law content.</p>
+            <p class="empty-state">{{ __('site.search.empty_prompt') }}</p>
         @else
-            <p class="law-meta">Results for "{{ $query }}" in {{ strtoupper($language) }}</p>
+            <p class="law-meta">{{ __('site.search.results_for', ['query' => $query]) }}</p>
 
             @if ($lawMatches->isEmpty() && $contentMatches->isEmpty())
-                <p class="empty-state stack-top">No published matches found for "{{ $query }}".</p>
+                <p class="empty-state stack-top">{{ __('site.search.no_results', ['query' => $query]) }}</p>
             @else
                 <div class="stack-top">
                     <section class="result-section">
-                        <h2 class="result-section-title">Law matches</h2>
+                        <h2 class="result-section-title">{{ __('site.search.law_matches') }}</h2>
                         @if ($lawMatches->isEmpty())
-                            <p class="empty-state">No direct law-number matches.</p>
+                            <p class="empty-state">{{ __('site.search.no_law_matches') }}</p>
                         @else
                             <div class="result-list">
                                 @foreach ($lawMatches as $law)
                                     <article class="result-card">
-                                        <p class="eyebrow">Law {{ $law->law_number }}</p>
+                                        <p class="eyebrow">{{ __('site.laws.law_number', ['number' => $law->law_number]) }}</p>
                                         <h3><a class="result-link" href="{{ route('laws.show', $law).'?lang='.$language }}">{{ $law->displayTitle() }}</a></h3>
-                                        <p class="law-slug">{{ $law->slug }}</p>
-                                        <p class="law-meta">Open the full law detail page.</p>
+                                        <p class="law-meta">{{ __('site.search.open_law') }}</p>
                                     </article>
                                 @endforeach
                             </div>
@@ -41,14 +37,14 @@
                     </section>
 
                     <section class="result-section">
-                        <h2 class="result-section-title">Content matches</h2>
+                        <h2 class="result-section-title">{{ __('site.search.content_matches') }}</h2>
                         @if ($contentMatches->isEmpty())
-                            <p class="empty-state">No section title or body matches.</p>
+                            <p class="empty-state">{{ __('site.search.no_content_matches') }}</p>
                         @else
                             <div class="result-list">
                                 @foreach ($contentMatches as $translation)
                                     <article class="result-card">
-                                        <p class="eyebrow">In law {{ $translation->contentNode->law->law_number }}</p>
+                                        <p class="eyebrow">{{ __('site.search.in_law', ['number' => $translation->contentNode->law->law_number]) }}</p>
                                         <h3>
                                             <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law).'?lang='.$language }}">
                                                 {{ $translation->title ?: $translation->contentNode->law->displayTitle() }}
@@ -57,7 +53,7 @@
                                         <p class="law-meta">{{ $translation->search_excerpt }}</p>
                                         <p class="law-meta">
                                             <a class="result-link" href="{{ route('laws.show', $translation->contentNode->law).'?lang='.$language }}">
-                                                Go to {{ $translation->contentNode->law->displayTitle() }}
+                                                {{ __('site.search.go_to_law', ['title' => $translation->contentNode->law->displayTitle()]) }}
                                             </a>
                                         </p>
                                     </article>
