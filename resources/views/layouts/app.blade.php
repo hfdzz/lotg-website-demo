@@ -13,7 +13,7 @@
                     <a href="{{ route('laws.index') }}" class="mobile-logo-link" aria-label="Go to Laws home">
                         <img class="mobile-logo" src="{{ asset('demo/logo_pssi_tulisan.png') }}" alt="PSSI">
                     </a>
-                    <button type="button" class="mobile-header-title" data-scroll-top>@yield('mobile_header_title', 'Laws of the Game')</button>
+                    <p type="button" class="mobile-header-title" data-scroll-top>@yield('mobile_header_title', 'Laws of the Game')</p>
                     <button type="button" class="mobile-header-action" data-mobile-menu-toggle aria-expanded="false" aria-label="Open menu">&#9776;</button>
                 </div>
 
