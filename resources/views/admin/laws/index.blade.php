@@ -25,7 +25,7 @@
         <div class="collapse-body">
             <form action="{{ route('admin.laws.store') }}" method="post" class="stack-form">
                 @csrf
-                @include('admin.partials.law-fields', ['law' => null])
+                @include('admin.partials.law-fields', ['law' => null, 'translationsByLanguage' => collect(), 'languages' => $languages])
                 <button type="submit">Create law</button>
             </form>
         </div>
@@ -38,7 +38,7 @@
                 <article class="result-card">
                     <p class="eyebrow">Law {{ $law->law_number }}</p>
                     <h3><a href="{{ route('admin.laws.edit', $law) }}">Edit law {{ $law->law_number }}</a></h3>
-                    <p class="law-meta">Slug: {{ $law->slug }} | Status: {{ $law->status }} | Sort: {{ $law->sort_order }}</p>
+                    <p class="law-meta">{{ $law->displayTitle('id') }} | Status: {{ $law->status }} | Sort: {{ $law->sort_order }}</p>
                 </article>
             @empty
                 <p class="empty-state">No laws yet.</p>

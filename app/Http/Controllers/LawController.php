@@ -13,6 +13,7 @@ class LawController extends Controller
     public function index(): View
     {
         $laws = Law::published()
+            ->with('translations')
             ->orderBy('sort_order')
             ->get();
 
@@ -25,9 +26,11 @@ class LawController extends Controller
     {
         abort_unless($law->status === 'published', 404);
 
+        $law->loadMissing('translations');
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $tree = $treeBuilder->build($law, $language);
         $orderedLaws = Law::published()
+            ->with('translations')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get(['id', 'law_number', 'slug', 'sort_order', 'status']);

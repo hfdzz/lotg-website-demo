@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Law;
+use App\Models\LawTranslation;
+use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +16,8 @@ class LawAdminController extends Controller
     public function index(): View
     {
         return view('admin.laws.index', [
-            'laws' => Law::query()->orderBy('sort_order')->get(),
+            'laws' => Law::query()->with('translations')->orderBy('sort_order')->get(),
+            'languages' => LotgLanguage::supported(),
         ]);
     }
 
@@ -25,6 +28,12 @@ class LawAdminController extends Controller
             'slug' => ['nullable', 'string', 'max:255', 'unique:laws,slug'],
             'sort_order' => ['required', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published'],
+            'title_id' => ['required', 'string', 'max:255'],
+            'subtitle_id' => ['nullable', 'string', 'max:255'],
+            'description_text_id' => ['nullable', 'string'],
+            'title_en' => ['nullable', 'string', 'max:255'],
+            'subtitle_en' => ['nullable', 'string', 'max:255'],
+            'description_text_en' => ['nullable', 'string'],
         ]);
 
         $slug = $validated['slug'] ?: Str::slug('law-'.$validated['law_number']);
@@ -36,6 +45,8 @@ class LawAdminController extends Controller
             'status' => $validated['status'],
         ]);
 
+        $this->syncTranslations($law, $validated);
+
         return redirect()
             ->route('admin.laws.edit', $law)
             ->with('status', 'Law created.');
@@ -44,12 +55,15 @@ class LawAdminController extends Controller
     public function edit(Law $law): View
     {
         $law->load([
+            'translations',
             'contentNodes.translations',
             'contentNodes.mediaAssets',
         ]);
 
         return view('admin.laws.edit', [
             'law' => $law,
+            'translationsByLanguage' => $law->translations->keyBy('language_code'),
+            'languages' => LotgLanguage::supported(),
             'nodeTree' => $this->buildNodeTree($law),
             'parentOptions' => $this->buildParentOptions($law),
         ]);
@@ -62,9 +76,21 @@ class LawAdminController extends Controller
             'slug' => ['required', 'string', 'max:255', 'unique:laws,slug,'.$law->id],
             'sort_order' => ['required', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published'],
+            'title_id' => ['required', 'string', 'max:255'],
+            'subtitle_id' => ['nullable', 'string', 'max:255'],
+            'description_text_id' => ['nullable', 'string'],
+            'title_en' => ['nullable', 'string', 'max:255'],
+            'subtitle_en' => ['nullable', 'string', 'max:255'],
+            'description_text_en' => ['nullable', 'string'],
         ]);
 
-        $law->update($validated);
+        $law->update([
+            'law_number' => $validated['law_number'],
+            'slug' => $validated['slug'],
+            'sort_order' => $validated['sort_order'],
+            'status' => $validated['status'],
+        ]);
+        $this->syncTranslations($law, $validated);
 
         return redirect()
             ->route('admin.laws.edit', $law)
@@ -107,7 +133,7 @@ class LawAdminController extends Controller
     {
         return (($childrenByParent->get($parentId) ?? collect())->sortBy('sort_order'))
             ->map(function ($node) use ($childrenByParent, $depth) {
-                $translation = $node->translationFor($this->defaultLanguage());
+                $translation = $node->translationFor(LotgLanguage::default());
 
                 return [
                     'id' => $node->id,
@@ -133,7 +159,7 @@ class LawAdminController extends Controller
         $items = [];
 
         foreach (($childrenByParent->get($parentId) ?? collect())->sortBy('sort_order') as $node) {
-            $translation = $node->translationFor($this->defaultLanguage());
+            $translation = $node->translationFor(LotgLanguage::default());
 
             $items[] = [
                 'id' => $node->id,
@@ -149,8 +175,24 @@ class LawAdminController extends Controller
         return $items;
     }
 
-    protected function defaultLanguage(): string
+    protected function syncTranslations(Law $law, array $validated): void
     {
-        return config('app.fallback_locale', 'en');
+        foreach (array_keys(LotgLanguage::supported()) as $languageCode) {
+            $title = $validated['title_'.$languageCode] ?? null;
+
+            if ($languageCode === 'id' || $title) {
+                LawTranslation::updateOrCreate(
+                    [
+                        'law_id' => $law->id,
+                        'language_code' => $languageCode,
+                    ],
+                    [
+                        'title' => $title ?: ($validated['title_id'] ?? 'Law '.$law->law_number),
+                        'subtitle' => $validated['subtitle_'.$languageCode] ?: null,
+                        'description_text' => $validated['description_text_'.$languageCode] ?: null,
+                    ]
+                );
+            }
+        }
     }
 }

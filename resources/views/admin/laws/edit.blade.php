@@ -28,7 +28,7 @@
             <form action="{{ route('admin.laws.update', $law) }}" method="post" class="stack-form">
                 @csrf
                 @method('patch')
-                @include('admin.partials.law-fields', ['law' => $law])
+                @include('admin.partials.law-fields', ['law' => $law, 'translationsByLanguage' => $translationsByLanguage, 'languages' => $languages])
                 <button type="submit">Save law</button>
             </form>
         </div>

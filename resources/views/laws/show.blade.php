@@ -2,8 +2,8 @@
 
 @section('title', __('site.laws.law_number', ['number' => $law->law_number]))
 @section('body_class', 'has-mobile-law-context')
-@section('mobile_header_title', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle())
-@section('mobile_law_context', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle())
+@section('mobile_header_title', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
+@section('mobile_law_context', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
 
 @section('content')
     <a class="back-link" href="{{ route('laws.index', ['lang' => $language]) }}">{{ __('site.laws.back') }}</a>
@@ -23,8 +23,11 @@
     <div class="law-detail-shell">
         <section class="hero">
             <p class="eyebrow">{{ __('site.laws.law_number', ['number' => $law->law_number]) }}</p>
-            <h1>{{ $law->displayTitle() }}</h1>
-            <p>{{ __('site.laws.hero_intro') }}</p>
+            <h1>{{ $law->displayTitle($language) }}</h1>
+            @if ($law->displaySubtitle($language))
+                <p class="law-hero-subtitle">{{ $law->displaySubtitle($language) }}</p>
+            @endif
+            <p>{{ $law->displayDescription($language) ?: __('site.laws.hero_intro') }}</p>
             <div class="law-hero-nav">
                 @if ($previousLaw)
                     <a class="law-nav-link" href="{{ route('laws.show', $previousLaw).'?lang='.$language }}">
@@ -56,7 +59,10 @@
                 <aside class="toc-card">
                     <div>
                         <p class="eyebrow">{{ __('site.laws.law_number', ['number' => $law->law_number]) }}</p>
-                        <p class="toc-law-title">{{ $law->displayTitle() }}</p>
+                        <p class="toc-law-title">{{ $law->displayTitle($language) }}</p>
+                        @if ($law->displaySubtitle($language))
+                            <p class="toc-law-meta">{{ $law->displaySubtitle($language) }}</p>
+                        @endif
                     </div>
 
                     <div>

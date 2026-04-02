@@ -17,8 +17,14 @@
             <a class="law-link card" href="{{ route('laws.show', $law).'?lang='.$language }}">
                 <span class="law-number">{{ __('site.laws.law_number', ['number' => $law->law_number]) }}</span>
                 <div>
-                    <h2>{{ $law->displayTitle() }}</h2>
+                    <h2>{{ $law->displayTitle($language) }}</h2>
+                    @if ($law->displaySubtitle($language))
+                        <p class="law-meta">{{ $law->displaySubtitle($language) }}</p>
+                    @endif
                 </div>
+                @if ($law->displayDescription($language))
+                    <p class="law-meta">{{ $law->displayDescription($language) }}</p>
+                @endif
                 <span class="law-link-cta">{{ __('site.laws.view_law') }} <span aria-hidden="true">-></span></span>
             </a>
         @empty

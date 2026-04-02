@@ -6,6 +6,7 @@ use App\Models\ChangelogEntry;
 use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
 use App\Models\Law;
+use App\Models\LawTranslation;
 use App\Models\MediaAsset;
 use App\Support\LotgLanguage;
 use Illuminate\Database\Seeder;
@@ -27,6 +28,19 @@ class LotgSeeder extends Seeder
                     'status' => 'published',
                 ]
             );
+
+            $this->syncLawTranslations($law, [
+                'id' => [
+                    'title' => 'Lapangan Permainan',
+                    'subtitle' => 'Persyaratan dasar lapangan dan penandaan',
+                    'description_text' => 'Ringkasan hukum ini mencakup prinsip umum, ukuran lapangan, penandaan, serta contoh visual untuk membantu pembacaan publik dan pengujian alur admin.',
+                ],
+                'en' => [
+                    'title' => 'The Field of Play',
+                    'subtitle' => 'Core requirements for the playing surface and markings',
+                    'description_text' => 'This law summary covers the general principles, field dimensions, markings, and visual examples used to validate both the public reading experience and the admin workflow.',
+                ],
+            ]);
 
             $law->contentNodes()->delete();
 
@@ -154,6 +168,29 @@ class LotgSeeder extends Seeder
         return $node;
     }
 
+    protected function syncLawTranslations(Law $law, array $translations): void
+    {
+        foreach (array_keys(LotgLanguage::supported()) as $languageCode) {
+            $payload = $translations[$languageCode] ?? $translations['id'] ?? $translations['en'] ?? null;
+
+            if (! $payload || empty($payload['title'])) {
+                continue;
+            }
+
+            LawTranslation::updateOrCreate(
+                [
+                    'law_id' => $law->id,
+                    'language_code' => $languageCode,
+                ],
+                [
+                    'title' => $payload['title'],
+                    'subtitle' => $payload['subtitle'] ?? null,
+                    'description_text' => $payload['description_text'] ?? null,
+                ]
+            );
+        }
+    }
+
     protected function seedLawTwo(): void
     {
         $law = Law::updateOrCreate(
@@ -164,6 +201,19 @@ class LotgSeeder extends Seeder
                 'status' => 'published',
             ]
         );
+
+        $this->syncLawTranslations($law, [
+            'id' => [
+                'title' => 'Bola',
+                'subtitle' => 'Standar teknis, pemeriksaan, dan penggantian',
+                'description_text' => 'Contoh hukum ini memuat uraian yang lebih panjang, beberapa bagian utama, subbagian bertingkat, serta contoh gambar dan video untuk menguji kenyamanan membaca dan alur input admin.',
+            ],
+            'en' => [
+                'title' => 'The Ball',
+                'subtitle' => 'Technical standards, inspection, and replacement',
+                'description_text' => 'This example law includes longer copy, multiple sections, nested subsections, and supporting image and video examples so the reading layout and editorial workflow can be tested more realistically.',
+            ],
+        ]);
 
         $law->contentNodes()->delete();
 
@@ -287,6 +337,19 @@ class LotgSeeder extends Seeder
                 'status' => 'published',
             ]
         );
+
+        $this->syncLawTranslations($law, [
+            'id' => [
+                'title' => 'Pemain',
+                'subtitle' => 'Prinsip dasar, administrasi pertandingan, dan referensi',
+                'description_text' => 'Contoh ini dirancang sebagai hukum yang lebih lengkap, dengan teks panjang, media tertanam, dan daftar sumber tertaut agar seluruh fitur utama sistem dapat divalidasi dalam satu halaman.',
+            ],
+            'en' => [
+                'title' => 'The Players',
+                'subtitle' => 'Core principles, match administration, and references',
+                'description_text' => 'This is a fuller seeded example with longer narrative content, embedded media, and linked resources so the main public and admin features can be validated on a single law page.',
+            ],
+        ]);
 
         $law->contentNodes()->delete();
 
