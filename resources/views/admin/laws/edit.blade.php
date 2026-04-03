@@ -3,7 +3,7 @@
 @section('title', 'Admin | Edit Law')
 
 @section('content')
-    <a class="back-link" href="{{ route('admin.laws.index', ['edition' => $selectedEdition?->id]) }}">Back to admin laws</a>
+    <a class="back-link" href="{{ route('admin.laws.index', ['edition' => $selectedEdition]) }}">Back to admin laws</a>
 
     <section class="hero">
         <p class="eyebrow">Admin</p>
@@ -25,10 +25,10 @@
             <h2>Law settings</h2>
         </summary>
         <div class="collapse-body">
-            <form action="{{ route('admin.laws.update', $law) }}" method="post" class="stack-form">
+            <form action="{{ route('admin.laws.update', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" class="stack-form">
                 @csrf
                 @method('patch')
-                @include('admin.partials.law-fields', ['law' => $law, 'translationsByLanguage' => $translationsByLanguage, 'languages' => $languages, 'editions' => $editions, 'selectedEdition' => $selectedEdition])
+                @include('admin.partials.law-fields', ['law' => $law, 'translationsByLanguage' => $translationsByLanguage, 'languages' => $languages, 'selectedEdition' => $selectedEdition])
                 <button type="submit">Save law</button>
             </form>
         </div>
@@ -40,7 +40,7 @@
         </summary>
         <div class="collapse-body">
             <p class="nav-meta">Start with sections, then add child sections or content blocks beneath them. Parent labels include node type and current sort order to make hierarchy safer to read.</p>
-            <form action="{{ route('admin.nodes.store', ['law' => $law, 'edition' => $selectedEdition?->id]) }}" method="post" enctype="multipart/form-data" class="stack-form">
+            <form action="{{ route('admin.nodes.store', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" enctype="multipart/form-data" class="stack-form">
                 @csrf
                 @include('admin.partials.node-fields', ['node' => null, 'translationsByLanguage' => collect(), 'languages' => \App\Support\LotgLanguage::supported(), 'parentOptions' => $parentOptions])
                 <button type="submit">Create node</button>

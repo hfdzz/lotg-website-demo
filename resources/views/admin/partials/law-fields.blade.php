@@ -1,18 +1,8 @@
 @php
     $translationsByLanguage = $translationsByLanguage ?? collect();
     $languages = $languages ?? \App\Support\LotgLanguage::supported();
-    $editions = $editions ?? collect();
     $selectedEdition = $selectedEdition ?? null;
 @endphp
-
-<label>
-    <div class="law-meta">Edition</div>
-    <select name="edition_id">
-        @foreach ($editions as $edition)
-            <option value="{{ $edition->id }}" @selected(old('edition_id', $law?->edition_id ?? $selectedEdition?->id) == $edition->id)>{{ $edition->name }}</option>
-        @endforeach
-    </select>
-</label>
 
 <label>
     <div class="law-meta">Law number</div>

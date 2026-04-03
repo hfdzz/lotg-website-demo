@@ -3,6 +3,10 @@
 @section('title', 'Admin | Laws')
 
 @section('content')
+    @php
+        $defaultYearStart = (int) now()->format('Y');
+        $defaultYearEnd = $defaultYearStart + 1;
+    @endphp
     <section class="hero">
         <p class="eyebrow">Admin</p>
         <h1>Manage laws</h1>
@@ -19,12 +23,12 @@
     @endif
 
     <section class="card">
-        <form action="{{ route('admin.laws.index') }}" method="get" class="stack-form">
+        <form action="{{ route('admin.editions.go') }}" method="get" class="stack-form">
             <label>
                 <div class="law-meta">Working edition</div>
                 <select name="edition" onchange="this.form.submit()">
                     @foreach ($editions as $edition)
-                        <option value="{{ $edition->id }}" @selected($selectedEdition?->id === $edition->id)>{{ $edition->name }}@if ($edition->is_active) (active) @endif</option>
+                        <option value="{{ $edition->slug }}" @selected($selectedEdition?->id === $edition->id)>{{ $edition->name }}@if ($edition->is_active) (active) @endif</option>
                     @endforeach
                 </select>
             </label>
@@ -33,16 +37,79 @@
 
     <details class="card collapse-card">
         <summary class="collapse-summary">
+            <h2>Create edition</h2>
+        </summary>
+        <div class="collapse-body">
+            <form action="{{ route('admin.editions.store') }}" method="post" class="stack-form">
+                @csrf
+                <label>
+                    <div class="law-meta">Name</div>
+                    <input type="text" name="name" value="{{ old('name') }}">
+                </label>
+                <label>
+                    <div class="law-meta">Year start</div>
+                    <input type="number" name="year_start" value="{{ old('year_start', $defaultYearStart) }}">
+                </label>
+                <label>
+                    <div class="law-meta">Year end</div>
+                    <input type="number" name="year_end" value="{{ old('year_end', $defaultYearEnd) }}">
+                </label>
+                <label>
+                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active'))>
+                    Set as active edition
+                </label>
+                <button type="submit">Create edition</button>
+            </form>
+        </div>
+    </details>
+
+    <details class="card collapse-card">
+        <summary class="collapse-summary">
+            <h2>Edit current edition</h2>
+        </summary>
+        <div class="collapse-body">
+            @if ($selectedEdition)
+                <form action="{{ route('admin.editions.update', $selectedEdition) }}" method="post" class="stack-form">
+                    @csrf
+                    @method('patch')
+                    <label>
+                        <div class="law-meta">Name</div>
+                        <input type="text" name="name" value="{{ old('name', $selectedEdition->name) }}">
+                    </label>
+                    <label>
+                        <div class="law-meta">Year start</div>
+                        <input type="number" name="year_start" value="{{ old('year_start', $selectedEdition->year_start) }}">
+                    </label>
+                    <label>
+                        <div class="law-meta">Year end</div>
+                        <input type="number" name="year_end" value="{{ old('year_end', $selectedEdition->year_end) }}">
+                    </label>
+                    <label>
+                        <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $selectedEdition->is_active))>
+                        Active edition
+                    </label>
+                    <button type="submit">Save edition</button>
+                </form>
+            @endif
+        </div>
+    </details>
+
+    <details class="card collapse-card">
+        <summary class="collapse-summary">
             <h2>Create law</h2>
         </summary>
         <div class="collapse-body">
-            <form action="{{ route('admin.laws.store') }}" method="post" class="stack-form">
+            <form action="{{ route('admin.laws.store', ['edition' => $selectedEdition]) }}" method="post" class="stack-form">
                 @csrf
-                @include('admin.partials.law-fields', ['law' => null, 'translationsByLanguage' => collect(), 'languages' => $languages, 'editions' => $editions, 'selectedEdition' => $selectedEdition])
+                @include('admin.partials.law-fields', ['law' => null, 'translationsByLanguage' => collect(), 'languages' => $languages, 'selectedEdition' => $selectedEdition])
                 <button type="submit">Create law</button>
             </form>
         </div>
     </details>
+
+    <section class="card">
+        <p class="law-meta"><a class="result-link" href="{{ route('admin.changelog.index', ['edition' => $selectedEdition]) }}">Manage update entries for this edition</a></p>
+    </section>
 
     <section class="card">
         <h2>Existing laws</h2>
@@ -50,7 +117,7 @@
             @forelse ($laws as $law)
                 <article class="result-card">
                     <p class="eyebrow">Law {{ $law->law_number }}</p>
-                    <h3><a href="{{ route('admin.laws.edit', ['law' => $law, 'edition' => $selectedEdition?->id]) }}">Edit law {{ $law->law_number }}</a></h3>
+                    <h3><a href="{{ route('admin.laws.edit', ['edition' => $selectedEdition, 'law' => $law]) }}">Edit law {{ $law->law_number }}</a></h3>
                     <p class="law-meta">{{ $law->displayTitle('id') }} | Edition: {{ $law->edition?->name ?? 'None' }} | Status: {{ $law->status }} | Sort: {{ $law->sort_order }}</p>
                 </article>
             @empty

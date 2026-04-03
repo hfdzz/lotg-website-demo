@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('laws', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('edition_id');
+            $table->foreignId('edition_id')->nullable()->constrained()->nullOnDelete();
             $table->string('law_number', 20);
             $table->string('slug')->unique();
             $table->unsignedInteger('sort_order')->default(0);

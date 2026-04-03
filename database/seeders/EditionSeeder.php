@@ -12,8 +12,19 @@ class EditionSeeder extends Seeder
         Edition::query()->update(['is_active' => false]);
 
         Edition::updateOrCreate(
+            ['name' => '2024/25'],
+            [
+                'slug' => 'edition_2024_2025',
+                'year_start' => 2024,
+                'year_end' => 2025,
+                'is_active' => false,
+            ]
+        );
+
+        Edition::updateOrCreate(
             ['name' => '2025/26'],
             [
+                'slug' => 'edition_2025_2026',
                 'year_start' => 2025,
                 'year_end' => 2026,
                 'is_active' => true,

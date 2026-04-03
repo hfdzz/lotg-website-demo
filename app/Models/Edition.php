@@ -10,6 +10,7 @@ class Edition extends Model
 {
     protected $fillable = [
         'name',
+        'slug',
         'year_start',
         'year_end',
         'is_active',
@@ -25,6 +26,11 @@ class Edition extends Model
     public function laws(): HasMany
     {
         return $this->hasMany(Law::class);
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 
     public function scopeActive(Builder $query): Builder

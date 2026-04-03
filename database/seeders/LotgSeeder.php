@@ -24,9 +24,19 @@ class LotgSeeder extends Seeder
             $edition = Edition::current() ?? Edition::query()->firstOrCreate(
                 ['name' => '2025/26'],
                 [
+                    'slug' => 'edition_2025_2026',
                     'year_start' => 2025,
                     'year_end' => 2026,
                     'is_active' => true,
+                ]
+            );
+            $previousEdition = Edition::query()->firstOrCreate(
+                ['name' => '2024/25'],
+                [
+                    'slug' => 'edition_2024_2025',
+                    'year_start' => 2024,
+                    'year_end' => 2025,
+                    'is_active' => false,
                 ]
             );
 
@@ -121,6 +131,7 @@ class LotgSeeder extends Seeder
 
             ChangelogEntry::updateOrCreate(
                 [
+                    'edition_id' => $edition->id,
                     'language_code' => 'id',
                     'title' => 'Initial LotG sample structure',
                 ],
@@ -133,6 +144,7 @@ class LotgSeeder extends Seeder
 
             ChangelogEntry::updateOrCreate(
                 [
+                    'edition_id' => $edition->id,
                     'language_code' => 'en',
                     'title' => 'Initial LotG sample structure',
                 ],
@@ -145,6 +157,7 @@ class LotgSeeder extends Seeder
 
             $this->seedLawTwo($edition);
             $this->seedLawThree($edition);
+            $this->seedPreviousEditionLaw($previousEdition);
         });
     }
 
@@ -525,5 +538,69 @@ class LotgSeeder extends Seeder
         $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 1, 'Youth match exceptions', null);
         $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 2, 'Tournament reporting flow', null);
         $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 3, 'Post-match administration', null);
+    }
+
+    protected function seedPreviousEditionLaw(Edition $edition): void
+    {
+        $law = Law::updateOrCreate(
+            ['slug' => 'law-1-the-field-of-play-2024'],
+            [
+                'edition_id' => $edition->id,
+                'law_number' => '1',
+                'sort_order' => 1,
+                'status' => 'published',
+            ]
+        );
+
+        $this->syncLawTranslations($law, [
+            'id' => [
+                'title' => 'Lapangan Permainan',
+                'subtitle' => 'Edisi sebelumnya',
+                'description_text' => 'Contoh hukum ini mewakili edisi sebelumnya agar alur edition filtering dapat diuji di admin maupun halaman publik.',
+            ],
+            'en' => [
+                'title' => 'The Field of Play',
+                'subtitle' => 'Previous edition',
+                'description_text' => 'This sample law belongs to the previous edition so edition filtering can be validated in both admin and public flows.',
+            ],
+        ]);
+
+        $law->contentNodes()->delete();
+
+        $section = $this->makeNode($law->id, null, 'section', 1, 'Previous edition note', null);
+        $this->makeNode(
+            $law->id,
+            $section->id,
+            'rich_text',
+            1,
+            null,
+            '<p>This short sample belongs to the older edition and should only appear when working with that edition in admin. Public pages scoped to the active edition should not expose it.</p>'
+        );
+
+        ChangelogEntry::updateOrCreate(
+            [
+                'edition_id' => $edition->id,
+                'language_code' => 'en',
+                'title' => 'Archived 2024/25 update sample',
+            ],
+            [
+                'body' => 'A sample archived update entry for the previous edition.',
+                'sort_order' => 1,
+                'published_at' => now()->subMonths(8),
+            ]
+        );
+
+        ChangelogEntry::updateOrCreate(
+            [
+                'edition_id' => $edition->id,
+                'language_code' => 'id',
+                'title' => 'Contoh pembaruan arsip 2024/25',
+            ],
+            [
+                'body' => 'Contoh entri pembaruan arsip untuk edisi sebelumnya.',
+                'sort_order' => 1,
+                'published_at' => now()->subMonths(8),
+            ]
+        );
     }
 }

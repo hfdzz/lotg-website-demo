@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
+use App\Models\Edition;
 use App\Models\Law;
 use App\Models\MediaAsset;
 use App\Support\LotgLanguage;
@@ -15,8 +16,9 @@ use Illuminate\Support\Collection;
 
 class NodeAdminController extends Controller
 {
-    public function edit(Law $law, ContentNode $node): View
+    public function edit(Edition $edition, Law $law, ContentNode $node): View
     {
+        $this->assertLawBelongsToEdition($edition, $law);
         $this->assertNodeBelongsToLaw($law, $node);
         
         $node->load(['translations', 'mediaAssets', 'children']);
@@ -31,8 +33,9 @@ class NodeAdminController extends Controller
         ]);
     }
 
-    public function store(Request $request, Law $law): RedirectResponse
+    public function store(Request $request, Edition $edition, Law $law): RedirectResponse
     {
+        $this->assertLawBelongsToEdition($edition, $law);
         $validated = $this->validateNode($request, $law);
 
         $node = ContentNode::create([
@@ -48,12 +51,13 @@ class NodeAdminController extends Controller
         $this->syncMedia($request, $node);
 
         return redirect()
-            ->route('admin.nodes.edit', ['law' => $law, 'node' => $node, 'edition' => $law->edition_id])
+            ->route('admin.nodes.edit', ['edition' => $edition, 'law' => $law, 'node' => $node])
             ->with('status', 'Node created.');
     }
 
-    public function update(Request $request, Law $law, ContentNode $node): RedirectResponse
+    public function update(Request $request, Edition $edition, Law $law, ContentNode $node): RedirectResponse
     {
+        $this->assertLawBelongsToEdition($edition, $law);
         $this->assertNodeBelongsToLaw($law, $node);
 
         $validated = $this->validateNode($request, $law, $node);
@@ -70,18 +74,19 @@ class NodeAdminController extends Controller
         $this->syncMedia($request, $node);
 
         return redirect()
-            ->route('admin.nodes.edit', ['law' => $law, 'node' => $node, 'edition' => $law->edition_id])
+            ->route('admin.nodes.edit', ['edition' => $edition, 'law' => $law, 'node' => $node])
             ->with('status', 'Node updated.');
     }
 
-    public function destroy(Law $law, ContentNode $node): RedirectResponse
+    public function destroy(Edition $edition, Law $law, ContentNode $node): RedirectResponse
     {
+        $this->assertLawBelongsToEdition($edition, $law);
         $this->assertNodeBelongsToLaw($law, $node);
 
         $this->deleteNodeRecursively($node);
 
         return redirect()
-            ->route('admin.laws.edit', ['law' => $law, 'edition' => $law->edition_id])
+            ->route('admin.laws.edit', ['edition' => $edition, 'law' => $law])
             ->with('status', 'Node deleted.');
     }
 
@@ -368,6 +373,11 @@ class NodeAdminController extends Controller
     protected function assertNodeBelongsToLaw(Law $law, ContentNode $node): void
     {
         abort_unless((int) $node->law_id === (int) $law->id, 404);
+    }
+
+    protected function assertLawBelongsToEdition(Edition $edition, Law $law): void
+    {
+        abort_unless((int) $law->edition_id === (int) $edition->id, 404);
     }
 
     /**
