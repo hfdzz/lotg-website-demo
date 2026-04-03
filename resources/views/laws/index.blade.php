@@ -26,7 +26,16 @@
                 <div class="law-link-cta">
                     <div class="law-link-cta-inner">
                         <span class="law-link-cta-label">{{ __('site.laws.view_law') }}</span>
-                        <span class="law-link-cta-arrow" aria-hidden="true">-></span>
+                        <div class="law-link-cta-arrow" aria-hidden="true">
+                            <svg viewBox="0 0 100 24" preserveAspectRatio="none">
+                                <path d="M0 12 H95 M75 6 L100 12 L75 18"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"/>
+                            </svg>
+                        </div>
                     </div>
                 </div>
             </a>

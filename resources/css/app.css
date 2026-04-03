@@ -255,10 +255,10 @@ button:hover {
     overflow: hidden;
     padding: 0;
     border: 0;
-    border-radius: 1.125rem;
+    border-radius: 0.5rem;
     background:
         linear-gradient(140deg, rgba(6, 37, 69, 0.92) 0%, rgba(0, 87, 168, 0.88) 100%),
-        url("http://lotg-website.test/demo/field-layout.svg");
+        url("demo/field-layout.svg");
     background-position: center, center;
     background-repeat: no-repeat, no-repeat;
     background-size: cover, cover;
@@ -290,7 +290,7 @@ button:hover {
     margin: 0 0 0.25rem;
     color: #ffd54a;
     font-size: 1.625rem;
-    font-weight: 800;
+    font-weight: normal;
     letter-spacing: -0.03em;
     line-height: 1.05;
     white-space: nowrap;
@@ -302,13 +302,12 @@ button:hover {
     margin: 0;
     color: #ffffff;
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: bold;
     line-height: 1.12;
 }
 
 .law-row-subtitle {
     display: -webkit-box;
-    min-height: calc(1.55em * 3);
     margin: 0.5rem 0 0;
     color: rgba(255, 255, 255, 0.92);
     font-size: 1rem;
@@ -337,9 +336,11 @@ button:hover {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin: 0 0.75rem;
+    margin: 0;
     padding: 0.25rem 0.75rem;
     background: rgba(0, 0, 0, 0.4);
+    justify-content: end;
+    gap: 0.75rem;
 }
 
 .law-link-cta-label,
@@ -357,6 +358,13 @@ button:hover {
 
 .law-link-cta-arrow {
     font-size: 1.125rem;
+    width: 36px;
+    height: 24px;
+}
+
+.law-link-cta-arrow svg {
+    height: 100%;
+    width: 100%;
 }
 
 .law-row-card:hover {
@@ -796,11 +804,17 @@ h5.node-title {
     align-items: center;
 }
 
+.nav-main-wrapper {
+    overflow-x: auto;
+}
+
 .nav-main {
     gap: 0.65rem;
     justify-content: center;
-    min-width: 0;
+    min-width: 100%;
     flex-wrap: nowrap;
+    display: inline-flex;
+    width: max-content;
 }
 
 .nav-utility {
@@ -1324,6 +1338,9 @@ body.has-mobile-law-context {
         padding: 0;
         background: transparent;
         text-align: right;
+        flex-direction: column;
+        align-items: end;
+        gap: 0;
     }
 
     .law-link-cta-label,

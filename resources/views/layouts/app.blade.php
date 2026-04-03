@@ -88,10 +88,12 @@
                             </a>
                         </div>
 
-                        <div class="nav-main">
-                            <a class="nav-link" href="{{ route('laws.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.laws') }}</a>
-                            <a class="nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
-                            <a class="nav-link" href="{{ route('search.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.search') }}</a>
+                        <div class="nav-main-wrapper">
+                            <div class="nav-main">
+                                <a class="nav-link" href="{{ route('laws.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.laws') }}</a>
+                                <a class="nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
+                                <a class="nav-link" href="{{ route('search.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.search') }}</a>
+                            </div>
                         </div>
 
                         <div class="nav-utility">
