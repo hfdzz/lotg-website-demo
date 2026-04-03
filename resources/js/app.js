@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTableOfContentsTracking();
 });
 
+window.addEventListener('load', () => {
+    setupDeferredMediaLoading();
+});
+
 function setupMobileHeader() {
     const mobileHeader = document.querySelector('[data-mobile-header]');
     const toggleButton = document.querySelector('[data-mobile-menu-toggle]');
@@ -164,5 +168,23 @@ function setupSearchPopover() {
         if (event.key === 'Escape') {
             popovers.forEach((popover) => popover.removeAttribute('open'));
         }
+    });
+}
+
+function setupDeferredMediaLoading() {
+    const deferredMedia = Array.from(document.querySelectorAll('[data-deferred-src]'));
+
+    deferredMedia.forEach((element) => {
+        if (!(element instanceof HTMLIFrameElement || element instanceof HTMLImageElement)) {
+            return;
+        }
+
+        const source = element.dataset.src;
+
+        if (!source || element.getAttribute('src')) {
+            return;
+        }
+
+        element.setAttribute('src', source);
     });
 }

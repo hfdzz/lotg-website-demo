@@ -41,7 +41,8 @@
             @foreach ($videoItems as $mediaItem)
                 <figure class="media-frame video-frame">
                     <iframe
-                        src="{{ $mediaItem['src'] }}"
+                        data-src="{{ $mediaItem['src'] }}"
+                        data-deferred-src
                         title="{{ $mediaItem['caption'] ?? 'YouTube video' }}"
                         loading="lazy"
                         allowfullscreen
