@@ -31,15 +31,21 @@
             <div class="law-hero-nav">
                 @if ($previousLaw)
                     <a class="law-nav-link" href="{{ route('laws.show', $previousLaw).'?lang='.$language }}">
-                        <span class="law-nav-label">{{ __('site.laws.previous_law') }}</span>
-                        <span>{{ __('site.laws.law_number', ['number' => $previousLaw->law_number]) }}</span>
+                        <div class="law-nav-label">{{ __('site.laws.previous_law') }}</div>
+                        <div class="left">
+                            <span class="law-nav-arrow" aria-hidden="true">&larr;</span>
+                            <span>{{ __('site.laws.law_number', ['number' => $previousLaw->law_number]) }}</span>
+                        </div>
                     </a>
                 @endif
 
                 @if ($nextLaw)
                     <a class="law-nav-link" href="{{ route('laws.show', $nextLaw).'?lang='.$language }}">
-                        <span class="law-nav-label">{{ __('site.laws.next_law') }}</span>
-                        <span>{{ __('site.laws.law_number', ['number' => $nextLaw->law_number]) }}</span>
+                        <div class="law-nav-label">{{ __('site.laws.next_law') }}</div>
+                        <div class="right">
+                            <span>{{ __('site.laws.law_number', ['number' => $nextLaw->law_number]) }}</span>
+                            <span class="law-nav-arrow" aria-hidden="true">&rarr;</span>
+                        </div>
                     </a>
                 @endif
             </div>
@@ -66,7 +72,6 @@
                     </div>
 
                     <div>
-                        <p class="eyebrow">{{ __('site.laws.contents') }}</p>
                         <h2 class="toc-title">{{ __('site.laws.on_this_page') }}</h2>
                     </div>
 

@@ -19,26 +19,37 @@ class LawTreeBuilder
 
         $childrenByParent = $nodes->groupBy('parent_id');
 
-        return $this->buildBranch($childrenByParent, null, 0, $languageCode);
+        return $this->buildBranch($childrenByParent, null, 0, $languageCode, [(string) $law->law_number]);
     }
 
     /**
      * @param Collection<int, Collection<int, \App\Models\ContentNode>> $childrenByParent
      * @return array<int, array<string, mixed>>
      */
-    protected function buildBranch(Collection $childrenByParent, ?int $parentId, int $depth, string $languageCode): array
+    protected function buildBranch(Collection $childrenByParent, ?int $parentId, int $depth, string $languageCode, array $sectionPath): array
     {
+        $sectionIndex = 0;
+
         return ($childrenByParent->get($parentId) ?? collect())
             ->sortBy('sort_order')
             ->values()
-            ->map(function ($node) use ($childrenByParent, $depth, $languageCode) {
+            ->map(function ($node) use ($childrenByParent, $depth, $languageCode, $sectionPath, &$sectionIndex) {
                 $translation = $node->translationFor($languageCode);
+                $currentSectionPath = $sectionPath;
+                $sectionNumber = null;
+
+                if ($node->node_type === 'section') {
+                    $sectionIndex++;
+                    $currentSectionPath[] = (string) $sectionIndex;
+                    $sectionNumber = implode('.', $currentSectionPath);
+                }
 
                 return [
                     'id' => $node->id,
                     'node_type' => $node->node_type,
                     'sort_order' => $node->sort_order,
                     'depth' => $depth,
+                    'section_number' => $sectionNumber,
                     'heading_tag' => $this->headingTagFor($node->node_type, $depth),
                     'anchor_id' => $this->anchorIdFor($node->id, $translation?->title, $node->node_type),
                     'settings' => $node->settings_json ?? [],
@@ -47,7 +58,7 @@ class LawTreeBuilder
                     'body_html' => $translation?->body_html,
                     'media_items' => $this->buildMediaItems($node->mediaAssets, $node->node_type),
                     'resource_items' => $this->buildResourceItems($node->mediaAssets, $node->node_type),
-                    'children' => $this->buildBranch($childrenByParent, $node->id, $depth + 1, $languageCode),
+                    'children' => $this->buildBranch($childrenByParent, $node->id, $depth + 1, $languageCode, $currentSectionPath),
                 ];
             })
             ->all();
@@ -71,6 +82,7 @@ class LawTreeBuilder
 
             $items[] = [
                 'title' => $node['title'],
+                'section_number' => $node['section_number'] ?? null,
                 'anchor_id' => $node['anchor_id'],
                 'depth' => $node['depth'],
                 'children' => $children,

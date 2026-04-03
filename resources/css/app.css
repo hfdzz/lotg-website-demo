@@ -116,7 +116,7 @@ button:hover {
 }
 
 .hero {
-    margin-bottom: 1.75rem;
+    /* margin-bottom: 1.75rem; */
     padding: 0 0 1.5rem;
     border-bottom: 1px solid var(--line);
 }
@@ -257,8 +257,7 @@ button:hover {
     border: 0;
     border-radius: 0.5rem;
     background:
-        linear-gradient(140deg, rgba(6, 37, 69, 0.92) 0%, rgba(0, 87, 168, 0.88) 100%),
-        url("demo/field-layout.svg");
+        linear-gradient(140deg, rgba(6, 37, 69, 0.92) 0%, rgba(0, 87, 168, 0.88) 100%);
     background-position: center, center;
     background-repeat: no-repeat, no-repeat;
     background-size: cover, cover;
@@ -428,9 +427,7 @@ button:hover {
 
 .law-detail-mobile-toc {
     display: block;
-    padding: 0.9rem 0 0;
     border: 0;
-    border-top: 1px solid var(--line);
     border-radius: 0;
     background: transparent;
     box-shadow: none;
@@ -484,12 +481,18 @@ details[open] > .toc-summary::after {
 }
 
 .toc-link {
-    display: block;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.5rem;
     padding: 0.35rem 0;
     color: var(--muted);
     text-decoration: none;
     line-height: 1.45;
     transition: color 0.12s ease;
+}
+
+.toc-text {
+    min-width: 0;
 }
 
 .toc-link:hover {
@@ -538,6 +541,10 @@ details[open] > .toc-summary::after {
     margin-top: 2rem;
 }
 
+.node[data-type="section"]:first-child {
+    margin-top: 0;
+}
+
 .node[data-depth="0"] {
     margin-top: 0;
 }
@@ -545,9 +552,13 @@ details[open] > .toc-summary::after {
 .node-title {
     margin: 0;
     color: var(--ink);
-    font-weight: 700;
+    font-weight: 400;
     line-height: 1.2;
     letter-spacing: -0.01em;
+}
+
+.node-title-text {
+    display: block;
 }
 
 .node-title[id] {
@@ -555,10 +566,17 @@ details[open] > .toc-summary::after {
 }
 
 h2.node-title {
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: 2.5rem;
     margin-bottom: 1rem;
-    padding-bottom: 0.55rem;
-    border-bottom: 1px solid var(--line);
+    border-top: 2px solid var(--line);
+    border-bottom: 2px solid var(--line);
     font-size: clamp(1.7rem, 3vw, 2.25rem);
+}
+
+h2.node-title:first-child {
+    margin-top: 0;
 }
 
 h3.node-title {
@@ -986,7 +1004,7 @@ h5.node-title {
 }
 
 .law-hero-nav {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     gap: 0.85rem;
     margin-top: 1rem;
@@ -994,14 +1012,15 @@ h5.node-title {
 
 .law-nav-link {
     display: inline-flex;
-    flex-direction: column;
-    gap: 0.2rem;
+    align-items: center;
     min-width: 9.5rem;
     padding: 0.8rem 0.95rem;
     border: 1px solid var(--line);
     border-radius: 14px;
     color: var(--ink);
     text-decoration: none;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .law-nav-link:hover {
@@ -1010,11 +1029,23 @@ h5.node-title {
 }
 
 .law-nav-label {
-    color: var(--muted);
     font-size: 0.82rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+.law-nav-link > .left {
+    align-self: flex-start;
+}
+
+.law-nav-link > .right {
+    align-self: flex-end;
+}
+
+.law-nav-arrow {
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
 .mobile-header {
@@ -1346,6 +1377,10 @@ body.has-mobile-law-context {
     .law-link-cta-label,
     .law-link-cta-arrow {
         color: #ffd54a;
+    }
+
+    .law-hero-nav {
+        display: flex;
     }
 
     .law-detail-grid {

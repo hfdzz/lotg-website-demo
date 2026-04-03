@@ -6,7 +6,12 @@
     @endphp
 
     @if ($node['title'])
-        @include('laws.partials.title', ['tag' => $node['heading_tag'], 'title' => $node['title'], 'anchorId' => $node['anchor_id']])
+        @include('laws.partials.title', [
+            'tag' => $node['heading_tag'],
+            'title' => $node['title'],
+            'anchorId' => $node['anchor_id'],
+            'sectionNumber' => $node['section_number'] ?? null,
+        ])
     @endif
 
     @if ($node['body_html'])
