@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Edition;
 use App\Models\Law;
 use App\Services\LawTreeBuilder;
 use App\Support\LotgLanguage;
@@ -12,7 +13,9 @@ class LawController extends Controller
 {
     public function index(): View
     {
+        $activeEdition = Edition::current();
         $laws = Law::published()
+            ->forEdition($activeEdition?->id)
             ->with('translations')
             ->orderBy('sort_order')
             ->get();
@@ -24,12 +27,15 @@ class LawController extends Controller
 
     public function show(Request $request, Law $law, LawTreeBuilder $treeBuilder): View
     {
-        abort_unless($law->status === 'published', 404);
+        $activeEdition = Edition::current();
+
+        abort_unless($law->status === 'published' && $law->edition_id === $activeEdition?->id, 404);
 
         $law->loadMissing('translations');
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $tree = $treeBuilder->build($law, $language);
         $orderedLaws = Law::published()
+            ->forEdition($activeEdition?->id)
             ->with('translations')
             ->orderBy('sort_order')
             ->orderBy('id')

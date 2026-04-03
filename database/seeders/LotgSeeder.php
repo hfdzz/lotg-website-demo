@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\ChangelogEntry;
 use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
+use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawTranslation;
 use App\Models\MediaAsset;
@@ -20,9 +21,19 @@ class LotgSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
+            $edition = Edition::current() ?? Edition::query()->firstOrCreate(
+                ['name' => '2025/26'],
+                [
+                    'year_start' => 2025,
+                    'year_end' => 2026,
+                    'is_active' => true,
+                ]
+            );
+
             $law = Law::updateOrCreate(
                 ['slug' => 'law-1-the-field-of-play'],
                 [
+                    'edition_id' => $edition->id,
                     'law_number' => '1',
                     'sort_order' => 1,
                     'status' => 'published',
@@ -132,8 +143,8 @@ class LotgSeeder extends Seeder
                 ]
             );
 
-            $this->seedLawTwo();
-            $this->seedLawThree();
+            $this->seedLawTwo($edition);
+            $this->seedLawThree($edition);
         });
     }
 
@@ -191,11 +202,12 @@ class LotgSeeder extends Seeder
         }
     }
 
-    protected function seedLawTwo(): void
+    protected function seedLawTwo(Edition $edition): void
     {
         $law = Law::updateOrCreate(
             ['slug' => 'law-2-the-ball'],
             [
+                'edition_id' => $edition->id,
                 'law_number' => '2',
                 'sort_order' => 2,
                 'status' => 'published',
@@ -327,11 +339,12 @@ class LotgSeeder extends Seeder
         $this->makeNode($law->id, $sectionCompetitionNotes->id, 'section', 2, 'Training adaptations', null);
     }
 
-    protected function seedLawThree(): void
+    protected function seedLawThree(Edition $edition): void
     {
         $law = Law::updateOrCreate(
             ['slug' => 'law-3-the-players'],
             [
+                'edition_id' => $edition->id,
                 'law_number' => '3',
                 'sort_order' => 3,
                 'status' => 'published',

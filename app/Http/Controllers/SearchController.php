@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContentNodeTranslation;
+use App\Models\Edition;
 use App\Models\Law;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
@@ -15,12 +16,14 @@ class SearchController extends Controller
     {
         $query = trim((string) $request->query('q', ''));
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
+        $activeEdition = Edition::current();
 
         $lawMatches = collect();
         $contentMatches = collect();
 
         if ($query !== '') {
             $lawMatches = Law::published()
+                ->forEdition($activeEdition?->id)
                 ->where('law_number', 'like', '%'.$query.'%')
                 ->orderBy('sort_order')
                 ->get();
@@ -31,6 +34,7 @@ class SearchController extends Controller
                 ->join('content_nodes', 'content_nodes.id', '=', 'content_node_translations.content_node_id')
                 ->join('laws', 'laws.id', '=', 'content_nodes.law_id')
                 ->where('laws.status', 'published')
+                ->where('laws.edition_id', $activeEdition?->id)
                 ->where('content_nodes.is_published', true)
                 ->where('content_node_translations.status', 'published')
                 ->where('content_node_translations.language_code', $language)

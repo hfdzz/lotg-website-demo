@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -28,6 +29,11 @@ class Law extends Model
         return $this->hasMany(ContentNode::class);
     }
 
+    public function edition(): BelongsTo
+    {
+        return $this->belongsTo(Edition::class);
+    }
+
     public function translations(): HasMany
     {
         return $this->hasMany(LawTranslation::class)->orderBy('language_code');
@@ -41,6 +47,20 @@ class Law extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', 'published');
+    }
+
+    public function scopeForEdition(Builder $query, ?int $editionId): Builder
+    {
+        if (! $editionId) {
+            return $query;
+        }
+
+        return $query->where('edition_id', $editionId);
+    }
+
+    public function scopeForActiveEdition(Builder $query): Builder
+    {
+        return $query->where('edition_id', Edition::current()?->id);
     }
 
     public function translationFor(?string $languageCode = null): ?LawTranslation

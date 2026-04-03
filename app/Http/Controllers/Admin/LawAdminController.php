@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawTranslation;
 use App\Support\LotgLanguage;
@@ -13,10 +14,18 @@ use Illuminate\Support\Str;
 
 class LawAdminController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $selectedEdition = $this->selectedEdition($request);
+
         return view('admin.laws.index', [
-            'laws' => Law::query()->with('translations')->orderBy('sort_order')->get(),
+            'laws' => Law::query()
+                ->with(['edition', 'translations'])
+                ->forEdition($selectedEdition?->id)
+                ->orderBy('sort_order')
+                ->get(),
+            'editions' => Edition::query()->orderByDesc('year_start')->get(),
+            'selectedEdition' => $selectedEdition,
             'languages' => LotgLanguage::supported(),
         ]);
     }
@@ -25,6 +34,7 @@ class LawAdminController extends Controller
     {
         $validated = $request->validate([
             'law_number' => ['required', 'string', 'max:20'],
+            'edition_id' => ['required', 'integer', 'exists:editions,id'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:laws,slug'],
             'sort_order' => ['required', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published'],
@@ -39,6 +49,7 @@ class LawAdminController extends Controller
         $slug = $validated['slug'] ?: Str::slug('law-'.$validated['law_number']);
 
         $law = Law::create([
+            'edition_id' => $validated['edition_id'],
             'law_number' => $validated['law_number'],
             'slug' => $slug,
             'sort_order' => $validated['sort_order'],
@@ -48,13 +59,14 @@ class LawAdminController extends Controller
         $this->syncTranslations($law, $validated);
 
         return redirect()
-            ->route('admin.laws.edit', $law)
+            ->route('admin.laws.edit', ['law' => $law, 'edition' => $law->edition_id])
             ->with('status', 'Law created.');
     }
 
-    public function edit(Law $law): View
+    public function edit(Request $request, Law $law): View
     {
         $law->load([
+            'edition',
             'translations',
             'contentNodes.translations',
             'contentNodes.mediaAssets',
@@ -62,6 +74,8 @@ class LawAdminController extends Controller
 
         return view('admin.laws.edit', [
             'law' => $law,
+            'editions' => Edition::query()->orderByDesc('year_start')->get(),
+            'selectedEdition' => $this->selectedEdition($request) ?? $law->edition,
             'translationsByLanguage' => $law->translations->keyBy('language_code'),
             'languages' => LotgLanguage::supported(),
             'nodeTree' => $this->buildNodeTree($law),
@@ -73,6 +87,7 @@ class LawAdminController extends Controller
     {
         $validated = $request->validate([
             'law_number' => ['required', 'string', 'max:20'],
+            'edition_id' => ['required', 'integer', 'exists:editions,id'],
             'slug' => ['required', 'string', 'max:255', 'unique:laws,slug,'.$law->id],
             'sort_order' => ['required', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,published'],
@@ -85,6 +100,7 @@ class LawAdminController extends Controller
         ]);
 
         $law->update([
+            'edition_id' => $validated['edition_id'],
             'law_number' => $validated['law_number'],
             'slug' => $validated['slug'],
             'sort_order' => $validated['sort_order'],
@@ -93,8 +109,19 @@ class LawAdminController extends Controller
         $this->syncTranslations($law, $validated);
 
         return redirect()
-            ->route('admin.laws.edit', $law)
+            ->route('admin.laws.edit', ['law' => $law, 'edition' => $law->edition_id])
             ->with('status', 'Law updated.');
+    }
+
+    protected function selectedEdition(Request $request): ?Edition
+    {
+        $editionId = (int) $request->query('edition', 0);
+
+        if ($editionId > 0) {
+            return Edition::query()->find($editionId) ?? Edition::current();
+        }
+
+        return Edition::current();
     }
 
     /**

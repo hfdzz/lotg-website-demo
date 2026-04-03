@@ -3,7 +3,7 @@
 @section('title', 'Admin | Edit Node')
 
 @section('content')
-    <a class="back-link" href="{{ route('admin.laws.edit', $law) }}">Back to law editor</a>
+    <a class="back-link" href="{{ route('admin.laws.edit', ['law' => $law, 'edition' => request('edition', $law->edition_id)]) }}">Back to law editor</a>
 
     <section class="hero">
         <p class="eyebrow">Admin</p>
@@ -31,7 +31,7 @@
             <h2>Node settings</h2>
         </summary>
         <div class="collapse-body">
-            <form action="{{ route('admin.nodes.update', [$law, $node]) }}" method="post" enctype="multipart/form-data" class="stack-form">
+            <form action="{{ route('admin.nodes.update', ['law' => $law, 'node' => $node, 'edition' => request('edition', $law->edition_id)]) }}" method="post" enctype="multipart/form-data" class="stack-form">
                 @csrf
                 @method('patch')
                 @include('admin.partials.node-fields', ['node' => $node, 'translationsByLanguage' => $translationsByLanguage, 'languages' => $languages, 'parentOptions' => $parentOptions])
@@ -43,7 +43,7 @@
     <section class="card">
         <h2>Delete node</h2>
         <p class="law-meta">Deleting a node removes its descendants recursively in the application layer.</p>
-        <form action="{{ route('admin.nodes.destroy', [$law, $node]) }}" method="post" class="stack-top">
+        <form action="{{ route('admin.nodes.destroy', ['law' => $law, 'node' => $node, 'edition' => request('edition', $law->edition_id)]) }}" method="post" class="stack-top">
             @csrf
             @method('delete')
             <button type="submit">Delete node</button>

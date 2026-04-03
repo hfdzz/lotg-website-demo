@@ -48,7 +48,7 @@ class NodeAdminController extends Controller
         $this->syncMedia($request, $node);
 
         return redirect()
-            ->route('admin.nodes.edit', [$law, $node])
+            ->route('admin.nodes.edit', ['law' => $law, 'node' => $node, 'edition' => $law->edition_id])
             ->with('status', 'Node created.');
     }
 
@@ -70,7 +70,7 @@ class NodeAdminController extends Controller
         $this->syncMedia($request, $node);
 
         return redirect()
-            ->route('admin.nodes.edit', [$law, $node])
+            ->route('admin.nodes.edit', ['law' => $law, 'node' => $node, 'edition' => $law->edition_id])
             ->with('status', 'Node updated.');
     }
 
@@ -81,7 +81,7 @@ class NodeAdminController extends Controller
         $this->deleteNodeRecursively($node);
 
         return redirect()
-            ->route('admin.laws.edit', $law)
+            ->route('admin.laws.edit', ['law' => $law, 'edition' => $law->edition_id])
             ->with('status', 'Node deleted.');
     }
 
