@@ -88,4 +88,14 @@ class Law extends Model
     {
         return $this->translationFor($languageCode)?->description_text;
     }
+
+    public function cardBackgroundImageUrl(): string
+    {
+        $relativePath = 'statics/law-images/law'.$this->law_number.'.jpg';
+
+        if (file_exists(public_path($relativePath))) {
+            return asset($relativePath);
+        }
+        return 'statics/law-images/law'.$this->law_number.'.webp';
+    }
 }

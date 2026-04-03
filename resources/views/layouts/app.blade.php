@@ -84,7 +84,7 @@
                     <div class="nav-row">
                         <div class="nav-brand-area">
                             <a href="{{ route('laws.index', ['lang' => $currentLanguage]) }}" class="nav-brand" aria-label="{{ __('site.nav.go_home') }}">
-                                <img class="nav-brand-mark" src="{{ asset('demo/logo_pssi_tulisan.png') }}" alt="PSSI">
+                                <img class="nav-brand-mark" src="{{ asset('statics/logo_pssi_tulisan.png') }}" alt="PSSI">
                             </a>
                         </div>
 

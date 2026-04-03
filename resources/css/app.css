@@ -131,7 +131,6 @@ button:hover {
 }
 
 .hero p {
-    max-width: 68ch;
     margin-bottom: 0;
     color: var(--muted);
     font-size: 1.04rem;
@@ -257,7 +256,8 @@ button:hover {
     border: 0;
     border-radius: 0.5rem;
     background:
-        linear-gradient(140deg, rgba(6, 37, 69, 0.92) 0%, rgba(0, 87, 168, 0.88) 100%);
+        linear-gradient(140deg, rgba(6, 37, 69, 0.92) 0%, rgba(0, 87, 168, 0.88) 100%),
+        var(--law-card-image);
     background-position: center, center;
     background-repeat: no-repeat, no-repeat;
     background-size: cover, cover;
@@ -1353,10 +1353,6 @@ body.has-mobile-law-context {
         font-size: 1.625rem;
     }
 
-    .law-row-subtitle {
-        max-width: 42rem;
-    }
-
     .law-link-cta {
         align-items: center;
         width: auto;
@@ -1413,7 +1409,6 @@ body.has-mobile-law-context {
     }
 
     .node-body {
-        max-width: 70ch;
         font-size: 1.06rem;
         line-height: 1.9;
     }

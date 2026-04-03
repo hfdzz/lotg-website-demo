@@ -14,7 +14,7 @@
 
     <section class="law-grid">
         @forelse ($laws as $law)
-            <a class="law-link law-row-card card" href="{{ route('laws.show', $law).'?lang='.$language }}">
+            <a class="law-link law-row-card card" href="{{ route('laws.show', $law).'?lang='.$language }}" style="--law-card-image: url('{{ $law->cardBackgroundImageUrl() }}');">
                 <div class="law-row-main">
                     <p class="law-number">{{ __('site.laws.law_number', ['number' => $law->law_number]) }}</p>
                     <h2>{{ $law->displayTitle($language) }}</h2>
