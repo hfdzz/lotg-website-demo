@@ -54,10 +54,6 @@
                     <div class="law-meta">Year end</div>
                     <input type="number" name="year_end" value="{{ old('year_end', $defaultYearEnd) }}">
                 </label>
-                <label>
-                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active'))>
-                    Set as active edition
-                </label>
                 <button type="submit">Create edition</button>
             </form>
         </div>
@@ -84,10 +80,11 @@
                         <div class="law-meta">Year end</div>
                         <input type="number" name="year_end" value="{{ old('year_end', $selectedEdition->year_end) }}">
                     </label>
-                    <label>
-                        <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $selectedEdition->is_active))>
-                        Active edition
-                    </label>
+                    @if ($selectedEdition->is_active)
+                        <p class="law-meta">This is the active edition.</p>
+                    @else
+                        <button type="submit" name="set_active" value="1">Save and set as active</button>
+                    @endif
                     <button type="submit">Save edition</button>
                 </form>
             @endif

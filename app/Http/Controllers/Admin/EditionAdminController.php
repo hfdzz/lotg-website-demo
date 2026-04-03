@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Edition;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class EditionAdminController extends Controller
 {
@@ -22,19 +23,20 @@ class EditionAdminController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:editions,name'],
             'year_start' => ['required', 'integer', 'min:1900', 'max:9999'],
             'year_end' => ['required', 'integer', 'min:1900', 'max:9999', 'gte:year_start'],
-            'is_active' => ['nullable', 'boolean'],
         ]);
 
-        if ($request->boolean('is_active')) {
+        $shouldBeActive = ! Edition::query()->active()->exists();
+
+        if ($shouldBeActive) {
             Edition::query()->update(['is_active' => false]);
         }
 
         $edition = Edition::create([
             'name' => $validated['name'],
-            'slug' => $this->makeSlug((int) $validated['year_start'], (int) $validated['year_end']),
+            'slug' => $this->makeSlug($validated['name'], (int) $validated['year_start'], (int) $validated['year_end']),
             'year_start' => $validated['year_start'],
             'year_end' => $validated['year_end'],
-            'is_active' => $request->boolean('is_active'),
+            'is_active' => $shouldBeActive,
         ]);
 
         return redirect()
@@ -48,19 +50,21 @@ class EditionAdminController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:editions,name,'.$edition->id],
             'year_start' => ['required', 'integer', 'min:1900', 'max:9999'],
             'year_end' => ['required', 'integer', 'min:1900', 'max:9999', 'gte:year_start'],
-            'is_active' => ['nullable', 'boolean'],
         ]);
 
-        if ($request->boolean('is_active')) {
+        $shouldBeActive = $request->boolean('set_active')
+            || ($edition->is_active && ! Edition::query()->whereKeyNot($edition->id)->active()->exists());
+
+        if ($shouldBeActive) {
             Edition::query()->whereKeyNot($edition->id)->update(['is_active' => false]);
         }
 
         $edition->update([
             'name' => $validated['name'],
-            'slug' => $this->makeSlug((int) $validated['year_start'], (int) $validated['year_end']),
+            'slug' => $this->makeSlug($validated['name'], (int) $validated['year_start'], (int) $validated['year_end']),
             'year_start' => $validated['year_start'],
             'year_end' => $validated['year_end'],
-            'is_active' => $request->boolean('is_active'),
+            'is_active' => $shouldBeActive,
         ]);
 
         return redirect()
@@ -68,8 +72,10 @@ class EditionAdminController extends Controller
             ->with('status', 'Edition updated.');
     }
 
-    protected function makeSlug(int $yearStart, int $yearEnd): string
+    protected function makeSlug(string $name, int $yearStart, int $yearEnd): string
     {
-        return 'edition_'.$yearStart.'_'.$yearEnd;
+        $nameSlug = Str::slug($name, '_');
+
+        return trim('edition_'.$yearStart.'_'.$yearEnd.($nameSlug !== '' ? '_'.$nameSlug : ''), '_');
     }
 }

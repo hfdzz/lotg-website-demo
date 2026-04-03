@@ -12,6 +12,7 @@ use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class NodeAdminController extends Controller
@@ -38,17 +39,23 @@ class NodeAdminController extends Controller
         $this->assertLawBelongsToEdition($edition, $law);
         $validated = $this->validateNode($request, $law);
 
-        $node = ContentNode::create([
-            'law_id' => $law->id,
-            'parent_id' => $validated['parent_id'] ?: null,
-            'node_type' => $validated['node_type'],
-            'sort_order' => $validated['sort_order'],
-            'is_published' => $request->boolean('is_published'),
-            'settings_json' => $this->settingsFromRequest($request),
-        ]);
+        $node = DB::transaction(function () use ($law, $validated, $request) {
+            $parentId = $validated['parent_id'] ?: null;
 
-        $this->syncTranslation($node, $validated);
-        $this->syncMedia($request, $node);
+            $node = ContentNode::create([
+                'law_id' => $law->id,
+                'parent_id' => $parentId,
+                'node_type' => $validated['node_type'],
+                'sort_order' => $this->nextSortOrder($law, $parentId),
+                'is_published' => $request->boolean('is_published'),
+                'settings_json' => $this->settingsFromRequest($request),
+            ]);
+
+            $this->syncTranslation($node, $validated);
+            $this->syncMedia($request, $node);
+
+            return $node;
+        });
 
         return redirect()
             ->route('admin.nodes.edit', ['edition' => $edition, 'law' => $law, 'node' => $node])
@@ -62,16 +69,29 @@ class NodeAdminController extends Controller
 
         $validated = $this->validateNode($request, $law, $node);
 
-        $node->update([
-            'parent_id' => $validated['parent_id'] ?: null,
-            'node_type' => $validated['node_type'],
-            'sort_order' => $validated['sort_order'],
-            'is_published' => $request->boolean('is_published'),
-            'settings_json' => $this->settingsFromRequest($request),
-        ]);
+        DB::transaction(function () use ($node, $validated, $request, $law) {
+            $oldParentId = $node->parent_id;
+            $newParentId = $validated['parent_id'] ?: null;
+            $requestedSortOrder = (int) $validated['sort_order'];
 
-        $this->syncTranslation($node, $validated);
-        $this->syncMedia($request, $node);
+            $this->normalizeSiblingSortOrders($law, $oldParentId, $node->id);
+
+            $maxSortOrder = $this->nextSortOrder($law, $newParentId, $node->id);
+            $finalSortOrder = min(max($requestedSortOrder, 1), $maxSortOrder);
+
+            $this->shiftSiblingsForInsert($law, $newParentId, $finalSortOrder, $node->id);
+
+            $node->update([
+                'parent_id' => $newParentId,
+                'node_type' => $validated['node_type'],
+                'sort_order' => $finalSortOrder,
+                'is_published' => $request->boolean('is_published'),
+                'settings_json' => $this->settingsFromRequest($request),
+            ]);
+
+            $this->syncTranslation($node, $validated);
+            $this->syncMedia($request, $node);
+        });
 
         return redirect()
             ->route('admin.nodes.edit', ['edition' => $edition, 'law' => $law, 'node' => $node])
@@ -83,7 +103,11 @@ class NodeAdminController extends Controller
         $this->assertLawBelongsToEdition($edition, $law);
         $this->assertNodeBelongsToLaw($law, $node);
 
-        $this->deleteNodeRecursively($node);
+        DB::transaction(function () use ($node, $law) {
+            $parentId = $node->parent_id;
+            $this->deleteNodeRecursively($node);
+            $this->normalizeSiblingSortOrders($law, $parentId);
+        });
 
         return redirect()
             ->route('admin.laws.edit', ['edition' => $edition, 'law' => $law])
@@ -116,7 +140,7 @@ class NodeAdminController extends Controller
                 },
             ],
             'node_type' => ['required', 'in:section,rich_text,image,video_group,resource_list'],
-            'sort_order' => ['required', 'integer', 'min:0'],
+            'sort_order' => ['nullable', 'integer', 'min:1'],
             'title_id' => ['nullable', 'string', 'max:255'],
             'body_html_id' => ['nullable', 'string'],
             'translation_status_id' => ['required', 'in:draft,published'],
@@ -323,6 +347,49 @@ class NodeAdminController extends Controller
 
         $this->purgeNodeMedia($node);
         $node->delete();
+    }
+
+    protected function nextSortOrder(Law $law, ?int $parentId, ?int $excludeNodeId = null): int
+    {
+        return $this->siblingQuery($law, $parentId, $excludeNodeId)->count() + 1;
+    }
+
+    protected function normalizeSiblingSortOrders(Law $law, ?int $parentId, ?int $excludeNodeId = null): void
+    {
+        $siblings = $this->siblingQuery($law, $parentId, $excludeNodeId)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($siblings as $index => $sibling) {
+            $targetOrder = $index + 1;
+
+            if ((int) $sibling->sort_order !== $targetOrder) {
+                $sibling->update(['sort_order' => $targetOrder]);
+            }
+        }
+    }
+
+    protected function shiftSiblingsForInsert(Law $law, ?int $parentId, int $sortOrder, ?int $excludeNodeId = null): void
+    {
+        $siblings = $this->siblingQuery($law, $parentId, $excludeNodeId)
+            ->where('sort_order', '>=', $sortOrder)
+            ->orderByDesc('sort_order')
+            ->get();
+
+        foreach ($siblings as $sibling) {
+            $sibling->update([
+                'sort_order' => (int) $sibling->sort_order + 1,
+            ]);
+        }
+    }
+
+    protected function siblingQuery(Law $law, ?int $parentId, ?int $excludeNodeId = null)
+    {
+        return ContentNode::query()
+            ->where('law_id', $law->id)
+            ->where('parent_id', $parentId)
+            ->when($excludeNodeId, fn ($query) => $query->whereKeyNot($excludeNodeId));
     }
 
     /**

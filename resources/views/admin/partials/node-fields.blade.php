@@ -1,5 +1,6 @@
 @php
     $mediaAssets = $node?->mediaAssets ?? collect();
+    $isEditing = (bool) $node;
     $imageAsset = $mediaAssets->firstWhere('asset_type', 'image');
     $translationsByLanguage = $translationsByLanguage ?? collect();
     $languages = $languages ?? \App\Support\LotgLanguage::supported();
@@ -46,8 +47,14 @@
 
 <label>
     <div class="law-meta">Sort order</div>
-    <div class="nav-meta">Lower numbers appear first among sibling nodes under the same parent.</div>
-    <input type="number" min="0" name="sort_order" value="{{ old('sort_order', $node?->sort_order ?? 0) }}">
+    <div class="nav-meta">
+        @if ($isEditing)
+            Use 1-based ordering. Moving this node to a new number will shift affected siblings automatically.
+        @else
+            New nodes are appended automatically as the last sibling under the selected parent.
+        @endif
+    </div>
+    <input type="number" min="1" name="sort_order" value="{{ old('sort_order', $node?->sort_order ?? 1) }}">
 </label>
 
 <label>
