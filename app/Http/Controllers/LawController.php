@@ -12,9 +12,35 @@ use Illuminate\Http\Request;
 
 class LawController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $activeEdition = Edition::current();
+        $publishedEditions = Edition::query()
+            ->published()
+            ->orderByDesc('year_start')
+            ->orderByDesc('year_end')
+            ->get();
+        $requestedEditionId = $request->integer('edition');
+        $selectedEdition = $requestedEditionId
+            ? $publishedEditions->firstWhere('id', $requestedEditionId)
+            : $activeEdition;
+        $isArchiveEdition = (bool) $selectedEdition && (! $activeEdition || $selectedEdition->id !== $activeEdition->id);
+
+        if ($isArchiveEdition) {
+            return view('laws.archive', [
+                'laws' => Law::published()
+                    ->forEdition($selectedEdition?->id)
+                    ->with('translations')
+                    ->orderBy('sort_order')
+                    ->get(),
+                'hasActiveEdition' => (bool) $activeEdition,
+                'activeEdition' => $activeEdition,
+                'selectedEdition' => $selectedEdition,
+                'language' => $language,
+            ]);
+        }
+
         $laws = Law::published()
             ->forEdition($activeEdition?->id)
             ->with('translations')
@@ -24,22 +50,43 @@ class LawController extends Controller
         return view('laws.index', [
             'laws' => $laws,
             'hasActiveEdition' => (bool) $activeEdition,
+            'activeEdition' => $activeEdition,
+            'otherPublishedEditions' => $publishedEditions
+                ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
+                ->values(),
+            'language' => $language,
+        ]);
+    }
+
+    public function editions(Request $request): View
+    {
+        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
+        $activeEdition = Edition::current();
+        $publishedEditions = Edition::query()
+            ->published()
+            ->orderByDesc('year_start')
+            ->orderByDesc('year_end')
+            ->get();
+
+        return view('laws.editions', [
+            'language' => $language,
+            'activeEdition' => $activeEdition,
+            'editions' => $publishedEditions,
         ]);
     }
 
     public function show(Request $request, Law $law, LawTreeBuilder $treeBuilder): View|RedirectResponse
     {
-        $activeEdition = Edition::current();
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
+        $law->loadMissing(['translations', 'edition']);
 
-        if (! $activeEdition || $law->status !== 'published' || $law->edition_id !== $activeEdition->id) {
+        if (! $law->edition || $law->status !== 'published' || $law->edition->status !== 'published') {
             return redirect()->route('laws.index', ['lang' => $language]);
         }
 
-        $law->loadMissing('translations');
         $tree = $treeBuilder->build($law, $language);
         $orderedLaws = Law::published()
-            ->forEdition($activeEdition?->id)
+            ->forEdition($law->edition_id)
             ->with('translations')
             ->orderBy('sort_order')
             ->orderBy('id')

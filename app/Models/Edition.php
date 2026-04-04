@@ -47,10 +47,16 @@ class Edition extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('status', 'published');
+    }
+
     public static function current(): ?self
     {
         return static::query()
             ->active()
+            ->published()
             ->orderByDesc('year_start')
             ->first();
     }

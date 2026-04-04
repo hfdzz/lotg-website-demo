@@ -27,7 +27,7 @@ class EditionAdminController extends Controller
             'status' => ['required', 'in:draft,published'],
         ]);
 
-        $shouldBeActive = ! Edition::query()->active()->exists();
+        $shouldBeActive = $validated['status'] === 'published' && ! Edition::query()->active()->published()->exists();
 
         if ($shouldBeActive) {
             Edition::query()->update(['is_active' => false]);
@@ -60,6 +60,12 @@ class EditionAdminController extends Controller
         $shouldBeActive = $request->boolean('set_active')
             || ($edition->is_active && ! Edition::query()->whereKeyNot($edition->id)->active()->exists());
 
+        if ($shouldBeActive && $validated['status'] !== 'published') {
+            return back()
+                ->withErrors(['status' => 'Only a published edition can be active.'])
+                ->withInput();
+        }
+
         if ($shouldBeActive) {
             Edition::query()->whereKeyNot($edition->id)->update(['is_active' => false]);
         }
@@ -80,6 +86,10 @@ class EditionAdminController extends Controller
 
     public function activate(Edition $edition): RedirectResponse
     {
+        if ($edition->status !== 'published') {
+            return back()->withErrors(['status' => 'Only a published edition can be active.']);
+        }
+
         Edition::query()->update(['is_active' => false]);
         $edition->update(['is_active' => true]);
 

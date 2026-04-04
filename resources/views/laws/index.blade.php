@@ -3,9 +3,6 @@
 @section('title', __('site.laws.index_title'))
 
 @section('content')
-    @php
-        $language = \App\Support\LotgLanguage::normalize(request('lang'));
-    @endphp
     <section class="hero">
         <p class="eyebrow">{{ __('site.laws.index_eyebrow') }}</p>
         <h1>{{ __('site.laws.index_title') }}</h1>
@@ -53,4 +50,14 @@
             @endforelse
         @endif
     </section>
+
+    @if ($otherPublishedEditions->isNotEmpty())
+        <section class="card edition-browser">
+            <h2>{{ __('site.editions.more_title') }}</h2>
+            <p class="law-meta">{{ __('site.editions.more_body') }}</p>
+            <p class="stack-top">
+                <a class="result-link" href="{{ route('editions.index', ['lang' => $language]) }}">{{ __('site.editions.browse_link') }}</a>
+            </p>
+        </section>
+    @endif
 @endsection
