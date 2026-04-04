@@ -26,6 +26,8 @@
         </div>
     @endif
 
+    @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition])
+
     <details class="card collapse-card">
         <summary class="collapse-summary">
             <h2>Node settings</h2>

@@ -25,6 +25,8 @@ class NodeAdminController extends Controller
         $node->load(['translations', 'mediaAssets', 'children']);
         
         return view('admin.nodes.edit', [
+            'editions' => Edition::query()->orderByDesc('year_start')->get(),
+            'selectedEdition' => $edition,
             'law' => $law,
             'node' => $node,
             'translationsByLanguage' => $node->translations->keyBy('language_code'),

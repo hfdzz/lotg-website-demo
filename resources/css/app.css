@@ -180,7 +180,7 @@ button:hover {
     line-height: 1;
 }
 
-.collapse-card[open] .collapse-summary::after {
+.collapse-card[open] > .collapse-summary::after {
     content: "-";
 }
 

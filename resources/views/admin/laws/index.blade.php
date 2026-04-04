@@ -23,97 +23,105 @@
         </div>
     @endif
 
-    <section class="card">
-        <form action="{{ route('admin.editions.go') }}" method="get" class="stack-form">
-            <label>
-                <div class="law-meta">Working edition</div>
-                <select name="edition" onchange="this.form.submit()">
-                    @if (! $selectedEdition)
-                        <option value="">No active edition selected</option>
-                    @endif
-                    @foreach ($editions as $edition)
-                        <option value="{{ $edition->slug }}" @selected($selectedEdition?->id === $edition->id)>{{ $edition->name }}@if ($edition->is_active) (active) @endif</option>
-                    @endforeach
-                </select>
-            </label>
-        </form>
-    </section>
+    @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition])
 
-    <section class="card">
-        <h2>All editions</h2>
-        <div class="result-list stack-top">
-            @forelse ($editions as $edition)
-                <article class="result-card">
-                    <h3>{{ $edition->name }}</h3>
-                    <p class="law-meta">Slug: {{ $edition->slug }} | Years: {{ $edition->year_start }}/{{ $edition->year_end }} | Status: {{ $edition->is_active ? 'active' : 'inactive' }}</p>
-                    <p class="law-meta">
-                        <a class="result-link" href="{{ route('admin.laws.index', ['edition' => $edition]) }}">Open this edition</a>
-                    </p>
-                    @if (! $edition->is_active)
-                        <form action="{{ route('admin.editions.activate', $edition) }}" method="post" class="inline-form">
+    <details class="card collapse-card">
+        <summary class="collapse-summary">
+            <h2>Edition settings</h2>
+        </summary>
+        <div class="collapse-body stack-form">
+            <details class="collapse-card">
+                <summary class="collapse-summary">
+                    <h2>All editions</h2>
+                </summary>
+                <div class="collapse-body">
+                    <div class="result-list">
+                        @forelse ($editions as $edition)
+                            <article class="result-card">
+                                <h3>{{ $edition->name }}</h3>
+                                <p class="law-meta">Slug: {{ $edition->slug }} | Years: {{ $edition->year_start }}/{{ $edition->year_end }} | Status: {{ $edition->is_active ? 'active' : 'inactive' }}</p>
+                                <p class="law-meta">
+                                    <a class="result-link" href="{{ route('admin.laws.index', ['edition' => $edition]) }}">Open this edition</a>
+                                </p>
+                                @if (! $edition->is_active)
+                                    <form action="{{ route('admin.editions.activate', $edition) }}" method="post" class="inline-form">
+                                        @csrf
+                                        <button type="submit">Set as active</button>
+                                    </form>
+                                @endif
+                            </article>
+                        @empty
+                            <p class="empty-state">No editions yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </details>
+
+            <details class="collapse-card">
+                <summary class="collapse-summary">
+                    <h2>Create edition</h2>
+                </summary>
+                <div class="collapse-body">
+                    <form action="{{ route('admin.editions.store') }}" method="post" class="stack-form">
+                        @csrf
+                        <label>
+                            <div class="law-meta">Name</div>
+                            <input type="text" name="name" value="{{ old('name') }}">
+                        </label>
+                        <label>
+                            <div class="law-meta">Year start</div>
+                            <input type="number" name="year_start" value="{{ old('year_start', $defaultYearStart) }}">
+                        </label>
+                        <label>
+                            <div class="law-meta">Year end</div>
+                            <input type="number" name="year_end" value="{{ old('year_end', $defaultYearEnd) }}">
+                        </label>
+                        <button type="submit">Create edition</button>
+                    </form>
+                </div>
+            </details>
+
+            <details class="collapse-card">
+                <summary class="collapse-summary">
+                    <h2>Edit current edition</h2>
+                </summary>
+                <div class="collapse-body">
+                    @if ($selectedEdition)
+                        <form action="{{ route('admin.editions.update', $selectedEdition) }}" method="post" class="stack-form">
                             @csrf
-                            <button type="submit">Set as active</button>
+                            @method('patch')
+                            <label>
+                                <div class="law-meta">Name</div>
+                                <input type="text" name="name" value="{{ old('name', $selectedEdition->name) }}">
+                            </label>
+                            <label>
+                                <div class="law-meta">Year start</div>
+                                <input type="number" name="year_start" value="{{ old('year_start', $selectedEdition->year_start) }}">
+                            </label>
+                            <label>
+                                <div class="law-meta">Year end</div>
+                                <input type="number" name="year_end" value="{{ old('year_end', $selectedEdition->year_end) }}">
+                            </label>
+                            @if ($selectedEdition->is_active)
+                                <p class="law-meta">This is the active edition.</p>
+                            @else
+                                <button type="submit" name="set_active" value="1">Save and set as active</button>
+                            @endif
+                            <button type="submit">Save edition</button>
                         </form>
                     @endif
-                </article>
-            @empty
-                <p class="empty-state">No editions yet.</p>
-            @endforelse
-        </div>
-    </section>
+                </div>
+            </details>
 
-    <details class="card collapse-card">
-        <summary class="collapse-summary">
-            <h2>Create edition</h2>
-        </summary>
-        <div class="collapse-body">
-            <form action="{{ route('admin.editions.store') }}" method="post" class="stack-form">
-                @csrf
-                <label>
-                    <div class="law-meta">Name</div>
-                    <input type="text" name="name" value="{{ old('name') }}">
-                </label>
-                <label>
-                    <div class="law-meta">Year start</div>
-                    <input type="number" name="year_start" value="{{ old('year_start', $defaultYearStart) }}">
-                </label>
-                <label>
-                    <div class="law-meta">Year end</div>
-                    <input type="number" name="year_end" value="{{ old('year_end', $defaultYearEnd) }}">
-                </label>
-                <button type="submit">Create edition</button>
-            </form>
-        </div>
-    </details>
-
-    <details class="card collapse-card">
-        <summary class="collapse-summary">
-            <h2>Edit current edition</h2>
-        </summary>
-        <div class="collapse-body">
             @if ($selectedEdition)
-                <form action="{{ route('admin.editions.update', $selectedEdition) }}" method="post" class="stack-form">
-                    @csrf
-                    @method('patch')
-                    <label>
-                        <div class="law-meta">Name</div>
-                        <input type="text" name="name" value="{{ old('name', $selectedEdition->name) }}">
-                    </label>
-                    <label>
-                        <div class="law-meta">Year start</div>
-                        <input type="number" name="year_start" value="{{ old('year_start', $selectedEdition->year_start) }}">
-                    </label>
-                    <label>
-                        <div class="law-meta">Year end</div>
-                        <input type="number" name="year_end" value="{{ old('year_end', $selectedEdition->year_end) }}">
-                    </label>
-                    @if ($selectedEdition->is_active)
-                        <p class="law-meta">This is the active edition.</p>
-                    @else
-                        <button type="submit" name="set_active" value="1">Save and set as active</button>
-                    @endif
-                    <button type="submit">Save edition</button>
-                </form>
+                <details class="collapse-card">
+                    <summary class="collapse-summary">
+                        <h2>Edition updates</h2>
+                    </summary>
+                    <div class="collapse-body">
+                        <p class="law-meta"><a class="result-link" href="{{ route('admin.changelog.index', ['edition' => $selectedEdition]) }}">Manage update entries for this edition</a></p>
+                    </div>
+                </details>
             @endif
         </div>
     </details>
@@ -131,10 +139,6 @@
                 </form>
             </div>
         </details>
-
-        <section class="card">
-            <p class="law-meta"><a class="result-link" href="{{ route('admin.changelog.index', ['edition' => $selectedEdition]) }}">Manage update entries for this edition</a></p>
-        </section>
 
         <section class="card">
             <h2>Existing laws</h2>
