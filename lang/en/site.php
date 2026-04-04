@@ -22,6 +22,8 @@ return [
         'view_law' => 'View law',
         'no_laws_title' => 'No laws published yet',
         'no_laws_body' => 'Run the seed data to load the first sample law.',
+        'unavailable_title' => 'The laws will be back soon',
+        'unavailable_body' => 'There is currently no active edition available for public viewing. Please check back again soon.',
         'back' => 'Back to all laws',
         'hero_intro' => 'Read the law in a structured format with nested sections, supporting text, diagrams, and related video examples where available.',
         'previous_law' => 'Previous law',
@@ -53,5 +55,7 @@ return [
         'hero_title' => 'Project updates',
         'hero_intro' => 'Published notes for content and structure changes. This stays lightweight for v0.5 and can later evolve into edition-aware updates if needed.',
         'empty' => 'No published updates yet.',
+        'unavailable_title' => 'Updates will be back soon',
+        'unavailable_body' => 'There is currently no active edition available for public viewing. Please check back again soon.',
     ],
 ];

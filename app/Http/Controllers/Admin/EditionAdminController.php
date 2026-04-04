@@ -72,6 +72,16 @@ class EditionAdminController extends Controller
             ->with('status', 'Edition updated.');
     }
 
+    public function activate(Edition $edition): RedirectResponse
+    {
+        Edition::query()->update(['is_active' => false]);
+        $edition->update(['is_active' => true]);
+
+        return redirect()
+            ->route('admin.laws.index', ['edition' => $edition])
+            ->with('status', 'Edition activated.');
+    }
+
     protected function makeSlug(string $name, int $yearStart, int $yearEnd): string
     {
         return Str::slug('edition '.$yearStart.' '.$yearEnd.' '.$name);

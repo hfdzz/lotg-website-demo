@@ -6,6 +6,7 @@
     @php
         $defaultYearStart = (int) now()->format('Y');
         $defaultYearEnd = $defaultYearStart + 1;
+        $editionManagementOnly = $editionManagementOnly ?? false;
     @endphp
     <section class="hero">
         <p class="eyebrow">Admin</p>
@@ -27,12 +28,38 @@
             <label>
                 <div class="law-meta">Working edition</div>
                 <select name="edition" onchange="this.form.submit()">
+                    @if (! $selectedEdition)
+                        <option value="">No active edition selected</option>
+                    @endif
                     @foreach ($editions as $edition)
                         <option value="{{ $edition->slug }}" @selected($selectedEdition?->id === $edition->id)>{{ $edition->name }}@if ($edition->is_active) (active) @endif</option>
                     @endforeach
                 </select>
             </label>
         </form>
+    </section>
+
+    <section class="card">
+        <h2>All editions</h2>
+        <div class="result-list stack-top">
+            @forelse ($editions as $edition)
+                <article class="result-card">
+                    <h3>{{ $edition->name }}</h3>
+                    <p class="law-meta">Slug: {{ $edition->slug }} | Years: {{ $edition->year_start }}/{{ $edition->year_end }} | Status: {{ $edition->is_active ? 'active' : 'inactive' }}</p>
+                    <p class="law-meta">
+                        <a class="result-link" href="{{ route('admin.laws.index', ['edition' => $edition]) }}">Open this edition</a>
+                    </p>
+                    @if (! $edition->is_active)
+                        <form action="{{ route('admin.editions.activate', $edition) }}" method="post" class="inline-form">
+                            @csrf
+                            <button type="submit">Set as active</button>
+                        </form>
+                    @endif
+                </article>
+            @empty
+                <p class="empty-state">No editions yet.</p>
+            @endforelse
+        </div>
     </section>
 
     <details class="card collapse-card">
@@ -91,35 +118,41 @@
         </div>
     </details>
 
-    <details class="card collapse-card">
-        <summary class="collapse-summary">
-            <h2>Create law</h2>
-        </summary>
-        <div class="collapse-body">
-            <form action="{{ route('admin.laws.store', ['edition' => $selectedEdition]) }}" method="post" class="stack-form">
-                @csrf
-                @include('admin.partials.law-fields', ['law' => null, 'translationsByLanguage' => collect(), 'languages' => $languages, 'selectedEdition' => $selectedEdition])
-                <button type="submit">Create law</button>
-            </form>
-        </div>
-    </details>
+    @if ($selectedEdition)
+        <details class="card collapse-card">
+            <summary class="collapse-summary">
+                <h2>Create law</h2>
+            </summary>
+            <div class="collapse-body">
+                <form action="{{ route('admin.laws.store', ['edition' => $selectedEdition]) }}" method="post" class="stack-form">
+                    @csrf
+                    @include('admin.partials.law-fields', ['law' => null, 'translationsByLanguage' => collect(), 'languages' => $languages, 'selectedEdition' => $selectedEdition])
+                    <button type="submit">Create law</button>
+                </form>
+            </div>
+        </details>
 
-    <section class="card">
-        <p class="law-meta"><a class="result-link" href="{{ route('admin.changelog.index', ['edition' => $selectedEdition]) }}">Manage update entries for this edition</a></p>
-    </section>
+        <section class="card">
+            <p class="law-meta"><a class="result-link" href="{{ route('admin.changelog.index', ['edition' => $selectedEdition]) }}">Manage update entries for this edition</a></p>
+        </section>
 
-    <section class="card">
-        <h2>Existing laws</h2>
-        <div class="result-list stack-top">
-            @forelse ($laws as $law)
-                <article class="result-card">
-                    <p class="eyebrow">Law {{ $law->law_number }}</p>
-                    <h3><a href="{{ route('admin.laws.edit', ['edition' => $selectedEdition, 'law' => $law]) }}">Edit law {{ $law->law_number }}</a></h3>
-                    <p class="law-meta">{{ $law->displayTitle('id') }} | Edition: {{ $law->edition?->name ?? 'None' }} | Status: {{ $law->status }} | Sort: {{ $law->sort_order }}</p>
-                </article>
-            @empty
-                <p class="empty-state">No laws yet.</p>
-            @endforelse
-        </div>
-    </section>
+        <section class="card">
+            <h2>Existing laws</h2>
+            <div class="result-list stack-top">
+                @forelse ($laws as $law)
+                    <article class="result-card">
+                        <p class="eyebrow">Law {{ $law->law_number }}</p>
+                        <h3><a href="{{ route('admin.laws.edit', ['edition' => $selectedEdition, 'law' => $law]) }}">Edit law {{ $law->law_number }}</a></h3>
+                        <p class="law-meta">{{ $law->displayTitle('id') }} | Edition: {{ $law->edition?->name ?? 'None' }} | Status: {{ $law->status }} | Sort: {{ $law->sort_order }}</p>
+                    </article>
+                @empty
+                    <p class="empty-state">No laws yet.</p>
+                @endforelse
+            </div>
+        </section>
+    @elseif ($editionManagementOnly)
+        <section class="card">
+            <p class="law-meta">No active edition is set right now. Create a new edition or activate one from the list above to continue working with laws and updates.</p>
+        </section>
+    @endif
 @endsection

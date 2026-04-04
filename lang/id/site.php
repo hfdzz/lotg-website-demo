@@ -22,6 +22,8 @@ return [
         'view_law' => 'Lihat aturan',
         'no_laws_title' => 'Belum ada aturan yang dipublikasikan',
         'no_laws_body' => 'Jalankan seed data untuk memuat contoh aturan pertama.',
+        'unavailable_title' => 'Aturan akan segera kembali',
+        'unavailable_body' => 'Saat ini belum ada edisi aktif untuk ditampilkan ke publik. Silakan cek kembali dalam waktu dekat.',
         'back' => 'Kembali ke halaman utama',
         'hero_intro' => 'Baca aturan dalam format terstruktur dengan bagian bertingkat, teks pendukung, diagram, dan contoh video terkait jika tersedia.',
         'previous_law' => 'Aturan sebelumnya',
@@ -53,5 +55,7 @@ return [
         'hero_title' => 'Pembaruan proyek',
         'hero_intro' => 'Catatan perubahan untuk konten dan struktur yang dipublikasikan. Versi v0.5 ini tetap ringan dan nantinya bisa dikembangkan menjadi pembaruan berbasis edisi jika diperlukan.',
         'empty' => 'Belum ada pembaruan yang dipublikasikan.',
+        'unavailable_title' => 'Pembaruan akan segera kembali',
+        'unavailable_body' => 'Saat ini belum ada edisi aktif untuk ditampilkan ke publik. Silakan cek kembali dalam waktu dekat.',
     ],
 ];

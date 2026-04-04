@@ -25,6 +25,7 @@ class ChangelogController extends Controller
         return view('updates.index', [
             'entries' => $entries,
             'language' => $language,
+            'hasActiveEdition' => (bool) $activeEdition,
         ]);
     }
 }

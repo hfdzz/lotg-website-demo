@@ -14,6 +14,23 @@ use Illuminate\Support\Str;
 
 class LawAdminController extends Controller
 {
+    public function home(): View|RedirectResponse
+    {
+        $activeEdition = Edition::current();
+
+        if ($activeEdition) {
+            return redirect()->route('admin.laws.index', ['edition' => $activeEdition]);
+        }
+
+        return view('admin.laws.index', [
+            'laws' => collect(),
+            'editions' => Edition::query()->orderByDesc('year_start')->get(),
+            'selectedEdition' => null,
+            'languages' => LotgLanguage::supported(),
+            'editionManagementOnly' => true,
+        ]);
+    }
+
     public function index(Edition $edition): View
     {
         return view('admin.laws.index', [
@@ -25,6 +42,7 @@ class LawAdminController extends Controller
             'editions' => Edition::query()->orderByDesc('year_start')->get(),
             'selectedEdition' => $edition,
             'languages' => LotgLanguage::supported(),
+            'editionManagementOnly' => false,
         ]);
     }
 

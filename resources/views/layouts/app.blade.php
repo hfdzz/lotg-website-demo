@@ -15,7 +15,7 @@
             <div class="mobile-header-shell" data-mobile-header>
                 <div class="mobile-header-bar">
                     <a href="{{ route('laws.index', ['lang' => $currentLanguage]) }}" class="mobile-logo-link" aria-label="{{ __('site.nav.go_home') }}">
-                        <img class="mobile-logo" src="{{ asset('demo/logo_pssi_tulisan.png') }}" alt="PSSI">
+                        <img class="mobile-logo" src="{{ asset('statics/logo_pssi_tulisan.png') }}" alt="PSSI">
                     </a>
                     <p type="button" class="mobile-header-title" data-scroll-top>@yield('mobile_header_title', __('site.brand'))</p>
                     <button type="button" class="mobile-header-action" data-mobile-menu-toggle aria-expanded="false" aria-label="{{ __('site.nav.open_menu') }}">&#9776;</button>

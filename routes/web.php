@@ -25,15 +25,11 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', function () {
-        $edition = \App\Models\Edition::current();
-        abort_unless((bool) $edition, 404);
-
-        return redirect()->route('admin.laws.index', ['edition' => $edition]);
-    })->name('home');
+    Route::get('/', [LawAdminController::class, 'home'])->name('home');
 
     Route::get('/switch-edition', [EditionAdminController::class, 'go'])->name('editions.go');
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');
+    Route::post('/editions/{edition:slug}/activate', [EditionAdminController::class, 'activate'])->name('editions.activate');
     Route::patch('/editions/{edition:slug}', [EditionAdminController::class, 'update'])->name('editions.update');
 
     Route::prefix('editions/{edition:slug}')->group(function () {

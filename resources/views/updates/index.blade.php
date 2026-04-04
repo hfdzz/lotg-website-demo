@@ -10,14 +10,19 @@
     </section>
 
     <section class="card">
-        @forelse ($entries as $entry)
-            <article class="result-card">
-                <p class="eyebrow">{{ optional($entry->published_at)->format('d M Y') }}</p>
-                <h2>{{ $entry->title }}</h2>
-                <p class="law-meta">{{ $entry->body }}</p>
-            </article>
-        @empty
-            <p class="empty-state">{{ __('site.updates.empty') }}</p>
-        @endforelse
+        @if (! $hasActiveEdition)
+            <h2>{{ __('site.updates.unavailable_title') }}</h2>
+            <p class="law-meta">{{ __('site.updates.unavailable_body') }}</p>
+        @else
+            @forelse ($entries as $entry)
+                <article class="result-card">
+                    <p class="eyebrow">{{ optional($entry->published_at)->format('d M Y') }}</p>
+                    <h2>{{ $entry->title }}</h2>
+                    <p class="law-meta">{{ $entry->body }}</p>
+                </article>
+            @empty
+                <p class="empty-state">{{ __('site.updates.empty') }}</p>
+            @endforelse
+        @endif
     </section>
 @endsection

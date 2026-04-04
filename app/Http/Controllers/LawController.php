@@ -7,6 +7,7 @@ use App\Models\Law;
 use App\Services\LawTreeBuilder;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class LawController extends Controller
@@ -22,17 +23,20 @@ class LawController extends Controller
 
         return view('laws.index', [
             'laws' => $laws,
+            'hasActiveEdition' => (bool) $activeEdition,
         ]);
     }
 
-    public function show(Request $request, Law $law, LawTreeBuilder $treeBuilder): View
+    public function show(Request $request, Law $law, LawTreeBuilder $treeBuilder): View|RedirectResponse
     {
         $activeEdition = Edition::current();
+        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
 
-        abort_unless($law->status === 'published' && $law->edition_id === $activeEdition?->id, 404);
+        if (! $activeEdition || $law->status !== 'published' || $law->edition_id !== $activeEdition->id) {
+            return redirect()->route('laws.index', ['lang' => $language]);
+        }
 
         $law->loadMissing('translations');
-        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $tree = $treeBuilder->build($law, $language);
         $orderedLaws = Law::published()
             ->forEdition($activeEdition?->id)
