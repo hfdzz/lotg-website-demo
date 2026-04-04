@@ -24,18 +24,20 @@ class LotgSeeder extends Seeder
             $edition = Edition::current() ?? Edition::query()->firstOrCreate(
                 ['name' => '2025/26'],
                 [
-                    'slug' => 'edition-2025-2026-2025-26',
+                    'code' => '2025-26',
                     'year_start' => 2025,
                     'year_end' => 2026,
+                    'status' => 'published',
                     'is_active' => true,
                 ]
             );
             $previousEdition = Edition::query()->firstOrCreate(
                 ['name' => '2024/25'],
                 [
-                    'slug' => 'edition-2024-2025-2024-25',
+                    'code' => '2024-25',
                     'year_start' => 2024,
                     'year_end' => 2025,
+                    'status' => 'published',
                     'is_active' => false,
                 ]
             );

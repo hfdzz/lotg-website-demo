@@ -29,10 +29,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/switch-edition', [EditionAdminController::class, 'go'])->name('editions.go');
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');
-    Route::post('/editions/{edition:slug}/activate', [EditionAdminController::class, 'activate'])->name('editions.activate');
-    Route::patch('/editions/{edition:slug}', [EditionAdminController::class, 'update'])->name('editions.update');
+    Route::post('/editions/{edition}/activate', [EditionAdminController::class, 'activate'])->name('editions.activate');
+    Route::patch('/editions/{edition}', [EditionAdminController::class, 'update'])->name('editions.update');
 
-    Route::prefix('editions/{edition:slug}')->group(function () {
+    Route::prefix('editions/{edition}')->group(function () {
         Route::get('/', [LawAdminController::class, 'index'])->name('laws.index');
         Route::post('/laws', [LawAdminController::class, 'store'])->name('laws.store');
         Route::get('/laws/{law}/edit', [LawAdminController::class, 'edit'])->name('laws.edit');

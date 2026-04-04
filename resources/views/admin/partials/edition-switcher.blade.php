@@ -7,7 +7,7 @@
                     <option value="">No active edition selected</option>
                 @endif
                 @foreach ($editions as $edition)
-                    <option value="{{ $edition->slug }}" @selected($selectedEdition?->id === $edition->id)>{{ $edition->name }}@if ($edition->is_active) (active) @endif</option>
+                    <option value="{{ $edition->id }}" @selected($selectedEdition?->id === $edition->id)>{{ $edition->name }}@if ($edition->is_active) (active) @endif</option>
                 @endforeach
             </select>
         </label>

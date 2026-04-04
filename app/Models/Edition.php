@@ -10,9 +10,10 @@ class Edition extends Model
 {
     protected $fillable = [
         'name',
-        'slug',
+        'code',
         'year_start',
         'year_end',
+        'status',
         'is_active',
     ];
 
@@ -28,9 +29,17 @@ class Edition extends Model
         return $this->hasMany(Law::class);
     }
 
-    public function getRouteKeyName(): string
+    public function resolveRouteBinding($value, $field = null): ?Model
     {
-        return 'slug';
+        if ($field !== null) {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        if (is_numeric($value)) {
+            return $this->whereKey($value)->first();
+        }
+
+        return $this->newQuery()->where('code', (string) $value)->first();
     }
 
     public function scopeActive(Builder $query): Builder

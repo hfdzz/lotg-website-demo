@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupMobileHeader();
     setupSearchPopover();
     setupTableOfContentsTracking();
+    setupEditionCodePlaceholders();
 });
 
 window.addEventListener('load', () => {
@@ -186,5 +187,46 @@ function setupDeferredMediaLoading() {
         }
 
         element.setAttribute('src', source);
+    });
+}
+
+function setupEditionCodePlaceholders() {
+    const codeInputs = Array.from(document.querySelectorAll('[data-edition-code-input]'));
+
+    codeInputs.forEach((codeInput) => {
+        if (!(codeInput instanceof HTMLInputElement)) {
+            return;
+        }
+
+        const form = codeInput.closest('form');
+
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const nameInput = form.querySelector('[data-edition-name-input]');
+
+        if (!(nameInput instanceof HTMLInputElement)) {
+            return;
+        }
+
+        const slugify = (value) =>
+            value
+                .toString()
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .replace(/-{2,}/g, '-');
+
+        const updatePlaceholder = () => {
+            const autoCode = slugify(nameInput.value) || 'edition';
+            codeInput.placeholder = `Auto: ${autoCode}`;
+        };
+
+        nameInput.addEventListener('input', updatePlaceholder);
+
+        updatePlaceholder();
     });
 }

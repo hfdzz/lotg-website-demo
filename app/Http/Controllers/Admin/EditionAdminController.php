@@ -12,7 +12,7 @@ class EditionAdminController extends Controller
 {
     public function go(Request $request): RedirectResponse
     {
-        $edition = Edition::query()->where('slug', (string) $request->query('edition'))->firstOrFail();
+        $edition = Edition::query()->findOrFail((int) $request->query('edition'));
 
         return redirect()->route('admin.laws.index', ['edition' => $edition]);
     }
@@ -21,8 +21,10 @@ class EditionAdminController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:editions,name'],
+            'code' => ['nullable', 'string', 'max:255', 'unique:editions,code'],
             'year_start' => ['required', 'integer', 'min:1900', 'max:9999'],
             'year_end' => ['required', 'integer', 'min:1900', 'max:9999', 'gte:year_start'],
+            'status' => ['required', 'in:draft,published'],
         ]);
 
         $shouldBeActive = ! Edition::query()->active()->exists();
@@ -33,9 +35,10 @@ class EditionAdminController extends Controller
 
         $edition = Edition::create([
             'name' => $validated['name'],
-            'slug' => $this->makeSlug($validated['name'], (int) $validated['year_start'], (int) $validated['year_end']),
+            'code' => $this->makeCode($validated['code'] ?? null, $validated['name']),
             'year_start' => $validated['year_start'],
             'year_end' => $validated['year_end'],
+            'status' => $validated['status'],
             'is_active' => $shouldBeActive,
         ]);
 
@@ -48,8 +51,10 @@ class EditionAdminController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:editions,name,'.$edition->id],
+            'code' => ['nullable', 'string', 'max:255', 'unique:editions,code,'.$edition->id],
             'year_start' => ['required', 'integer', 'min:1900', 'max:9999'],
             'year_end' => ['required', 'integer', 'min:1900', 'max:9999', 'gte:year_start'],
+            'status' => ['required', 'in:draft,published'],
         ]);
 
         $shouldBeActive = $request->boolean('set_active')
@@ -61,9 +66,10 @@ class EditionAdminController extends Controller
 
         $edition->update([
             'name' => $validated['name'],
-            'slug' => $this->makeSlug($validated['name'], (int) $validated['year_start'], (int) $validated['year_end']),
+            'code' => $this->makeCode($validated['code'] ?? null, $validated['name'], $edition),
             'year_start' => $validated['year_start'],
             'year_end' => $validated['year_end'],
+            'status' => $validated['status'],
             'is_active' => $shouldBeActive,
         ]);
 
@@ -82,8 +88,26 @@ class EditionAdminController extends Controller
             ->with('status', 'Edition activated.');
     }
 
-    protected function makeSlug(string $name, int $yearStart, int $yearEnd): string
+    protected function makeCode(?string $code, string $name, ?Edition $edition = null): string
     {
-        return Str::slug('edition '.$yearStart.' '.$yearEnd.' '.$name);
+        if (filled($code)) {
+            return Str::slug($code);
+        }
+
+        $baseCode = Str::slug($name) ?: 'edition';
+        $candidate = $baseCode;
+        $suffix = 1;
+
+        while (
+            Edition::query()
+                ->when($edition, fn ($query) => $query->whereKeyNot($edition->id))
+                ->where('code', $candidate)
+                ->exists()
+        ) {
+            $candidate = $baseCode.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $candidate;
     }
 }

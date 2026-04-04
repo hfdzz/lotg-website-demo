@@ -39,7 +39,7 @@
                         @forelse ($editions as $edition)
                             <article class="result-card">
                                 <h3>{{ $edition->name }}</h3>
-                                <p class="law-meta">Slug: {{ $edition->slug }} | Years: {{ $edition->year_start }}/{{ $edition->year_end }} | Status: {{ $edition->is_active ? 'active' : 'inactive' }}</p>
+                                <p class="law-meta">Code: {{ $edition->code }} | Years: {{ $edition->year_start }}/{{ $edition->year_end }} | Publication: {{ $edition->status }} | Active: {{ $edition->is_active ? 'yes' : 'no' }}</p>
                                 <p class="law-meta">
                                     <a class="result-link" href="{{ route('admin.laws.index', ['edition' => $edition]) }}">Open this edition</a>
                                 </p>
@@ -66,7 +66,11 @@
                         @csrf
                         <label>
                             <div class="law-meta">Name</div>
-                            <input type="text" name="name" value="{{ old('name') }}">
+                            <input type="text" name="name" value="{{ old('name') }}" data-edition-name-input>
+                        </label>
+                        <label>
+                            <div class="law-meta">Code</div>
+                            <input type="text" name="code" value="{{ old('code') }}" placeholder="Auto: edition-name" data-edition-code-input>
                         </label>
                         <label>
                             <div class="law-meta">Year start</div>
@@ -75,6 +79,13 @@
                         <label>
                             <div class="law-meta">Year end</div>
                             <input type="number" name="year_end" value="{{ old('year_end', $defaultYearEnd) }}">
+                        </label>
+                        <label>
+                            <div class="law-meta">Status</div>
+                            <select name="status">
+                                <option value="draft" @selected(old('status', 'draft') === 'draft')>Draft</option>
+                                <option value="published" @selected(old('status') === 'published')>Published</option>
+                            </select>
                         </label>
                         <button type="submit">Create edition</button>
                     </form>
@@ -92,7 +103,11 @@
                             @method('patch')
                             <label>
                                 <div class="law-meta">Name</div>
-                                <input type="text" name="name" value="{{ old('name', $selectedEdition->name) }}">
+                                <input type="text" name="name" value="{{ old('name', $selectedEdition->name) }}" data-edition-name-input>
+                            </label>
+                            <label>
+                                <div class="law-meta">Code</div>
+                                <input type="text" name="code" value="{{ old('code', $selectedEdition->code) }}" placeholder="Auto: {{ \Illuminate\Support\Str::slug($selectedEdition->name) ?: 'edition' }}" data-edition-code-input>
                             </label>
                             <label>
                                 <div class="law-meta">Year start</div>
@@ -101,6 +116,13 @@
                             <label>
                                 <div class="law-meta">Year end</div>
                                 <input type="number" name="year_end" value="{{ old('year_end', $selectedEdition->year_end) }}">
+                            </label>
+                            <label>
+                                <div class="law-meta">Status</div>
+                                <select name="status">
+                                    <option value="draft" @selected(old('status', $selectedEdition->status) === 'draft')>Draft</option>
+                                    <option value="published" @selected(old('status', $selectedEdition->status) === 'published')>Published</option>
+                                </select>
                             </label>
                             @if ($selectedEdition->is_active)
                                 <p class="law-meta">This is the active edition.</p>

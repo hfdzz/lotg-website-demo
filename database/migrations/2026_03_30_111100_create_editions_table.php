@@ -11,9 +11,10 @@ return new class extends Migration
         Schema::create('editions', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('slug')->unique();
+            $table->string('code')->unique();
             $table->unsignedSmallInteger('year_start');
             $table->unsignedSmallInteger('year_end');
+            $table->string('status')->default('draft');
             $table->boolean('is_active')->default(false);
             $table->timestamps();
         });
