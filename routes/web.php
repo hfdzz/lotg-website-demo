@@ -27,7 +27,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', function () {
         $edition = \App\Models\Edition::current();
-        abort_unless($edition, 404);
+        abort_unless((bool) $edition, 404);
 
         return redirect()->route('admin.laws.index', ['edition' => $edition]);
     })->name('home');

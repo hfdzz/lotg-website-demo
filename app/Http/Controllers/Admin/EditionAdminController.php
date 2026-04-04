@@ -74,8 +74,6 @@ class EditionAdminController extends Controller
 
     protected function makeSlug(string $name, int $yearStart, int $yearEnd): string
     {
-        $nameSlug = Str::slug($name, '_');
-
-        return trim('edition_'.$yearStart.'_'.$yearEnd.($nameSlug !== '' ? '_'.$nameSlug : ''), '_');
+        return Str::slug('edition '.$yearStart.' '.$yearEnd.' '.$name);
     }
 }
