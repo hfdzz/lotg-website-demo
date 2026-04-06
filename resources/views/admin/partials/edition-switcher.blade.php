@@ -1,4 +1,4 @@
-<section class="card">
+<section class="card edition-switcher">
     <form action="{{ route('admin.editions.go') }}" method="get" class="stack-form">
         <label>
             <div class="law-meta">Working edition</div>
