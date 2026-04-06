@@ -150,6 +150,10 @@ class NodeAdminController extends Controller
             'body_html_en' => ['nullable', 'string'],
             'translation_status_en' => ['required', 'in:draft,published'],
             'video_urls' => ['nullable', 'string'],
+            'video_captions' => ['nullable', 'array'],
+            'video_captions.*' => ['nullable', 'string'],
+            'video_credits' => ['nullable', 'array'],
+            'video_credits.*' => ['nullable', 'string', 'max:255'],
             'resource_lines' => ['nullable', 'string'],
             'resource_files' => ['nullable', 'array'],
             'resource_files.*' => ['nullable', 'file', 'max:10240'],
@@ -251,6 +255,8 @@ class NodeAdminController extends Controller
             ->map(fn ($url) => trim($url))
             ->filter()
             ->values();
+        $captions = collect($request->input('video_captions', []))->values();
+        $credits = collect($request->input('video_credits', []))->values();
 
         $this->purgeNodeMedia($node);
 
@@ -265,7 +271,8 @@ class NodeAdminController extends Controller
                 'asset_type' => 'video',
                 'storage_type' => 'youtube',
                 'external_url' => $url,
-                'caption' => 'Video '.($index + 1),
+                'caption' => $captions->get($index) ?: 'Video '.($index + 1),
+                'credit' => $credits->get($index) ?: null,
             ]);
 
             $syncPayload[$asset->id] = ['sort_order' => $index + 1];

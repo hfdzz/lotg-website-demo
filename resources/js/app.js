@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearchPopover();
     setupTableOfContentsTracking();
     setupEditionCodePlaceholders();
+    setupTranslationEditor();
+    setupNodeTypeSections();
 });
 
 window.addEventListener('load', () => {
@@ -228,5 +230,93 @@ function setupEditionCodePlaceholders() {
         nameInput.addEventListener('input', updatePlaceholder);
 
         updatePlaceholder();
+    });
+}
+
+function setupTranslationEditor() {
+    const editors = Array.from(document.querySelectorAll('[data-translation-editor]'));
+
+    editors.forEach((editor) => {
+        if (!(editor instanceof HTMLElement)) {
+            return;
+        }
+
+        const select = editor.querySelector('[data-translation-select]');
+        const panels = Array.from(editor.querySelectorAll('[data-translation-panel]'));
+        const fields = Array.from(editor.querySelectorAll('[data-translation-field]'));
+
+        if (!(select instanceof HTMLSelectElement) || !panels.length) {
+            return;
+        }
+
+        const updateVisiblePanel = () => {
+            panels.forEach((panel) => {
+                if (!(panel instanceof HTMLElement)) {
+                    return;
+                }
+
+                panel.hidden = panel.dataset.translationPanel !== select.value;
+            });
+        };
+
+        const updateOptionLabels = () => {
+            Array.from(select.options).forEach((option) => {
+                const languageCode = option.value;
+                const optionLabel = option.text.replace(/\s*\*$/, '');
+                const languageFields = fields.filter(
+                    (field) => field instanceof HTMLElement && field.dataset.translationField === languageCode,
+                );
+                const isDirty = languageFields.some((field) => {
+                    if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) {
+                        return false;
+                    }
+
+                    return (field.value || '') !== (field.dataset.initialValue || '');
+                });
+
+                option.text = isDirty ? `${optionLabel} *` : optionLabel;
+            });
+        };
+
+        fields.forEach((field) => {
+            field.addEventListener('input', updateOptionLabels);
+            field.addEventListener('change', updateOptionLabels);
+        });
+
+        select.addEventListener('change', updateVisiblePanel);
+
+        updateVisiblePanel();
+        updateOptionLabels();
+    });
+}
+
+function setupNodeTypeSections() {
+    const nodeTypeSelects = Array.from(document.querySelectorAll('[data-node-type-select]'));
+
+    nodeTypeSelects.forEach((select) => {
+        if (!(select instanceof HTMLSelectElement)) {
+            return;
+        }
+
+        const form = select.closest('form');
+
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const sections = Array.from(form.querySelectorAll('[data-node-type-section]'));
+
+        const updateSections = () => {
+            sections.forEach((section) => {
+                if (!(section instanceof HTMLElement)) {
+                    return;
+                }
+
+                section.hidden = section.dataset.nodeTypeSection !== select.value;
+            });
+        };
+
+        select.addEventListener('change', updateSections);
+        updateSections();
     });
 }

@@ -202,6 +202,17 @@ button:hover {
     margin-top: 1rem;
 }
 
+.translation-toolbar {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.translation-panel[hidden],
+[data-node-type-section][hidden] {
+    display: none !important;
+}
+
 .inline-form {
     display: inline-flex;
 }

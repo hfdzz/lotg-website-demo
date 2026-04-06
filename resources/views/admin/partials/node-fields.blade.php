@@ -9,6 +9,9 @@
         ->pluck('external_url')
         ->filter()
         ->implode("\n");
+    $videoAssets = $mediaAssets
+        ->where('asset_type', 'video')
+        ->values();
     $resourceLineItems = $mediaAssets
         ->whereIn('asset_type', ['document', 'external_link', 'video_link'])
         ->map(function ($asset) {
@@ -38,7 +41,7 @@
 <label>
     <div class="law-meta">Node type</div>
     <div class="nav-meta">Use `section` for headings, `rich_text` for prose, `image` for a single image block, `video_group` for embedded videos, and `resource_list` for linked-only references and files.</div>
-    <select name="node_type">
+    <select name="node_type" data-node-type-select>
         @foreach (['section', 'rich_text', 'image', 'video_group', 'resource_list'] as $type)
             <option value="{{ $type }}" @selected(old('node_type', $node?->node_type ?? 'section') === $type)>{{ $type }}</option>
         @endforeach
@@ -64,36 +67,68 @@
 
 <div class="nav-meta">If unpublished, the node stays in admin but does not appear on the public law page.</div>
 
-@foreach ($languages as $languageCode => $languageLabel)
-    @php
-        $translation = $translationsByLanguage->get($languageCode);
-    @endphp
-
-    <div class="card">
-        <h3>{{ $languageLabel }} translation</h3>
-
+<div class="card admin-translation-card" data-translation-editor>
+    <div class="translation-toolbar">
         <label>
-            <div class="law-meta">Title ({{ strtoupper($languageCode) }})</div>
-            <input type="text" name="title_{{ $languageCode }}" value="{{ old('title_'.$languageCode, $translation?->title) }}">
-        </label>
-
-        <label>
-            <div class="law-meta">Body HTML ({{ strtoupper($languageCode) }})</div>
-            <textarea name="body_html_{{ $languageCode }}" rows="10">{{ old('body_html_'.$languageCode, $translation?->body_html) }}</textarea>
-        </label>
-
-        <label>
-            <div class="law-meta">Translation status ({{ strtoupper($languageCode) }})</div>
-            <select name="translation_status_{{ $languageCode }}">
-                @foreach (['draft', 'published'] as $status)
-                    <option value="{{ $status }}" @selected(old('translation_status_'.$languageCode, $translation?->status ?? 'published') === $status)>{{ ucfirst($status) }}</option>
+            <div class="law-meta">Translation</div>
+            <select data-translation-select>
+                @foreach ($languages as $languageCode => $languageLabel)
+                    <option value="{{ $languageCode }}">{{ $languageLabel }} ({{ strtoupper($languageCode) }})</option>
                 @endforeach
             </select>
         </label>
+        <div class="nav-meta">An asterisk appears if title, body, or status has changed in that translation.</div>
     </div>
-@endforeach
 
-<div class="card">
+    @foreach ($languages as $languageCode => $languageLabel)
+        @php
+            $translation = $translationsByLanguage->get($languageCode);
+            $titleValue = old('title_'.$languageCode, $translation?->title);
+            $bodyValue = old('body_html_'.$languageCode, $translation?->body_html);
+            $statusValue = old('translation_status_'.$languageCode, $translation?->status ?? 'published');
+        @endphp
+
+        <div class="translation-panel" data-translation-panel="{{ $languageCode }}">
+            <h3>{{ $languageLabel }} translation</h3>
+
+            <label>
+                <div class="law-meta">Title ({{ strtoupper($languageCode) }})</div>
+                <input
+                    type="text"
+                    name="title_{{ $languageCode }}"
+                    value="{{ $titleValue }}"
+                    data-translation-field="{{ $languageCode }}"
+                    data-initial-value="{{ $titleValue }}"
+                >
+            </label>
+
+            <label>
+                <div class="law-meta">Body HTML ({{ strtoupper($languageCode) }})</div>
+                <textarea
+                    name="body_html_{{ $languageCode }}"
+                    rows="10"
+                    data-translation-field="{{ $languageCode }}"
+                    data-initial-value="{{ $bodyValue }}"
+                >{{ $bodyValue }}</textarea>
+            </label>
+
+            <label>
+                <div class="law-meta">Translation status ({{ strtoupper($languageCode) }})</div>
+                <select
+                    name="translation_status_{{ $languageCode }}"
+                    data-translation-field="{{ $languageCode }}"
+                    data-initial-value="{{ $statusValue }}"
+                >
+                    @foreach (['draft', 'published'] as $status)
+                        <option value="{{ $status }}" @selected($statusValue === $status)>{{ ucfirst($status) }}</option>
+                    @endforeach
+                </select>
+            </label>
+        </div>
+    @endforeach
+</div>
+
+<div class="card" data-node-type-section="image">
     <h3>Image fields</h3>
     <p class="nav-meta">Used only when the node type is `image`.</p>
     <label>
@@ -117,16 +152,34 @@
     </label>
 </div>
 
-<div class="card">
+<div class="card" data-node-type-section="video_group">
     <h3>Video fields</h3>
     <p class="nav-meta">Used only when the node type is `video_group`.</p>
     <label>
         <div class="law-meta">YouTube URLs, one per line</div>
         <textarea name="video_urls" rows="5">{{ old('video_urls', $videoUrls) }}</textarea>
     </label>
+    <div class="stack-form">
+        @for ($index = 0; $index < 6; $index++)
+            @php
+                $existingVideo = $videoAssets->get($index);
+            @endphp
+            <div class="card">
+                <h4>Video {{ $index + 1 }}</h4>
+                <label>
+                    <div class="law-meta">Caption</div>
+                    <input type="text" name="video_captions[]" value="{{ old('video_captions.'.$index, $existingVideo?->caption) }}">
+                </label>
+                <label>
+                    <div class="law-meta">Credit / attribution</div>
+                    <input type="text" name="video_credits[]" value="{{ old('video_credits.'.$index, $existingVideo?->credit) }}">
+                </label>
+            </div>
+        @endfor
+    </div>
 </div>
 
-<div class="card">
+<div class="card" data-node-type-section="resource_list">
     <h3>Resource list fields</h3>
     <p class="nav-meta">Used only when the node type is `resource_list`.</p>
     <label>

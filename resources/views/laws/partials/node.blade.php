@@ -47,8 +47,14 @@
                         loading="lazy"
                         allowfullscreen
                     ></iframe>
-                    @if ($mediaItem['caption'])
-                        <figcaption class="media-caption">{{ $mediaItem['caption'] }}</figcaption>
+                    @if ($mediaItem['caption'] || $mediaItem['credit'])
+                        <figcaption class="media-caption">
+                            {{ $mediaItem['caption'] }}
+                            @if ($mediaItem['credit'])
+                                @if ($mediaItem['caption']) | @endif
+                                {{ $mediaItem['credit'] }}
+                            @endif
+                        </figcaption>
                     @endif
                 </figure>
             @endforeach
