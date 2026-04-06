@@ -4,14 +4,26 @@
     $imageAsset = $mediaAssets->firstWhere('asset_type', 'image');
     $translationsByLanguage = $translationsByLanguage ?? collect();
     $languages = $languages ?? \App\Support\LotgLanguage::supported();
-    $videoUrls = $mediaAssets
-        ->where('asset_type', 'video')
-        ->pluck('external_url')
-        ->filter()
-        ->implode("\n");
     $videoAssets = $mediaAssets
         ->where('asset_type', 'video')
         ->values();
+    $videoRows = collect(old('video_items'))
+        ->whenEmpty(function () use ($videoAssets) {
+            return $videoAssets->map(fn ($asset) => [
+                'url' => $asset->external_url,
+                'caption' => $asset->caption,
+                'credit' => $asset->credit,
+            ]);
+        })
+        ->values();
+
+    if ($videoRows->isEmpty()) {
+        $videoRows = collect([[
+            'url' => '',
+            'caption' => '',
+            'credit' => '',
+        ]]);
+    }
     $resourceLineItems = $mediaAssets
         ->whereIn('asset_type', ['document', 'external_link', 'video_link'])
         ->map(function ($asset) {
@@ -155,27 +167,31 @@
 <div class="card" data-node-type-section="video_group">
     <h3>Video fields</h3>
     <p class="nav-meta">Used only when the node type is `video_group`.</p>
-    <label>
-        <div class="law-meta">YouTube URLs, one per line</div>
-        <textarea name="video_urls" rows="5">{{ old('video_urls', $videoUrls) }}</textarea>
-    </label>
-    <div class="stack-form">
-        @for ($index = 0; $index < 6; $index++)
-            @php
-                $existingVideo = $videoAssets->get($index);
-            @endphp
-            <div class="card">
-                <h4>Video {{ $index + 1 }}</h4>
-                <label>
-                    <div class="law-meta">Caption</div>
-                    <input type="text" name="video_captions[]" value="{{ old('video_captions.'.$index, $existingVideo?->caption) }}">
-                </label>
-                <label>
-                    <div class="law-meta">Credit / attribution</div>
-                    <input type="text" name="video_credits[]" value="{{ old('video_credits.'.$index, $existingVideo?->credit) }}">
-                </label>
-            </div>
-        @endfor
+    <div class="stack-form" data-video-group-editor>
+        <div class="nav-meta">Add one row per video. Each row keeps the source URL, caption, and credit together.</div>
+        <div class="stack-form" data-video-group-list>
+            @foreach ($videoRows as $index => $videoRow)
+                <div class="card video-item-card" data-video-item>
+                    <div class="video-item-header">
+                        <h4>Video <span data-video-item-number>{{ $index + 1 }}</span></h4>
+                        <button type="button" class="video-item-remove" data-video-remove>Remove video</button>
+                    </div>
+                    <label>
+                        <div class="law-meta">Source URL</div>
+                        <input type="url" name="video_items[{{ $index }}][url]" value="{{ $videoRow['url'] ?? '' }}" placeholder="https://www.youtube.com/watch?v=...">
+                    </label>
+                    <label>
+                        <div class="law-meta">Caption</div>
+                        <input type="text" name="video_items[{{ $index }}][caption]" value="{{ $videoRow['caption'] ?? '' }}">
+                    </label>
+                    <label>
+                        <div class="law-meta">Credit / attribution</div>
+                        <input type="text" name="video_items[{{ $index }}][credit]" value="{{ $videoRow['credit'] ?? '' }}">
+                    </label>
+                </div>
+            @endforeach
+        </div>
+        <button type="button" data-video-add>Add video</button>
     </div>
 </div>
 

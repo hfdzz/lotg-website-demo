@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEditionCodePlaceholders();
     setupTranslationEditor();
     setupNodeTypeSections();
+    setupVideoGroupEditor();
 });
 
 window.addEventListener('load', () => {
@@ -318,5 +319,116 @@ function setupNodeTypeSections() {
 
         select.addEventListener('change', updateSections);
         updateSections();
+    });
+}
+
+function setupVideoGroupEditor() {
+    const editors = Array.from(document.querySelectorAll('[data-video-group-editor]'));
+
+    editors.forEach((editor) => {
+        if (!(editor instanceof HTMLElement)) {
+            return;
+        }
+
+        const list = editor.querySelector('[data-video-group-list]');
+        const addButton = editor.querySelector('[data-video-add]');
+
+        if (!(list instanceof HTMLElement) || !(addButton instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const buildItem = (index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card video-item-card';
+            wrapper.dataset.videoItem = '';
+            wrapper.innerHTML = `
+                <div class="video-item-header">
+                    <h4>Video <span data-video-item-number>${index + 1}</span></h4>
+                    <button type="button" class="video-item-remove" data-video-remove>Remove video</button>
+                </div>
+                <label>
+                    <div class="law-meta">Source URL</div>
+                    <input type="url" name="video_items[${index}][url]" value="" placeholder="https://www.youtube.com/watch?v=...">
+                </label>
+                <label>
+                    <div class="law-meta">Caption</div>
+                    <input type="text" name="video_items[${index}][caption]" value="">
+                </label>
+                <label>
+                    <div class="law-meta">Credit / attribution</div>
+                    <input type="text" name="video_items[${index}][credit]" value="">
+                </label>
+            `;
+
+            return wrapper;
+        };
+
+        const renumberItems = () => {
+            const items = Array.from(list.querySelectorAll('[data-video-item]'));
+
+            items.forEach((item, index) => {
+                if (!(item instanceof HTMLElement)) {
+                    return;
+                }
+
+                const number = item.querySelector('[data-video-item-number]');
+                if (number) {
+                    number.textContent = `${index + 1}`;
+                }
+
+                Array.from(item.querySelectorAll('input')).forEach((input) => {
+                    if (!(input instanceof HTMLInputElement)) {
+                        return;
+                    }
+
+                    if (input.name.endsWith('[url]')) {
+                        input.name = `video_items[${index}][url]`;
+                    }
+
+                    if (input.name.endsWith('[caption]')) {
+                        input.name = `video_items[${index}][caption]`;
+                    }
+
+                    if (input.name.endsWith('[credit]')) {
+                        input.name = `video_items[${index}][credit]`;
+                    }
+                });
+            });
+        };
+
+        const ensureAtLeastOneItem = () => {
+            if (!list.querySelector('[data-video-item]')) {
+                list.appendChild(buildItem(0));
+            }
+
+            renumberItems();
+        };
+
+        addButton.addEventListener('click', () => {
+            const nextIndex = list.querySelectorAll('[data-video-item]').length;
+            list.appendChild(buildItem(nextIndex));
+            renumberItems();
+        });
+
+        list.addEventListener('click', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const removeButton = target.closest('[data-video-remove]');
+            if (!removeButton) {
+                return;
+            }
+
+            const item = removeButton.closest('[data-video-item]');
+            if (item instanceof HTMLElement) {
+                item.remove();
+                ensureAtLeastOneItem();
+            }
+        });
+
+        ensureAtLeastOneItem();
     });
 }

@@ -149,11 +149,10 @@ class NodeAdminController extends Controller
             'title_en' => ['nullable', 'string', 'max:255'],
             'body_html_en' => ['nullable', 'string'],
             'translation_status_en' => ['required', 'in:draft,published'],
-            'video_urls' => ['nullable', 'string'],
-            'video_captions' => ['nullable', 'array'],
-            'video_captions.*' => ['nullable', 'string'],
-            'video_credits' => ['nullable', 'array'],
-            'video_credits.*' => ['nullable', 'string', 'max:255'],
+            'video_items' => ['nullable', 'array'],
+            'video_items.*.url' => ['nullable', 'url'],
+            'video_items.*.caption' => ['nullable', 'string'],
+            'video_items.*.credit' => ['nullable', 'string', 'max:255'],
             'resource_lines' => ['nullable', 'string'],
             'resource_files' => ['nullable', 'array'],
             'resource_files.*' => ['nullable', 'file', 'max:10240'],
@@ -251,28 +250,32 @@ class NodeAdminController extends Controller
 
     protected function syncVideoMedia(Request $request, ContentNode $node): void
     {
-        $urls = collect(preg_split('/\r\n|\r|\n/', (string) $request->input('video_urls')))
-            ->map(fn ($url) => trim($url))
-            ->filter()
+        $videoItems = collect($request->input('video_items', []))
+            ->map(function ($item) {
+                return [
+                    'url' => trim((string) ($item['url'] ?? '')),
+                    'caption' => trim((string) ($item['caption'] ?? '')),
+                    'credit' => trim((string) ($item['credit'] ?? '')),
+                ];
+            })
+            ->filter(fn (array $item) => $item['url'] !== '')
             ->values();
-        $captions = collect($request->input('video_captions', []))->values();
-        $credits = collect($request->input('video_credits', []))->values();
 
         $this->purgeNodeMedia($node);
 
-        if ($urls->isEmpty()) {
+        if ($videoItems->isEmpty()) {
             return;
         }
 
         $syncPayload = [];
 
-        foreach ($urls as $index => $url) {
+        foreach ($videoItems as $index => $videoItem) {
             $asset = MediaAsset::create([
                 'asset_type' => 'video',
                 'storage_type' => 'youtube',
-                'external_url' => $url,
-                'caption' => $captions->get($index) ?: 'Video '.($index + 1),
-                'credit' => $credits->get($index) ?: null,
+                'external_url' => $videoItem['url'],
+                'caption' => $videoItem['caption'] ?: 'Video '.($index + 1),
+                'credit' => $videoItem['credit'] ?: null,
             ]);
 
             $syncPayload[$asset->id] = ['sort_order' => $index + 1];
