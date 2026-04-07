@@ -408,13 +408,6 @@ button:hover {
     line-clamp: 3;
 }
 
-.law-slug {
-    margin: 0.35rem 0 0;
-    color: var(--muted);
-    font-family: "Courier New", monospace;
-    font-size: 0.88rem;
-}
-
 .law-link-cta {
     display: flex;
     width: 100%;
@@ -637,24 +630,6 @@ button:hover {
     gap: 1.25rem;
     align-items: start;
     grid-template-columns: 1fr;
-}
-
-.law-detail-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.65rem;
-    margin-top: 1rem;
-}
-
-.law-detail-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.4rem 0.7rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--muted);
-    font-size: 0.9rem;
-    font-weight: 700;
 }
 
 .law-content {
@@ -970,19 +945,6 @@ h5.node-title {
     border-top: 1px solid var(--line);
 }
 
-.law-qa-section {
-    margin-top: 2.5rem;
-    padding-top: 1.75rem;
-    border-top: 1px solid var(--line);
-}
-
-.law-qa-heading {
-    margin: 0 0 1rem;
-    color: var(--ink);
-    font-size: 1.4rem;
-    line-height: 1.2;
-}
-
 .law-qa-list,
 .qa-admin-list {
     display: grid;
@@ -1069,15 +1031,6 @@ h5.node-title {
     text-decoration: underline;
 }
 
-.tree-node {
-    margin-top: 0.75rem;
-    border-left: 2px solid var(--line);
-}
-
-.tree-node-children {
-    margin-top: 0.35rem;
-}
-
 .auth-shell {
     width: min(480px, 100%);
     margin: 4rem auto;
@@ -1121,8 +1074,7 @@ h5.node-title {
 
 .nav-brand-area,
 .nav-main,
-.nav-utility,
-.nav-language-switch {
+.nav-utility {
     display: flex;
     align-items: center;
 }
@@ -1467,14 +1419,6 @@ h5.node-title {
     gap: 0.55rem;
     align-items: center;
     width: 100%;
-}
-
-.mobile-search-form input {
-    min-width: 0;
-    width: 100%;
-    margin-top: 0;
-    font-size: 1rem;
-    margin-top: 0;
 }
 
 .mobile-search-form input {

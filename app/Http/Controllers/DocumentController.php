@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
-use App\Models\Edition;
-use App\Models\Law;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -74,18 +72,10 @@ class DocumentController extends Controller
 
     protected function hubData(): array
     {
-        $activeEdition = Edition::current();
-
         return [
             'hubDocuments' => Document::query()
                 ->published()
                 ->with('publishedPages')
-                ->orderBy('sort_order')
-                ->get(),
-            'hubLaws' => Law::query()
-                ->published()
-                ->forEdition($activeEdition?->id)
-                ->with('translations')
                 ->orderBy('sort_order')
                 ->get(),
         ];
