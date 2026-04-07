@@ -4,9 +4,14 @@
 
 @section('content')
     <section class="hero">
-        <p class="eyebrow">{{ __('site.laws.index_eyebrow') }}</p>
-        <h1>{{ __('site.laws.index_title') }}</h1>
-        <p>{{ __('site.laws.index_intro') }}</p>
+        @if ($hasActiveEdition && $activeEdition)
+            <h1>{{ __('site.laws.index_title') }}</h1>
+            <h2 class="hero-edition-years">{{ $activeEdition->year_start }}/{{ $activeEdition->year_end }}</h2>
+            <p class="hero-edition-name">{{ __('site.laws.edition_label', ['name' => $activeEdition->name]) }}</p>
+        @else
+            <h1>{{ __('site.laws.index_title') }}</h1>
+            <p>{{ __('site.laws.index_intro') }}</p>
+        @endif
     </section>
 
     <section class="lotg-landing-list">

@@ -25,6 +25,7 @@ class LawController extends Controller
 
         return view('laws.index', [
             'hasActiveEdition' => (bool) $activeEdition,
+            'activeEdition' => $activeEdition,
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
                 ->values(),

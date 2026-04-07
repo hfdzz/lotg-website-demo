@@ -7,7 +7,7 @@
         <section class="hero">
             <p class="eyebrow">Admin</p>
             <h1>Sign in</h1>
-            <p>Use the internal admin account to manage laws, structured nodes, and media.</p>
+            <p>Use your internal admin account to manage laws, documents, structured nodes, and media.</p>
         </section>
 
         <section class="card auth-card">
@@ -39,10 +39,6 @@
 
                 <button type="submit">Login</button>
             </form>
-
-            <p class="nav-meta">
-                Default seeded admin: <strong>{{ env('ADMIN_EMAIL', 'admin@example.com') }}</strong>
-            </p>
         </section>
     </div>
 @endsection

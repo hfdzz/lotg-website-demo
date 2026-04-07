@@ -116,7 +116,7 @@ button:hover {
 }
 
 .hero {
-    /* margin-bottom: 1.75rem; */
+    margin-bottom: 1rem;
     padding: 0 0 1.5rem;
     border-bottom: 1px solid var(--line);
 }
@@ -139,6 +139,17 @@ button:hover {
 
 .hero h1 {
     font-size: 2rem;
+}
+
+.hero-edition-years {
+    margin-top: 0.45rem !important;
+    font-size: 1.85rem;
+}
+
+.hero-edition-name {
+    margin-top: 0.65rem;
+    color: var(--muted);
+    font-size: 0.98rem;
 }
 
 .card {
@@ -465,7 +476,6 @@ button:hover {
 
 .law-detail-shell {
     display: grid;
-    gap: 1.5rem;
 }
 
 .lotg-hub-layout {
@@ -571,6 +581,7 @@ button:hover {
 .lotg-landing-list {
     display: grid;
     gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .lotg-landing-item,
@@ -664,6 +675,7 @@ button:hover {
     border-radius: 0;
     background: transparent;
     box-shadow: none;
+    margin-bottom: 1rem;
 }
 
 .toc-card {
@@ -1560,6 +1572,10 @@ body.has-mobile-law-context {
     .hero {
         margin-bottom: 1.75rem;
         padding-bottom: 1.5rem;
+    }
+
+    .hero-edition-years {
+        font-size: 2.45rem;
     }
 
     .card {
