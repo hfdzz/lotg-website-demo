@@ -39,6 +39,16 @@ class Law extends Model
         return $this->hasMany(LawTranslation::class)->orderBy('language_code');
     }
 
+    public function qas(): HasMany
+    {
+        return $this->hasMany(LawQa::class);
+    }
+
+    public function publishedQas(): HasMany
+    {
+        return $this->hasMany(LawQa::class)->where('is_published', true);
+    }
+
     public function publishedContentNodes(): HasMany
     {
         return $this->contentNodes()->where('is_published', true);

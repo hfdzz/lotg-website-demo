@@ -9,6 +9,8 @@ use App\Models\Document;
 use App\Models\DocumentPage;
 use App\Models\Edition;
 use App\Models\Law;
+use App\Models\LawQa;
+use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
 use App\Models\MediaAsset;
 use App\Support\LotgLanguage;
@@ -158,6 +160,37 @@ class LotgSeeder extends Seeder
                     'published_at' => now(),
                 ]
             );
+
+            $this->syncLawQas($law, [
+                [
+                    'sort_order' => 1,
+                    'is_published' => true,
+                    'translations' => [
+                        'id' => [
+                            'question' => 'Apakah lapangan harus selalu berbentuk persegi panjang?',
+                            'answer_html' => '<p>Ya. Untuk pertandingan sepak bola, lapangan permainan harus berbentuk persegi panjang dan diberi tanda dengan garis yang jelas.</p>',
+                        ],
+                        'en' => [
+                            'question' => 'Must the field always be rectangular?',
+                            'answer_html' => '<p>Yes. For football matches, the field of play must be rectangular and clearly marked with visible lines.</p>',
+                        ],
+                    ],
+                ],
+                [
+                    'sort_order' => 2,
+                    'is_published' => true,
+                    'translations' => [
+                        'id' => [
+                            'question' => 'Bagaimana jika ada bagian garis lapangan yang memudar saat pertandingan?',
+                            'answer_html' => '<p>Wasit dapat meminta perbaikan bila memungkinkan dan harus mempertimbangkan apakah penandaan yang tidak jelas akan berdampak pada keselamatan atau keadilan pertandingan.</p>',
+                        ],
+                        'en' => [
+                            'question' => 'What if part of the field markings fades during the match?',
+                            'answer_html' => '<p>The referee may request practical corrective action when possible and should consider whether unclear markings affect safety or fairness.</p>',
+                        ],
+                    ],
+                ],
+            ]);
 
             $this->seedLawTwo($edition);
             $this->seedLawThree($edition);
@@ -355,6 +388,37 @@ class LotgSeeder extends Seeder
         $sectionCompetitionNotes = $this->makeNode($law->id, null, 'section', 5, 'Competition notes', null);
         $this->makeNode($law->id, $sectionCompetitionNotes->id, 'section', 1, 'Youth competitions', null);
         $this->makeNode($law->id, $sectionCompetitionNotes->id, 'section', 2, 'Training adaptations', null);
+
+        $this->syncLawQas($law, [
+            [
+                'sort_order' => 1,
+                'is_published' => true,
+                'translations' => [
+                    'id' => [
+                        'question' => 'Kapan bola harus diganti?',
+                        'answer_html' => '<p>Bola diganti ketika rusak, kehilangan tekanan yang dibutuhkan, atau tidak lagi layak digunakan sesuai keputusan wasit dan ketentuan kompetisi.</p>',
+                    ],
+                    'en' => [
+                        'question' => 'When must the ball be replaced?',
+                        'answer_html' => '<p>The ball should be replaced when it is damaged, loses the required pressure, or is otherwise no longer suitable for play under the referee’s judgment and competition rules.</p>',
+                    ],
+                ],
+            ],
+            [
+                'sort_order' => 2,
+                'is_published' => true,
+                'translations' => [
+                    'id' => [
+                        'question' => 'Apakah kompetisi boleh memiliki bola cadangan di sekitar lapangan?',
+                        'answer_html' => '<p>Ya. Banyak kompetisi menyediakan bola pengganti yang telah diperiksa sebelumnya agar pergantian dapat dilakukan dengan cepat bila diperlukan.</p>',
+                    ],
+                    'en' => [
+                        'question' => 'Can a competition place spare balls around the field?',
+                        'answer_html' => '<p>Yes. Many competitions provide pre-checked replacement balls around the field so substitutions can happen quickly when needed.</p>',
+                    ],
+                ],
+            ],
+        ]);
     }
 
     protected function seedLawThree(Edition $edition): void
@@ -543,6 +607,37 @@ class LotgSeeder extends Seeder
         $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 1, 'Youth match exceptions', null);
         $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 2, 'Tournament reporting flow', null);
         $this->makeNode($law->id, $sectionStructureOnly->id, 'section', 3, 'Post-match administration', null);
+
+        $this->syncLawQas($law, [
+            [
+                'sort_order' => 1,
+                'is_published' => true,
+                'translations' => [
+                    'id' => [
+                        'question' => 'Apakah semua pemain pengganti harus dicantumkan sebelum kickoff?',
+                        'answer_html' => '<p>Ya. Daftar pemain pengganti yang memenuhi syarat umumnya harus diserahkan sebelum pertandingan dimulai agar administrasi pertandingan berjalan jelas dan konsisten.</p>',
+                    ],
+                    'en' => [
+                        'question' => 'Must all substitutes be listed before kickoff?',
+                        'answer_html' => '<p>Yes. Eligible substitutes generally need to be declared before the match starts so match administration stays clear and consistent.</p>',
+                    ],
+                ],
+            ],
+            [
+                'sort_order' => 2,
+                'is_published' => true,
+                'translations' => [
+                    'id' => [
+                        'question' => 'Apakah pertanyaan administrasi tim lebih baik dijelaskan di Q&A atau isi utama aturan?',
+                        'answer_html' => '<p>Untuk penjelasan tambahan yang sering ditanyakan, Q&amp;A cocok digunakan karena tidak membebani alur bacaan utama hukum tetapi tetap mudah ditemukan oleh pembaca.</p>',
+                    ],
+                    'en' => [
+                        'question' => 'Should team administration clarifications live in Q&A or the main law text?',
+                        'answer_html' => '<p>For recurring clarifications, Q&amp;A works well because it keeps the main law text cleaner while still making the answer easy to find.</p>',
+                    ],
+                ],
+            ],
+        ]);
     }
 
     protected function seedPreviousEditionLaw(Edition $edition): void
@@ -707,5 +802,37 @@ class LotgSeeder extends Seeder
                 'status' => 'published',
             ]
         );
+    }
+
+    protected function syncLawQas(Law $law, array $items): void
+    {
+        $law->qas()->delete();
+
+        foreach ($items as $item) {
+            $qa = LawQa::create([
+                'law_id' => $law->id,
+                'sort_order' => $item['sort_order'],
+                'is_published' => $item['is_published'] ?? true,
+            ]);
+
+            foreach (array_keys(LotgLanguage::supported()) as $languageCode) {
+                $translation = $item['translations'][$languageCode]
+                    ?? $item['translations']['id']
+                    ?? $item['translations']['en']
+                    ?? null;
+
+                if (! $translation || empty($translation['question'])) {
+                    continue;
+                }
+
+                LawQaTranslation::create([
+                    'law_qa_id' => $qa->id,
+                    'language_code' => $languageCode,
+                    'question' => $translation['question'],
+                    'answer_html' => $translation['answer_html'] ?? null,
+                    'status' => 'published',
+                ]);
+            }
+        }
     }
 }

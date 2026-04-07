@@ -12,7 +12,7 @@
     <section class="result-list">
         <a class="result-card result-link-block" href="{{ route('admin.laws.home') }}">
             <h2>Manage laws</h2>
-            <p class="law-meta">Edit editions, laws, nodes, and law update entries.</p>
+            <p class="law-meta">Edit editions, laws, nodes, law Q&amp;A, and law change entries.</p>
         </a>
 
         <a class="result-card result-link-block" href="{{ route('admin.documents.index') }}">

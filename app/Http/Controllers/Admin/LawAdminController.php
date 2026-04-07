@@ -87,6 +87,7 @@ class LawAdminController extends Controller
             'translations',
             'contentNodes.translations',
             'contentNodes.mediaAssets',
+            'qas.translations',
         ]);
 
         return view('admin.laws.edit', [
@@ -97,6 +98,10 @@ class LawAdminController extends Controller
             'languages' => LotgLanguage::supported(),
             'nodeTree' => $this->buildNodeTree($law),
             'parentOptions' => $this->buildParentOptions($law),
+            'qas' => $law->qas->sortBy([
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])->values(),
         ]);
     }
 

@@ -6,10 +6,12 @@ use App\Http\Controllers\Admin\ChangelogAdminController;
 use App\Http\Controllers\Admin\DocumentAdminController;
 use App\Http\Controllers\Admin\EditionAdminController;
 use App\Http\Controllers\Admin\LawAdminController;
+use App\Http\Controllers\Admin\LawQaAdminController;
 use App\Http\Controllers\Admin\NodeAdminController;
 use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LawController;
+use App\Http\Controllers\QaController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +20,8 @@ Route::get('/editions', [LawController::class, 'editions'])->name('editions.inde
 Route::get('/laws', [LawController::class, 'index'])->name('laws.list');
 Route::get('/laws/{law:slug}', [LawController::class, 'show'])->name('laws.show');
 Route::get('/updates', [ChangelogController::class, 'index'])->name('updates.index');
+Route::get('/q-and-a', [QaController::class, 'index'])->name('qas.index');
+Route::get('/q-and-a/{law:slug}', [QaController::class, 'show'])->name('qas.show');
 Route::get('/search', [SearchController::class, 'index'])->name('search.index');
 
 Route::middleware('guest')->group(function () {
@@ -52,6 +56,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/laws/{law}/nodes/{node}/edit', [NodeAdminController::class, 'edit'])->name('nodes.edit');
         Route::patch('/laws/{law}/nodes/{node}', [NodeAdminController::class, 'update'])->name('nodes.update');
         Route::delete('/laws/{law}/nodes/{node}', [NodeAdminController::class, 'destroy'])->name('nodes.destroy');
+
+        Route::post('/laws/{law}/qas', [LawQaAdminController::class, 'store'])->name('qas.store');
+        Route::get('/laws/{law}/qas/{qa}/edit', [LawQaAdminController::class, 'edit'])->name('qas.edit');
+        Route::patch('/laws/{law}/qas/{qa}', [LawQaAdminController::class, 'update'])->name('qas.update');
+        Route::delete('/laws/{law}/qas/{qa}', [LawQaAdminController::class, 'destroy'])->name('qas.destroy');
 
         Route::get('/updates', [ChangelogAdminController::class, 'index'])->name('changelog.index');
         Route::post('/updates', [ChangelogAdminController::class, 'store'])->name('changelog.store');

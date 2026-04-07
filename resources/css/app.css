@@ -970,6 +970,66 @@ h5.node-title {
     border-top: 1px solid var(--line);
 }
 
+.law-qa-section {
+    margin-top: 2.5rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--line);
+}
+
+.law-qa-heading {
+    margin: 0 0 1rem;
+    color: var(--ink);
+    font-size: 1.4rem;
+    line-height: 1.2;
+}
+
+.law-qa-list,
+.qa-admin-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.law-qa-item {
+    border-bottom: 1px solid var(--line);
+}
+
+.law-qa-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    cursor: pointer;
+    list-style: none;
+}
+
+.law-qa-summary::-webkit-details-marker {
+    display: none;
+}
+
+.law-qa-summary::after {
+    content: "+";
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.law-qa-item[open] > .law-qa-summary::after {
+    content: "-";
+}
+
+.law-qa-question {
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.law-qa-answer {
+    padding: 0 0 1rem;
+}
+
 .result-list {
     display: grid;
     gap: 1rem;
