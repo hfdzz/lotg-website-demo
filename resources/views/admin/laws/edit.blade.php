@@ -30,7 +30,7 @@
 
     @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition])
 
-    <details class="card collapse-card" @open($errors->any())>
+    <details class="card collapse-card" @if($errors->any()) open @endif>
         <summary class="collapse-summary">
             <h2>Law settings</h2>
         </summary>

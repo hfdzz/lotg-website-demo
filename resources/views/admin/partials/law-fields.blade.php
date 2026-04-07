@@ -4,7 +4,8 @@
     $selectedEdition = $selectedEdition ?? null;
     $lawNumberValue = old('law_number', $law?->law_number);
     $slugValue = old('slug', $law?->slug);
-    $slugPreview = \Illuminate\Support\Str::slug($slugValue ?: ('law-'.$lawNumberValue));
+    $titleIdValue = old('title_id', $translationsByLanguage->get('id')?->title);
+    $slugPreview = \Illuminate\Support\Str::slug($slugValue ?: ($titleIdValue ?: ''));
 @endphp
 
 <label>
@@ -15,9 +16,9 @@
 
 <label>
     <div class="law-meta">Slug</div>
-    <div class="nav-meta">The saved slug is always normalized. You can leave this blank to auto-generate it from the law number.</div>
+    <div class="nav-meta">The saved slug is always normalized. Leave this blank to auto-generate it from the Indonesian title.</div>
     <input type="text" name="slug" value="{{ $slugValue }}" data-law-slug-input>
-    <div class="nav-meta">Result: <span data-law-slug-preview>{{ $slugPreview ?: 'law' }}</span></div>
+    <div class="nav-meta">Result: <span data-law-slug-preview>{{ $slugPreview ?: '-' }}</span></div>
 </label>
 
 <label>
@@ -45,7 +46,7 @@
 
         <label>
             <div class="law-meta">Title ({{ strtoupper($languageCode) }})</div>
-            <input type="text" name="title_{{ $languageCode }}" value="{{ old('title_'.$languageCode, $translation?->title) }}">
+            <input type="text" name="title_{{ $languageCode }}" value="{{ old('title_'.$languageCode, $translation?->title) }}" @if($languageCode === 'id') data-law-title-id-input @endif>
         </label>
 
         <label>

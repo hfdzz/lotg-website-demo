@@ -246,9 +246,10 @@ function setupLawSlugPreview() {
 
         const lawNumberInput = form.querySelector('[data-law-number-input]');
         const slugInput = form.querySelector('[data-law-slug-input]');
+        const titleIdInput = form.querySelector('[data-law-title-id-input]');
         const preview = form.querySelector('[data-law-slug-preview]');
 
-        if (!(lawNumberInput instanceof HTMLInputElement) || !(slugInput instanceof HTMLInputElement) || !(preview instanceof HTMLElement)) {
+        if (!(slugInput instanceof HTMLInputElement) || !(preview instanceof HTMLElement)) {
             return;
         }
 
@@ -263,12 +264,17 @@ function setupLawSlugPreview() {
                 .replace(/-{2,}/g, '-');
 
         const updatePreview = () => {
-            const fallback = `law-${lawNumberInput.value || 'number'}`;
-            preview.textContent = slugify(slugInput.value || fallback) || 'law';
+            const fallbackTitle = titleIdInput instanceof HTMLInputElement ? titleIdInput.value : '';
+            preview.textContent = slugify(slugInput.value || fallbackTitle) || '-';
         };
 
         slugInput.addEventListener('input', updatePreview);
-        lawNumberInput.addEventListener('input', updatePreview);
+        if (lawNumberInput instanceof HTMLInputElement) {
+            lawNumberInput.addEventListener('input', updatePreview);
+        }
+        if (titleIdInput instanceof HTMLInputElement) {
+            titleIdInput.addEventListener('input', updatePreview);
+        }
 
         updatePreview();
     });

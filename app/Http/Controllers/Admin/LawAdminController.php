@@ -62,7 +62,7 @@ class LawAdminController extends Controller
         ]);
 
         $lawNumber = $validated['law_number'] ?: $this->nextLawNumber($edition);
-        $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $lawNumber);
+        $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $validated['title_id'] ?? null);
 
         if (Law::query()->where('slug', $slug)->exists()) {
             return back()
@@ -129,7 +129,7 @@ class LawAdminController extends Controller
             'description_text_en' => ['nullable', 'string'],
         ]);
 
-        $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $validated['law_number']);
+        $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $validated['title_id'] ?? null);
 
         if (Law::query()->where('slug', $slug)->whereKeyNot($law->id)->exists()) {
             return back()
@@ -268,8 +268,8 @@ class LawAdminController extends Controller
         return (string) (($maxNumericLawNumber ?? 0) + 1);
     }
 
-    protected function normalizedLawSlug(?string $slug, string $lawNumber): string
+    protected function normalizedLawSlug(?string $slug, ?string $titleId): string
     {
-        return Str::slug($slug ?: 'law-'.$lawNumber);
+        return Str::slug($slug ?: ($titleId ?: 'law'));
     }
 }

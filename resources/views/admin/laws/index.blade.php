@@ -35,7 +35,7 @@
             <p class="law-meta"><a class="result-link" href="{{ route('admin.changelog.index', ['edition' => $selectedEdition]) }}">Manage law changes for this edition</a></p>
         </section>
 
-        <details class="card collapse-card" @open($errors->any())>
+        <details class="card collapse-card" @if($errors->any()) open @endif>
             <summary class="collapse-summary">
                 <h2>Create law</h2>
             </summary>
