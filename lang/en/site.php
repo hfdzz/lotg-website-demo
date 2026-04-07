@@ -50,6 +50,17 @@ return [
         'table_of_contents' => 'Table of contents',
         'no_content' => 'This law has no published content yet.',
     ],
+    'hub' => [
+        'menu_title' => 'LotG Menu',
+        'laws_entry' => 'Laws 1-17',
+        'laws_group_title' => 'Direct Law Links',
+    ],
+    'documents' => [
+        'eyebrow' => 'Document',
+        'intro' => 'Supporting Laws of the Game material published alongside the laws themselves.',
+        'pages' => 'Pages',
+        'empty' => 'This document does not have published content yet.',
+    ],
     'search' => [
         'title' => 'Search',
         'eyebrow' => 'Basic search',

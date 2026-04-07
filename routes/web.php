@@ -6,12 +6,15 @@ use App\Http\Controllers\Admin\EditionAdminController;
 use App\Http\Controllers\Admin\LawAdminController;
 use App\Http\Controllers\Admin\NodeAdminController;
 use App\Http\Controllers\ChangelogController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\LawController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LawController::class, 'index'])->name('laws.index');
 Route::get('/editions', [LawController::class, 'editions'])->name('editions.index');
+Route::get('/documents/{document:slug}/{page}', [DocumentController::class, 'page'])->name('documents.page');
+Route::get('/documents/{document:slug}', [DocumentController::class, 'show'])->name('documents.show');
 Route::get('/laws/{law:slug}', [LawController::class, 'show'])->name('laws.show');
 Route::get('/updates', [ChangelogController::class, 'index'])->name('updates.index');
 Route::get('/search', [SearchController::class, 'index'])->name('search.index');

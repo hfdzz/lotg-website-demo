@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Document;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Services\LawTreeBuilder;
@@ -54,6 +55,11 @@ class LawController extends Controller
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
                 ->values(),
+            'hubDocuments' => Document::query()
+                ->published()
+                ->with('publishedPages')
+                ->orderBy('sort_order')
+                ->get(),
             'language' => $language,
         ]);
     }

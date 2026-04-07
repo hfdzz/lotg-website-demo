@@ -50,6 +50,17 @@ return [
         'table_of_contents' => 'Daftar isi',
         'no_content' => 'Tidak ada konten.',
     ],
+    'hub' => [
+        'menu_title' => 'Menu Aturan',
+        'laws_entry' => 'Aturan 1-17',
+        'laws_group_title' => 'Tautan Aturan',
+    ],
+    'documents' => [
+        'eyebrow' => 'Dokumen',
+        'intro' => 'Materi pendukung Aturan Permainan yang dipublikasikan bersama kumpulan hukum utamanya.',
+        'pages' => 'Halaman',
+        'empty' => 'Dokumen ini belum memiliki konten yang dipublikasikan.',
+    ],
     'search' => [
         'title' => 'Pencarian',
         'eyebrow' => 'Pencarian dasar',
