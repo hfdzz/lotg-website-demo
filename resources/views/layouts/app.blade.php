@@ -35,7 +35,6 @@
                             <a class="mobile-nav-link" href="{{ route('laws.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.laws') }}</a>
                             <a class="mobile-nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
                             <a class="mobile-nav-link" href="{{ route('qas.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.qas') }}</a>
-                            <a class="mobile-nav-link" href="{{ route('search.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.search') }}</a>
                             <form class="mobile-lang-form" action="{{ url()->current() }}" method="get">
                                 @if (request()->filled('q'))
                                     <input type="hidden" name="q" value="{{ request('q') }}">
@@ -94,7 +93,6 @@
                                 <a class="nav-link" href="{{ route('laws.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.laws') }}</a>
                                 <a class="nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
                                 <a class="nav-link" href="{{ route('qas.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.qas') }}</a>
-                                <a class="nav-link" href="{{ route('search.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.search') }}</a>
                             </div>
                         </div>
 
