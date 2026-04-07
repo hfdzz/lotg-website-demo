@@ -26,7 +26,7 @@ class LotgSeeder extends Seeder
     {
         DB::transaction(function () {
             $edition = Edition::current() ?? Edition::query()->firstOrCreate(
-                ['name' => '2025/26'],
+                ['name' => '2025/26 [SEEDER]'],
                 [
                     'code' => '2025-26',
                     'year_start' => 2025,
@@ -36,7 +36,7 @@ class LotgSeeder extends Seeder
                 ]
             );
             $previousEdition = Edition::query()->firstOrCreate(
-                ['name' => '2024/25'],
+                ['name' => '2024/25 [SEEDER]'],
                 [
                     'code' => '2024-25',
                     'year_start' => 2024,
@@ -58,12 +58,12 @@ class LotgSeeder extends Seeder
 
             $this->syncLawTranslations($law, [
                 'id' => [
-                    'title' => 'Lapangan Permainan',
+                    'title' => 'Lapangan Permainan [SEEDER]',
                     'subtitle' => 'Persyaratan dasar lapangan dan penandaan',
                     'description_text' => 'Ringkasan hukum ini mencakup prinsip umum, ukuran lapangan, penandaan, serta contoh visual untuk membantu pembacaan publik dan pengujian alur admin.',
                 ],
                 'en' => [
-                    'title' => 'The Field of Play',
+                    'title' => 'The Field of Play [SEEDER]',
                     'subtitle' => 'Core requirements for the playing surface and markings',
                     'description_text' => 'This law summary covers the general principles, field dimensions, markings, and visual examples used to validate both the public reading experience and the admin workflow.',
                 ],
@@ -267,12 +267,12 @@ class LotgSeeder extends Seeder
 
         $this->syncLawTranslations($law, [
             'id' => [
-                'title' => 'Bola',
+                'title' => 'Bola [SEEDER]',
                 'subtitle' => 'Standar teknis, pemeriksaan, dan penggantian',
                 'description_text' => 'Contoh hukum ini memuat uraian yang lebih panjang, beberapa bagian utama, subbagian bertingkat, serta contoh gambar dan video untuk menguji kenyamanan membaca dan alur input admin.',
             ],
             'en' => [
-                'title' => 'The Ball',
+                'title' => 'The Ball [SEEDER]',
                 'subtitle' => 'Technical standards, inspection, and replacement',
                 'description_text' => 'This example law includes longer copy, multiple sections, nested subsections, and supporting image and video examples so the reading layout and editorial workflow can be tested more realistically.',
             ],
@@ -435,12 +435,12 @@ class LotgSeeder extends Seeder
 
         $this->syncLawTranslations($law, [
             'id' => [
-                'title' => 'Pemain',
+                'title' => 'Pemain [SEEDER]',
                 'subtitle' => 'Prinsip dasar, administrasi pertandingan, dan referensi',
                 'description_text' => 'Contoh ini dirancang sebagai hukum yang lebih lengkap, dengan teks panjang, media tertanam, dan daftar sumber tertaut agar seluruh fitur utama sistem dapat divalidasi dalam satu halaman.',
             ],
             'en' => [
-                'title' => 'The Players',
+                'title' => 'The Players [SEEDER]',
                 'subtitle' => 'Core principles, match administration, and references',
                 'description_text' => 'This is a fuller seeded example with longer narrative content, embedded media, and linked resources so the main public and admin features can be validated on a single law page.',
             ],
@@ -654,12 +654,12 @@ class LotgSeeder extends Seeder
 
         $this->syncLawTranslations($law, [
             'id' => [
-                'title' => 'Lapangan Permainan',
+                'title' => 'Lapangan Permainan [SEEDER]',
                 'subtitle' => 'Edisi sebelumnya',
                 'description_text' => 'Contoh hukum ini mewakili edisi sebelumnya agar alur edition filtering dapat diuji di admin maupun halaman publik.',
             ],
             'en' => [
-                'title' => 'The Field of Play',
+                'title' => 'The Field of Play [SEEDER]',
                 'subtitle' => 'Previous edition',
                 'description_text' => 'This sample law belongs to the previous edition so edition filtering can be validated in both admin and public flows.',
             ],

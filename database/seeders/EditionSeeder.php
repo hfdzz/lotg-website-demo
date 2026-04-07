@@ -12,7 +12,7 @@ class EditionSeeder extends Seeder
         Edition::query()->update(['is_active' => false]);
 
         Edition::updateOrCreate(
-            ['name' => '2024/25'],
+            ['name' => '2024/25 [SEEDER]'],
             [
                 'code' => '2024-25',
                 'year_start' => 2024,
@@ -23,7 +23,7 @@ class EditionSeeder extends Seeder
         );
 
         Edition::updateOrCreate(
-            ['name' => '2025/26'],
+            ['name' => '2025/26 [SEEDER]'],
             [
                 'code' => '2025-26',
                 'year_start' => 2025,
