@@ -54,7 +54,7 @@
 @endforeach
 
 @if ($errors->any())
-    <div class="empty-state">
+    <div class="flash-message-error">
         @foreach ($errors->all() as $error)
             <div>{{ $error }}</div>
         @endforeach

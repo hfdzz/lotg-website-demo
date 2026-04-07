@@ -14,7 +14,7 @@
     </section>
 
     @if (session('status'))
-        <div class="card surface-note">
+        <div class="card surface-note flash-message flash-message-success">
             <strong>{{ session('status') }}</strong>
         </div>
     @endif
