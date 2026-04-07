@@ -9,6 +9,7 @@ use App\Models\Law;
 use App\Models\LawQa;
 use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
+use App\Support\UniqueSlugSuffixer;
 use Illuminate\Support\Str;
 
 class EditionContentCopier
@@ -113,15 +114,9 @@ class EditionContentCopier
 
     protected function makeCopiedLawSlug(string $sourceSlug, Edition $targetEdition): string
     {
-        $base = Str::slug($sourceSlug.'-'.$targetEdition->code);
-        $candidate = $base;
-        $suffix = 1;
-
-        while (Law::query()->where('slug', $candidate)->exists()) {
-            $candidate = $base.'-'.$suffix;
-            $suffix++;
-        }
-
-        return $candidate;
+        return UniqueSlugSuffixer::ensureUnique(
+            Str::slug($sourceSlug.'-'.$targetEdition->code),
+            fn (string $candidate) => Law::query()->where('slug', $candidate)->exists()
+        );
     }
 }

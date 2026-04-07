@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ChangelogEntry;
 use App\Models\Edition;
 use App\Services\EditionContentCopier;
+use App\Support\UniqueSlugSuffixer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -159,20 +160,11 @@ class EditionAdminController extends Controller
             return Str::slug($code);
         }
 
-        $baseCode = Str::slug($name) ?: 'edition';
-        $candidate = $baseCode;
-        $suffix = 1;
-
-        while (
-            Edition::query()
+        return UniqueSlugSuffixer::ensureUnique($name, function (string $candidate) use ($edition) {
+            return Edition::query()
                 ->when($edition, fn ($query) => $query->whereKeyNot($edition->id))
                 ->where('code', $candidate)
-                ->exists()
-        ) {
-            $candidate = $baseCode.'-'.$suffix;
-            $suffix++;
-        }
-
-        return $candidate;
+                ->exists();
+        });
     }
 }
