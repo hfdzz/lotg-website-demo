@@ -625,14 +625,21 @@ class LotgSeeder extends Seeder
 
         $notes = Document::updateOrCreate(
             ['slug' => 'notes-and-modifications'],
-            ['title' => 'Notes and Modifications', 'type' => 'single', 'sort_order' => 2, 'status' => 'published']
+            ['title' => 'Notes and Modifications', 'type' => 'collection', 'sort_order' => 2, 'status' => 'published']
         );
         $this->syncDocumentPage(
             $notes,
-            'overview',
-            'Notes and Modifications',
-            '<p>Competition organizers may publish approved notes and modifications to explain how the laws are interpreted in specific contexts, tournaments, or age groups.</p><p>This seeded page helps validate the portal-style information architecture where law content and supporting reference documents live together.</p>',
+            'introduction',
+            'Introduction',
+            '<p>Competition organizers may publish approved notes and modifications to explain how the laws are interpreted in specific contexts, tournaments, or age groups.</p><p>This seeded collection helps validate the portal-style information architecture where law content and supporting reference documents live together.</p>',
             1
+        );
+        $this->syncDocumentPage(
+            $notes,
+            'modifications',
+            'Modifications',
+            '<p>Specific competition or development pathways may allow documented modifications, provided they remain clearly published and properly governed.</p>',
+            2
         );
 
         $var = Document::updateOrCreate(

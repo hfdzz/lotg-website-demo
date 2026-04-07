@@ -53,11 +53,14 @@ return [
     'hub' => [
         'menu_title' => 'LotG Menu',
         'laws_entry' => 'Laws 1-17',
-        'laws_group_title' => 'Direct Law Links',
+        'laws_intro' => 'Read the full set of Laws 1 through 17 in the current active edition.',
+        'back_to_hub' => 'Back to LotG home',
     ],
     'documents' => [
         'eyebrow' => 'Document',
         'intro' => 'Supporting Laws of the Game material published alongside the laws themselves.',
+        'single_intro' => 'Open this supporting document.',
+        'collection_intro' => 'Open this collection to browse its pages.',
         'pages' => 'Pages',
         'empty' => 'This document does not have published content yet.',
     ],

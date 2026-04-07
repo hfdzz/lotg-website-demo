@@ -53,11 +53,14 @@ return [
     'hub' => [
         'menu_title' => 'Menu Aturan',
         'laws_entry' => 'Aturan 1-17',
-        'laws_group_title' => 'Tautan Aturan',
+        'laws_intro' => 'Baca keseluruhan Aturan 1 sampai 17 pada edisi aktif saat ini.',
+        'back_to_hub' => 'Kembali ke beranda Aturan',
     ],
     'documents' => [
         'eyebrow' => 'Dokumen',
         'intro' => 'Materi pendukung Aturan Permainan yang dipublikasikan bersama kumpulan hukum utamanya.',
+        'single_intro' => 'Buka dokumen pendukung ini.',
+        'collection_intro' => 'Buka kumpulan ini untuk melihat halaman-halamannya.',
         'pages' => 'Halaman',
         'empty' => 'Dokumen ini belum memiliki konten yang dipublikasikan.',
     ],

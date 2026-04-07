@@ -1,6 +1,6 @@
 <div class="lotg-hub-nav-shell">
     <details class="lotg-hub-mobile-nav">
-        <summary class="toc-summary">{{ __('site.hub.menu_title') }}</summary>
+        <summary class="collapse-summary lotg-hub-summary"><h2>{{ __('site.hub.menu_title') }}</h2></summary>
         <div class="stack-top">
             @include('laws.partials.hub-nav-list', [
                 'hubDocuments' => $hubDocuments,

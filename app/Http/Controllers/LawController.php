@@ -13,6 +13,30 @@ use Illuminate\Http\Request;
 
 class LawController extends Controller
 {
+    public function hub(Request $request): View
+    {
+        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
+        $activeEdition = Edition::current();
+        $publishedEditions = Edition::query()
+            ->published()
+            ->orderByDesc('year_start')
+            ->orderByDesc('year_end')
+            ->get();
+
+        return view('laws.index', [
+            'hasActiveEdition' => (bool) $activeEdition,
+            'otherPublishedEditions' => $publishedEditions
+                ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
+                ->values(),
+            'hubDocuments' => Document::query()
+                ->published()
+                ->with('publishedPages')
+                ->orderBy('sort_order')
+                ->get(),
+            'language' => $language,
+        ]);
+    }
+
     public function index(Request $request): View
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
@@ -48,18 +72,13 @@ class LawController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return view('laws.index', [
+        return view('laws.list', [
             'laws' => $laws,
             'hasActiveEdition' => (bool) $activeEdition,
             'activeEdition' => $activeEdition,
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
                 ->values(),
-            'hubDocuments' => Document::query()
-                ->published()
-                ->with('publishedPages')
-                ->orderBy('sort_order')
-                ->get(),
             'language' => $language,
         ]);
     }

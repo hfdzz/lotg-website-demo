@@ -3,72 +3,65 @@
 @section('title', __('site.laws.index_title'))
 
 @section('content')
-    <div class="lotg-hub-layout">
-        @include('laws.partials.hub-nav', [
-            'hubDocuments' => $hubDocuments,
-            'hubLaws' => $laws,
-            'language' => $language,
-            'currentKey' => 'laws',
-        ])
+    <section class="hero">
+        <p class="eyebrow">{{ __('site.laws.index_eyebrow') }}</p>
+        <h1>{{ __('site.laws.index_title') }}</h1>
+        <p>{{ __('site.laws.index_intro') }}</p>
+    </section>
 
-        <div class="lotg-hub-main">
-            <section class="hero">
-                <p class="eyebrow">{{ __('site.laws.index_eyebrow') }}</p>
-                <h1>{{ __('site.laws.index_title') }}</h1>
-                <p>{{ __('site.laws.index_intro') }}</p>
-            </section>
+    <section class="lotg-landing-list">
+        @if (! $hasActiveEdition)
+            <div class="card">
+                <h2>{{ __('site.laws.unavailable_title') }}</h2>
+                <p class="law-meta">{{ __('site.laws.unavailable_body') }}</p>
+            </div>
+        @else
+            <a class="card lotg-landing-link" href="{{ route('laws.list', ['lang' => $language]) }}">
+                <h2>{{ __('site.hub.laws_entry') }}</h2>
+                <p class="law-meta">{{ __('site.hub.laws_intro') }}</p>
+            </a>
 
-            <section class="law-grid">
-                @if (! $hasActiveEdition)
-                    <div class="card">
-                        <h2>{{ __('site.laws.unavailable_title') }}</h2>
-                        <p class="law-meta">{{ __('site.laws.unavailable_body') }}</p>
-                    </div>
-                @else
-                    @forelse ($laws as $law)
-                        <a class="law-link law-row-card card" href="{{ route('laws.show', $law).'?lang='.$language }}" style="--law-card-image: url('{{ $law->cardBackgroundImageUrl() }}');">
-                            <div class="law-row-main">
-                                <p class="law-number">{{ __('site.laws.law_number', ['number' => $law->law_number]) }}</p>
-                                <h2>{{ $law->displayTitle($language) }}</h2>
-                                @if ($law->displaySubtitle($language))
-                                    <p class="law-row-subtitle">{{ $law->displaySubtitle($language) }}</p>
-                                @endif
+            @foreach ($hubDocuments as $document)
+                @php
+                    $firstPage = $document->firstPublishedPage();
+                    $targetUrl = $document->isCollection() && $firstPage
+                        ? route('documents.page', ['document' => $document, 'page' => $firstPage->slug, 'lang' => $language])
+                        : route('documents.show', ['document' => $document, 'lang' => $language]);
+                @endphp
+
+                @if ($document->isCollection() && $document->publishedPages->isNotEmpty())
+                    <details class="card lotg-landing-item">
+                        <summary class="lotg-landing-summary">
+                            <div>
+                                <h2>{{ $document->title }}</h2>
+                                <p class="law-meta">{{ __('site.documents.collection_intro') }}</p>
                             </div>
-
-                            <div class="law-link-cta">
-                                <div class="law-link-cta-inner">
-                                    <span class="law-link-cta-label">{{ __('site.laws.view_law') }}</span>
-                                    <div class="law-link-cta-arrow" aria-hidden="true">
-                                        <svg viewBox="0 0 100 24" preserveAspectRatio="none">
-                                            <path d="M0 12 H95 M75 6 L100 12 L75 18"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"/>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="card">
-                            <h2>{{ __('site.laws.no_laws_title') }}</h2>
-                            <p class="law-meta">{{ __('site.laws.no_laws_body') }}</p>
+                        </summary>
+                        <div class="lotg-landing-children">
+                            @foreach ($document->publishedPages as $documentPage)
+                                <a class="hub-nav-law-link" href="{{ route('documents.page', ['document' => $document, 'page' => $documentPage->slug, 'lang' => $language]) }}">
+                                    {{ $documentPage->title }}
+                                </a>
+                            @endforeach
                         </div>
-                    @endforelse
+                    </details>
+                @else
+                    <a class="card lotg-landing-link" href="{{ $targetUrl }}">
+                        <h2>{{ $document->title }}</h2>
+                        <p class="law-meta">{{ __('site.documents.single_intro') }}</p>
+                    </a>
                 @endif
-            </section>
+            @endforeach
+        @endif
+    </section>
 
-            @if ($otherPublishedEditions->isNotEmpty())
-                <div class="card edition-browser">
-                    <h2>{{ __('site.editions.more_title') }}</h2>
-                    <p class="law-meta">{{ __('site.editions.more_body') }}</p>
-                    <p class="stack-top">
-                        <a class="result-link" href="{{ route('editions.index', ['lang' => $language]) }}">{{ __('site.editions.browse_link') }}</a>
-                    </p>
-                </div>
-            @endif
+    @if ($otherPublishedEditions->isNotEmpty())
+        <div class="card edition-browser">
+            <h2>{{ __('site.editions.more_title') }}</h2>
+            <p class="law-meta">{{ __('site.editions.more_body') }}</p>
+            <p class="stack-top">
+                <a class="result-link" href="{{ route('editions.index', ['lang' => $language]) }}">{{ __('site.editions.browse_link') }}</a>
+            </p>
         </div>
-    </div>
+    @endif
 @endsection

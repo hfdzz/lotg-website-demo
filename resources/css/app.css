@@ -555,6 +555,72 @@ button:hover {
     padding: 0;
 }
 
+.result-link-block {
+    display: block;
+    text-decoration: none;
+}
+
+.result-link-block:hover h2 {
+    color: var(--accent);
+}
+
+.document-page-card {
+    margin-top: 0;
+}
+
+.lotg-landing-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.lotg-landing-item,
+.lotg-landing-link {
+    text-decoration: none;
+}
+
+.lotg-landing-summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.lotg-landing-summary::-webkit-details-marker {
+    display: none;
+}
+
+.lotg-landing-summary::after {
+    content: "+";
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.lotg-landing-item[open] > .lotg-landing-summary::after {
+    content: "-";
+}
+
+.lotg-landing-summary h2,
+.lotg-landing-link h2 {
+    margin: 0 0 0.35rem;
+    color: var(--ink);
+    font-size: 1.2rem;
+}
+
+.lotg-landing-children {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 1rem;
+}
+
+.lotg-hub-summary::after {
+    font-size: 1.35rem;
+}
+
 .law-detail-grid {
     display: grid;
     gap: 1.25rem;

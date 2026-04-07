@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTranslationEditor();
     setupNodeTypeSections();
     setupVideoGroupEditor();
+    setupDocumentPageEditor();
 });
 
 window.addEventListener('load', () => {
@@ -430,5 +431,106 @@ function setupVideoGroupEditor() {
         });
 
         ensureAtLeastOneItem();
+    });
+}
+
+function setupDocumentPageEditor() {
+    const editors = Array.from(document.querySelectorAll('[data-document-pages-editor]'));
+
+    editors.forEach((editor) => {
+        if (!(editor instanceof HTMLElement)) {
+            return;
+        }
+
+        const form = editor.closest('form');
+        const addButton = form?.querySelector('[data-document-page-add]');
+        const typeSelect = form?.querySelector('[data-document-type-select]');
+
+        if (!(form instanceof HTMLFormElement) || !(addButton instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const renumberItems = () => {
+            const items = Array.from(editor.querySelectorAll('[data-document-page-item]'));
+
+            items.forEach((item, index) => {
+                if (!(item instanceof HTMLElement)) {
+                    return;
+                }
+
+                const number = item.querySelector('[data-document-page-number]');
+                if (number) {
+                    number.textContent = `${index + 1}`;
+                }
+
+                Array.from(item.querySelectorAll('input, textarea, select')).forEach((field) => {
+                    if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) {
+                        return;
+                    }
+
+                    field.name = field.name.replace(/pages\[\d+\]/, `pages[${index}]`);
+                });
+            });
+        };
+
+        const updateTypeVisibility = () => {
+            if (!(typeSelect instanceof HTMLSelectElement)) {
+                return;
+            }
+
+            const isSingle = typeSelect.value === 'single';
+
+            Array.from(editor.querySelectorAll('[data-document-collection-only]')).forEach((element) => {
+                if (element instanceof HTMLElement) {
+                    element.hidden = isSingle;
+                }
+            });
+        };
+
+        addButton.addEventListener('click', () => {
+            const nextIndex = editor.querySelectorAll('[data-document-page-item]').length;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card stack-form document-page-card';
+            wrapper.dataset.documentPageItem = '';
+            wrapper.innerHTML = `
+                <div class="video-item-header">
+                    <h2>Page <span data-document-page-number>${nextIndex + 1}</span></h2>
+                </div>
+                <input type="hidden" name="pages[${nextIndex}][id]" value="">
+                <label>
+                    <div class="law-meta">Page slug</div>
+                    <input type="text" name="pages[${nextIndex}][slug]" value="">
+                </label>
+                <label>
+                    <div class="law-meta">Page title</div>
+                    <input type="text" name="pages[${nextIndex}][title]" value="">
+                </label>
+                <label>
+                    <div class="law-meta">Body HTML</div>
+                    <textarea name="pages[${nextIndex}][body_html]" rows="10"></textarea>
+                </label>
+                <label data-document-collection-only>
+                    <div class="law-meta">Sort order</div>
+                    <input type="number" min="1" name="pages[${nextIndex}][sort_order]" value="${nextIndex + 1}">
+                </label>
+                <label>
+                    <div class="law-meta">Page status</div>
+                    <select name="pages[${nextIndex}][status]">
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                    </select>
+                </label>
+            `;
+            editor.appendChild(wrapper);
+            renumberItems();
+            updateTypeVisibility();
+        });
+
+        if (typeSelect instanceof HTMLSelectElement) {
+            typeSelect.addEventListener('change', updateTypeVisibility);
+            updateTypeVisibility();
+        }
+
+        renumberItems();
     });
 }

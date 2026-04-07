@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\ChangelogAdminController;
+use App\Http\Controllers\Admin\DocumentAdminController;
 use App\Http\Controllers\Admin\EditionAdminController;
 use App\Http\Controllers\Admin\LawAdminController;
 use App\Http\Controllers\Admin\NodeAdminController;
@@ -11,10 +13,9 @@ use App\Http\Controllers\LawController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [LawController::class, 'index'])->name('laws.index');
+Route::get('/', [LawController::class, 'hub'])->name('laws.index');
 Route::get('/editions', [LawController::class, 'editions'])->name('editions.index');
-Route::get('/documents/{document:slug}/{page}', [DocumentController::class, 'page'])->name('documents.page');
-Route::get('/documents/{document:slug}', [DocumentController::class, 'show'])->name('documents.show');
+Route::get('/laws', [LawController::class, 'index'])->name('laws.list');
 Route::get('/laws/{law:slug}', [LawController::class, 'show'])->name('laws.show');
 Route::get('/updates', [ChangelogController::class, 'index'])->name('updates.index');
 Route::get('/search', [SearchController::class, 'index'])->name('search.index');
@@ -29,7 +30,12 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', [LawAdminController::class, 'home'])->name('home');
+    Route::get('/', [AdminHomeController::class, 'index'])->name('home');
+    Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');
+    Route::get('/documents', [DocumentAdminController::class, 'index'])->name('documents.index');
+    Route::post('/documents', [DocumentAdminController::class, 'store'])->name('documents.store');
+    Route::get('/documents/{document}/edit', [DocumentAdminController::class, 'edit'])->name('documents.edit');
+    Route::patch('/documents/{document}', [DocumentAdminController::class, 'update'])->name('documents.update');
 
     Route::get('/switch-edition', [EditionAdminController::class, 'go'])->name('editions.go');
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');
@@ -52,3 +58,6 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::patch('/updates/{entry}', [ChangelogAdminController::class, 'update'])->name('changelog.update');
     });
 });
+
+Route::get('/{document:slug}/{page}', [DocumentController::class, 'page'])->name('documents.page');
+Route::get('/{document:slug}', [DocumentController::class, 'show'])->name('documents.show');
