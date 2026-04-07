@@ -10,9 +10,20 @@
     </section>
 
     <section class="result-list">
+        <a class="result-card result-link-block" href="{{ route('admin.editions.index') }}">
+            <h2>Manage editions</h2>
+            <p class="law-meta">Create, activate, and prepare LotG editions before editing their law content.</p>
+        </a>
+
         <a class="result-card result-link-block" href="{{ route('admin.laws.home') }}">
             <h2>Manage laws</h2>
-            <p class="law-meta">Edit editions, laws, nodes, law Q&amp;A, and law change entries.</p>
+            <p class="law-meta">
+                @if ($activeEdition)
+                    Edit laws, nodes, Q&amp;A, and law change entries for the current working edition: {{ $activeEdition->name }}.
+                @else
+                    Edit laws, nodes, Q&amp;A, and law change entries for the selected working edition.
+                @endif
+            </p>
         </a>
 
         <a class="result-card result-link-block" href="{{ route('admin.documents.index') }}">

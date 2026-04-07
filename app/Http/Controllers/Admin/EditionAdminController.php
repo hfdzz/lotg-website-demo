@@ -3,13 +3,38 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChangelogEntry;
 use App\Models\Edition;
+use App\Services\EditionContentCopier;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class EditionAdminController extends Controller
 {
+    public function __construct(
+        protected EditionContentCopier $contentCopier
+    ) {
+    }
+
+    public function index(Request $request): View
+    {
+        $selectedEdition = $request->filled('edition')
+            ? Edition::query()->find($request->integer('edition'))
+            : null;
+
+        $selectedEdition = $selectedEdition
+            ?? Edition::current()
+            ?? Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->first();
+
+        return view('admin.editions.index', [
+            'editions' => Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->get(),
+            'selectedEdition' => $selectedEdition,
+        ]);
+    }
+
     public function go(Request $request): RedirectResponse
     {
         $edition = Edition::query()->findOrFail((int) $request->query('edition'));
@@ -25,25 +50,38 @@ class EditionAdminController extends Controller
             'year_start' => ['required', 'integer', 'min:1900', 'max:9999'],
             'year_end' => ['required', 'integer', 'min:1900', 'max:9999', 'gte:year_start'],
             'status' => ['required', 'in:draft,published'],
+            'copy_from_edition_id' => ['nullable', 'integer', 'exists:editions,id'],
         ]);
 
-        $shouldBeActive = $validated['status'] === 'published' && ! Edition::query()->active()->published()->exists();
+        $edition = DB::transaction(function () use ($validated) {
+            $shouldBeActive = $validated['status'] === 'published' && ! Edition::query()->active()->published()->exists();
 
-        if ($shouldBeActive) {
-            Edition::query()->update(['is_active' => false]);
-        }
+            if ($shouldBeActive) {
+                Edition::query()->update(['is_active' => false]);
+            }
 
-        $edition = Edition::create([
-            'name' => $validated['name'],
-            'code' => $this->makeCode($validated['code'] ?? null, $validated['name']),
-            'year_start' => $validated['year_start'],
-            'year_end' => $validated['year_end'],
-            'status' => $validated['status'],
-            'is_active' => $shouldBeActive,
-        ]);
+            $edition = Edition::create([
+                'name' => $validated['name'],
+                'code' => $this->makeCode($validated['code'] ?? null, $validated['name']),
+                'year_start' => $validated['year_start'],
+                'year_end' => $validated['year_end'],
+                'status' => $validated['status'],
+                'is_active' => $shouldBeActive,
+            ]);
+
+            if (! empty($validated['copy_from_edition_id'])) {
+                $sourceEdition = Edition::query()->find($validated['copy_from_edition_id']);
+
+                if ($sourceEdition) {
+                    $this->contentCopier->copy($sourceEdition, $edition);
+                }
+            }
+
+            return $edition;
+        });
 
         return redirect()
-            ->route('admin.laws.index', ['edition' => $edition])
+            ->route('admin.editions.index')
             ->with('status', 'Edition created.');
     }
 
@@ -80,7 +118,7 @@ class EditionAdminController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.laws.index', ['edition' => $edition])
+            ->route('admin.editions.index')
             ->with('status', 'Edition updated.');
     }
 
@@ -94,8 +132,25 @@ class EditionAdminController extends Controller
         $edition->update(['is_active' => true]);
 
         return redirect()
-            ->route('admin.laws.index', ['edition' => $edition])
+            ->route('admin.editions.index')
             ->with('status', 'Edition activated.');
+    }
+
+    public function destroy(Edition $edition): RedirectResponse
+    {
+        if ($edition->is_active) {
+            return back()->withErrors(['edition' => 'The active edition cannot be deleted.']);
+        }
+
+        if ($edition->laws()->exists() || ChangelogEntry::query()->where('edition_id', $edition->id)->exists()) {
+            return back()->withErrors(['edition' => 'Only an empty edition can be deleted. Remove its laws and law changes first.']);
+        }
+
+        $edition->delete();
+
+        return redirect()
+            ->route('admin.editions.index')
+            ->with('status', 'Edition deleted.');
     }
 
     protected function makeCode(?string $code, string $name, ?Edition $edition = null): string

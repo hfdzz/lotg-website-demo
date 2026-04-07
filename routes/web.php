@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminHomeController::class, 'index'])->name('home');
+    Route::get('/editions', [EditionAdminController::class, 'index'])->name('editions.index');
     Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');
     Route::get('/documents', [DocumentAdminController::class, 'index'])->name('documents.index');
     Route::post('/documents', [DocumentAdminController::class, 'store'])->name('documents.store');
@@ -45,6 +46,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');
     Route::post('/editions/{edition}/activate', [EditionAdminController::class, 'activate'])->name('editions.activate');
     Route::patch('/editions/{edition}', [EditionAdminController::class, 'update'])->name('editions.update');
+    Route::delete('/editions/{edition}', [EditionAdminController::class, 'destroy'])->name('editions.destroy');
 
     Route::prefix('editions/{edition}')->group(function () {
         Route::get('/', [LawAdminController::class, 'index'])->name('laws.index');

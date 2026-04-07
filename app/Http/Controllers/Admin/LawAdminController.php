@@ -22,13 +22,13 @@ class LawAdminController extends Controller
             return redirect()->route('admin.laws.index', ['edition' => $activeEdition]);
         }
 
-        return view('admin.laws.index', [
-            'laws' => collect(),
-            'editions' => Edition::query()->orderByDesc('year_start')->get(),
-            'selectedEdition' => null,
-            'languages' => LotgLanguage::supported(),
-            'editionManagementOnly' => true,
-        ]);
+        $fallbackEdition = Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->first();
+
+        if ($fallbackEdition) {
+            return redirect()->route('admin.laws.index', ['edition' => $fallbackEdition]);
+        }
+
+        return redirect()->route('admin.editions.index');
     }
 
     public function index(Edition $edition): View
