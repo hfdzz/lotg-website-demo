@@ -81,7 +81,7 @@ class LawAdminController extends Controller
         $this->syncTranslations($law, $validated);
 
         return redirect()
-            ->route('admin.laws.edit', ['edition' => $edition, 'law' => $law])
+            ->route('admin.laws.index', ['edition' => $edition])
             ->with('status', 'Law created.');
     }
 
