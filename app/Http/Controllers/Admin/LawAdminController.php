@@ -49,9 +49,9 @@ class LawAdminController extends Controller
     public function store(Request $request, Edition $edition): RedirectResponse
     {
         $validated = $request->validate([
-            'law_number' => ['required', 'string', 'max:20'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:laws,slug'],
-            'sort_order' => ['required', 'integer', 'min:0'],
+            'law_number' => ['nullable', 'string', 'max:20'],
+            'slug' => ['nullable', 'string', 'max:255'],
+            'sort_order' => ['nullable', 'integer', 'min:1'],
             'status' => ['required', 'in:draft,published'],
             'title_id' => ['required', 'string', 'max:255'],
             'subtitle_id' => ['nullable', 'string', 'max:255'],
@@ -61,13 +61,20 @@ class LawAdminController extends Controller
             'description_text_en' => ['nullable', 'string'],
         ]);
 
-        $slug = $validated['slug'] ?: Str::slug('law-'.$validated['law_number']);
+        $lawNumber = $validated['law_number'] ?: $this->nextLawNumber($edition);
+        $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $lawNumber);
+
+        if (Law::query()->where('slug', $slug)->exists()) {
+            return back()
+                ->withErrors(['slug' => 'The slug has already been taken.'])
+                ->withInput();
+        }
 
         $law = Law::create([
             'edition_id' => $edition->id,
-            'law_number' => $validated['law_number'],
+            'law_number' => $lawNumber,
             'slug' => $slug,
-            'sort_order' => $validated['sort_order'],
+            'sort_order' => $validated['sort_order'] ?? $this->nextSortOrder($edition),
             'status' => $validated['status'],
         ]);
 
@@ -111,8 +118,8 @@ class LawAdminController extends Controller
 
         $validated = $request->validate([
             'law_number' => ['required', 'string', 'max:20'],
-            'slug' => ['required', 'string', 'max:255', 'unique:laws,slug,'.$law->id],
-            'sort_order' => ['required', 'integer', 'min:0'],
+            'slug' => ['nullable', 'string', 'max:255'],
+            'sort_order' => ['required', 'integer', 'min:1'],
             'status' => ['required', 'in:draft,published'],
             'title_id' => ['required', 'string', 'max:255'],
             'subtitle_id' => ['nullable', 'string', 'max:255'],
@@ -122,9 +129,17 @@ class LawAdminController extends Controller
             'description_text_en' => ['nullable', 'string'],
         ]);
 
+        $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $validated['law_number']);
+
+        if (Law::query()->where('slug', $slug)->whereKeyNot($law->id)->exists()) {
+            return back()
+                ->withErrors(['slug' => 'The slug has already been taken.'])
+                ->withInput();
+        }
+
         $law->update([
             'law_number' => $validated['law_number'],
-            'slug' => $validated['slug'],
+            'slug' => $slug,
             'sort_order' => $validated['sort_order'],
             'status' => $validated['status'],
         ]);
@@ -232,5 +247,29 @@ class LawAdminController extends Controller
                 );
             }
         }
+    }
+
+    protected function nextSortOrder(Edition $edition): int
+    {
+        return Law::query()
+            ->forEdition($edition->id)
+            ->count() + 1;
+    }
+
+    protected function nextLawNumber(Edition $edition): string
+    {
+        $maxNumericLawNumber = Law::query()
+            ->forEdition($edition->id)
+            ->get(['law_number'])
+            ->map(fn (Law $law) => is_numeric($law->law_number) ? (int) $law->law_number : null)
+            ->filter()
+            ->max();
+
+        return (string) (($maxNumericLawNumber ?? 0) + 1);
+    }
+
+    protected function normalizedLawSlug(?string $slug, string $lawNumber): string
+    {
+        return Str::slug($slug ?: 'law-'.$lawNumber);
     }
 }

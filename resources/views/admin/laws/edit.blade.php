@@ -20,9 +20,17 @@
         </div>
     @endif
 
+    @if ($errors->any())
+        <div class="flash-message-error">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition])
 
-    <details class="card collapse-card">
+    <details class="card collapse-card" @open($errors->any())>
         <summary class="collapse-summary">
             <h2>Law settings</h2>
         </summary>

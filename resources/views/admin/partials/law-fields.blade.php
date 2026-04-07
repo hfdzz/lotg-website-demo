@@ -2,21 +2,28 @@
     $translationsByLanguage = $translationsByLanguage ?? collect();
     $languages = $languages ?? \App\Support\LotgLanguage::supported();
     $selectedEdition = $selectedEdition ?? null;
+    $lawNumberValue = old('law_number', $law?->law_number);
+    $slugValue = old('slug', $law?->slug);
+    $slugPreview = \Illuminate\Support\Str::slug($slugValue ?: ('law-'.$lawNumberValue));
 @endphp
 
 <label>
     <div class="law-meta">Law number</div>
-    <input type="text" name="law_number" value="{{ old('law_number', $law?->law_number) }}">
+    <div class="nav-meta">Leave blank to append as the last law number in this edition.</div>
+    <input type="text" name="law_number" value="{{ $lawNumberValue }}" data-law-number-input>
 </label>
 
 <label>
     <div class="law-meta">Slug</div>
-    <input type="text" name="slug" value="{{ old('slug', $law?->slug) }}">
+    <div class="nav-meta">The saved slug is always normalized. You can leave this blank to auto-generate it from the law number.</div>
+    <input type="text" name="slug" value="{{ $slugValue }}" data-law-slug-input>
+    <div class="nav-meta">Result: <span data-law-slug-preview>{{ $slugPreview ?: 'law' }}</span></div>
 </label>
 
 <label>
     <div class="law-meta">Sort order</div>
-    <input type="number" min="0" name="sort_order" value="{{ old('sort_order', $law?->sort_order ?? 0) }}">
+    <div class="nav-meta">Leave blank to append as the last law in this edition.</div>
+    <input type="number" min="1" name="sort_order" value="{{ old('sort_order', $law?->sort_order ?? '') }}">
 </label>
 
 <label>
@@ -52,11 +59,3 @@
         </label>
     </div>
 @endforeach
-
-@if ($errors->any())
-    <div class="flash-message-error">
-        @foreach ($errors->all() as $error)
-            <div>{{ $error }}</div>
-        @endforeach
-    </div>
-@endif

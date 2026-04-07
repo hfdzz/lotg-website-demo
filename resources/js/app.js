@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearchPopover();
     setupTableOfContentsTracking();
     setupEditionCodePlaceholders();
+    setupLawSlugPreview();
     setupTranslationEditor();
     setupNodeTypeSections();
     setupVideoGroupEditor();
@@ -232,6 +233,44 @@ function setupEditionCodePlaceholders() {
         nameInput.addEventListener('input', updatePlaceholder);
 
         updatePlaceholder();
+    });
+}
+
+function setupLawSlugPreview() {
+    const lawForms = Array.from(document.querySelectorAll('form'));
+
+    lawForms.forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const lawNumberInput = form.querySelector('[data-law-number-input]');
+        const slugInput = form.querySelector('[data-law-slug-input]');
+        const preview = form.querySelector('[data-law-slug-preview]');
+
+        if (!(lawNumberInput instanceof HTMLInputElement) || !(slugInput instanceof HTMLInputElement) || !(preview instanceof HTMLElement)) {
+            return;
+        }
+
+        const slugify = (value) =>
+            value
+                .toString()
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .replace(/-{2,}/g, '-');
+
+        const updatePreview = () => {
+            const fallback = `law-${lawNumberInput.value || 'number'}`;
+            preview.textContent = slugify(slugInput.value || fallback) || 'law';
+        };
+
+        slugInput.addEventListener('input', updatePreview);
+        lawNumberInput.addEventListener('input', updatePreview);
+
+        updatePreview();
     });
 }
 
