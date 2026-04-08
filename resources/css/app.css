@@ -9,6 +9,8 @@
     --accent: #0057a8;
     --accent-soft: rgba(0, 87, 168, 0.08);
     --accent-strong: #003f7b;
+    --secondary-accent: #b7dfc7;
+    --secondary-accent-soft: rgba(183, 223, 199, 0.24);
     --shadow-soft: 0 8px 24px rgba(22, 24, 29, 0.06);
 }
 
@@ -289,6 +291,7 @@ button:hover {
     border-radius: 14px;
     background: #fff1f2;
     color: #9f1239;
+    margin-bottom: 1rem;
 }
 
 .flash-message-error strong {
@@ -1062,6 +1065,11 @@ h5.node-title {
 .auth-card {
     display: grid;
     gap: 1rem;
+}
+
+.active-edition {
+    border: 1px solid var(--secondary-accent);
+    background: var(--secondary-accent-soft);
 }
 
 .nav {

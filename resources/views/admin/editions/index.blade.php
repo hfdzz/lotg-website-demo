@@ -22,6 +22,14 @@
         </div>
     @endif
 
+    @if ($errors->any())
+        <div class="flash-message-error">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     <details class="card collapse-card" open>
         <summary class="collapse-summary">
             <h2>All editions</h2>
@@ -29,7 +37,7 @@
         <div class="collapse-body">
             <div class="result-list">
                 @forelse ($editions as $edition)
-                    <article class="result-card">
+                    <article class="result-card @if ($edition->is_active) active-edition @endif">
                         <h3>{{ $edition->name }}</h3>
                         <p class="law-meta">Code: {{ $edition->code }} | Years: {{ $edition->year_start }}/{{ $edition->year_end }} | Publication: {{ $edition->status }} | Active: {{ $edition->is_active ? 'yes' : 'no' }}</p>
                         <p class="law-meta">

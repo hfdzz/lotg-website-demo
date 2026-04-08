@@ -28,10 +28,17 @@ class EditionAdminController extends Controller
 
         $selectedEdition = $selectedEdition
             ?? Edition::current()
-            ?? Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->first();
+            ?? Edition::query()
+                ->orderByDesc('year_start')
+                ->orderByDesc('year_end')
+                ->first();
 
         return view('admin.editions.index', [
-            'editions' => Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->get(),
+            'editions' => Edition::query()
+                ->orderByDesc('is_active')
+                ->orderByDesc('year_start')
+                ->orderByDesc('year_end')
+                ->get(),
             'selectedEdition' => $selectedEdition,
         ]);
     }
