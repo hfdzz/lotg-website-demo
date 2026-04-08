@@ -52,6 +52,7 @@
             <p class="nav-meta">Start with sections, then add child sections or content blocks beneath them. Parent labels include node type and current sort order to make hierarchy safer to read.</p>
             <form action="{{ route('admin.nodes.store', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" enctype="multipart/form-data" class="stack-form">
                 @csrf
+                <input type="hidden" name="return_to_law_edit" value="1">
                 @include('admin.partials.node-fields', ['node' => null, 'translationsByLanguage' => collect(), 'languages' => \App\Support\LotgLanguage::supported(), 'parentOptions' => $parentOptions])
                 <button type="submit">Create node</button>
             </form>

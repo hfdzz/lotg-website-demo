@@ -59,8 +59,23 @@ class NodeAdminController extends Controller
             return $node;
         });
 
+        $redirectNodeId = $request->integer('return_to_node_id');
+
+        if ($redirectNodeId > 0) {
+            $returnNode = ContentNode::query()
+                ->whereKey($redirectNodeId)
+                ->where('law_id', $law->id)
+                ->first();
+
+            if ($returnNode) {
+                return redirect()
+                    ->route('admin.nodes.edit', ['edition' => $edition, 'law' => $law, 'node' => $returnNode])
+                    ->with('status', 'Node created.');
+            }
+        }
+
         return redirect()
-            ->route('admin.nodes.edit', ['edition' => $edition, 'law' => $law, 'node' => $node])
+            ->route('admin.laws.edit', ['edition' => $edition, 'law' => $law])
             ->with('status', 'Node created.');
     }
 
