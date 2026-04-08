@@ -867,6 +867,48 @@ h5.node-title {
     margin: 0 0 1.1rem;
 }
 
+.node-body table {
+    display: block;
+    width: 100%;
+    min-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: normal;
+    background: #fff;
+}
+
+.node-body table thead {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.node-body table tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.015);
+}
+
+.node-body table caption {
+    margin-bottom: 0.65rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.node-body table th,
+.node-body table td {
+    min-width: 8rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.node-body table th {
+    color: #111317;
+    font-weight: 700;
+}
+
 .node-body ul,
 .node-body ol {
     padding-left: 1.35rem;
@@ -936,7 +978,8 @@ h5.node-title {
 }
 
 .media-frame {
-    margin: 0;
+    margin: 0 auto;
+    max-width: 80ch;
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 14px;
