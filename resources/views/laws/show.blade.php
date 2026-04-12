@@ -6,7 +6,7 @@
 @section('mobile_law_context', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
 
 @section('content')
-    <a class="back-link" href="{{ route('laws.index', ['lang' => $language]) }}">{{ __('site.laws.back') }}</a>
+    <a class="back-link" href="{{ route('laws.list', ['lang' => $language]) }}">{{ __('site.laws.back') }}</a>
 
     @section('mobile_law_prev')
         @if ($previousLaw)
