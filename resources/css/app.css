@@ -775,23 +775,12 @@ details[open] > .toc-summary::after {
 }
 
 .node {
+    display: flow-root;
     margin: 0;
     padding: 0;
 }
 
 .node + .node {
-    margin-top: 1.2rem;
-}
-
-.node[data-type="section"] {
-    margin-top: 2rem;
-}
-
-.node[data-type="section"]:first-child {
-    margin-top: 0;
-}
-
-.node[data-depth="0"] {
     margin-top: 0;
 }
 
@@ -821,25 +810,26 @@ h2.node-title {
     font-size: clamp(1.7rem, 3vw, 2.25rem);
 }
 
-h2.node-title:first-child {
+.law-content > .node:first-child > h2.node-title:first-child {
     margin-top: 0;
 }
 
 h3.node-title {
-    margin-top: 0.15rem;
+    margin-top: 1.85rem;
     margin-bottom: 0.85rem;
     font-size: clamp(1.35rem, 2.2vw, 1.65rem);
+    font-weight: 700;
 }
 
 h4.node-title {
-    margin-top: 0.1rem;
+    margin-top: 1.45rem;
     margin-bottom: 0.75rem;
     font-size: 1.12rem;
     letter-spacing: 0.02em;
 }
 
 h5.node-title {
-    margin-top: 0.1rem;
+    margin-top: 1.15rem;
     margin-bottom: 0.7rem;
     font-size: 1rem;
 }
@@ -935,18 +925,18 @@ h5.node-title {
 .media-grid {
     display: grid;
     gap: 1rem;
-    margin: 1.1rem 0 1.4rem;
+    margin: 1.35rem 0 1.6rem;
     grid-template-columns: 1fr;
 }
 
 .video-stack {
     display: grid;
     gap: 1.25rem;
-    margin: 1.4rem 0 1.75rem;
+    margin: 1.5rem 0 1.8rem;
 }
 
 .resource-list-block {
-    margin: 1.2rem 0 1.5rem;
+    margin: 1.35rem 0 1.6rem;
 }
 
 .resource-list {
@@ -1742,10 +1732,6 @@ body.has-mobile-law-context {
         border-radius: 0;
         background: transparent;
         box-shadow: none;
-    }
-
-    .node[data-type="section"] {
-        margin-top: 2.6rem;
     }
 
     .node-title[id] {
