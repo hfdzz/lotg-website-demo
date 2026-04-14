@@ -64,17 +64,24 @@
         @php
             $mobileLawPrev = trim($__env->yieldContent('mobile_law_prev'));
             $mobileLawNext = trim($__env->yieldContent('mobile_law_next'));
+            $mobileLawContextControl = trim($__env->yieldContent('mobile_law_context_control'));
         @endphp
 
         @hasSection('mobile_law_context')
             <div class="mobile-law-context">
                 <div class="mobile-law-context-bar">
                     @if ($mobileLawPrev !== '')
-                        <a href="{{ $mobileLawPrev }}" class="mobile-law-context-side left is-link" aria-label="{{ __('site.laws.previous_law') }}" onclick="event.stopPropagation()">&lsaquo;</a>
+                        <a href="{{ $mobileLawPrev }}" class="mobile-law-context-side left is-link" aria-label="{{ __('site.laws.previous_law') }}" onclick="event.stopPropagation()" data-nav-pending-link>&lsaquo;</a>
                     @endif
-                    <p class="mobile-law-context-title" data-scroll-top>@yield('mobile_law_context')</p>
+                    @if ($mobileLawContextControl !== '')
+                        <div class="mobile-law-context-title mobile-law-context-control">
+                            {!! $mobileLawContextControl !!}
+                        </div>
+                    @else
+                        <p class="mobile-law-context-title" data-scroll-top>@yield('mobile_law_context')</p>
+                    @endif
                     @if ($mobileLawNext !== '')
-                        <a href="{{ $mobileLawNext }}" class="mobile-law-context-side right is-link" aria-label="{{ __('site.laws.next_law') }}" onclick="event.stopPropagation()">&rsaquo;</a>
+                        <a href="{{ $mobileLawNext }}" class="mobile-law-context-side right is-link" aria-label="{{ __('site.laws.next_law') }}" onclick="event.stopPropagation()" data-nav-pending-link>&rsaquo;</a>
                     @endif
                 </div>
             </div>

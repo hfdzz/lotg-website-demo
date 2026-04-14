@@ -124,8 +124,38 @@ class LawController extends Controller
             'language' => $language,
             'tree' => $tree,
             'tableOfContents' => $treeBuilder->buildTableOfContents($tree),
+            'jumpLaws' => $orderedLaws,
             'previousLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex - 1) : null,
             'nextLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex + 1) : null,
         ]);
+    }
+
+    public function jump(Request $request): RedirectResponse
+    {
+        $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
+        $lawId = $request->integer('law');
+        $editionId = $request->integer('edition');
+
+        $fallbackParameters = array_filter([
+            'lang' => $language,
+            'edition' => $editionId ?: null,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        if (! $lawId) {
+            return redirect()->route('laws.list', $fallbackParameters);
+        }
+
+        $law = Law::query()
+            ->published()
+            ->forEdition($editionId)
+            ->whereKey($lawId)
+            ->whereHas('edition', fn ($query) => $query->published())
+            ->first();
+
+        if (! $law) {
+            return redirect()->route('laws.list', $fallbackParameters);
+        }
+
+        return redirect()->route('laws.show', ['law' => $law, 'lang' => $language]);
     }
 }

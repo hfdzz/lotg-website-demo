@@ -4,6 +4,11 @@
 @section('body_class', 'has-mobile-law-context')
 @section('mobile_header_title', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
 @section('mobile_law_context', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
+@section('mobile_law_context_control')
+    @if ($jumpLaws->count() > 1)
+        @include('laws.partials.jump', ['class' => 'law-jump-mobile-context', 'compact' => true])
+    @endif
+@endsection
 
 @section('content')
     <a class="back-link" href="{{ route('laws.list', ['lang' => $language]) }}">{{ __('site.laws.back') }}</a>
@@ -30,7 +35,7 @@
             <p>{{ $law->displayDescription($language) ?: __('site.laws.hero_intro') }}</p>
             <div class="law-hero-nav">
                 @if ($previousLaw)
-                    <a class="law-nav-link" href="{{ route('laws.show', $previousLaw).'?lang='.$language }}">
+                    <a class="law-nav-link" href="{{ route('laws.show', $previousLaw).'?lang='.$language }}" data-nav-pending-link>
                         <div class="law-nav-label">{{ __('site.laws.previous_law') }}</div>
                         <div class="left">
                             <span class="law-nav-arrow" aria-hidden="true">&larr;</span>
@@ -40,7 +45,7 @@
                 @endif
 
                 @if ($nextLaw)
-                    <a class="law-nav-link" href="{{ route('laws.show', $nextLaw).'?lang='.$language }}">
+                    <a class="law-nav-link" href="{{ route('laws.show', $nextLaw).'?lang='.$language }}" data-nav-pending-link>
                         <div class="law-nav-label">{{ __('site.laws.next_law') }}</div>
                         <div class="right">
                             <span>{{ __('site.laws.law_number', ['number' => $nextLaw->law_number]) }}</span>
@@ -70,6 +75,10 @@
                             <p class="toc-law-meta">{{ $law->displaySubtitle($language) }}</p>
                         @endif
                     </div>
+
+                    @if ($jumpLaws->count() > 1)
+                        @include('laws.partials.jump', ['class' => 'law-jump-desktop'])
+                    @endif
 
                     <div>
                         <h2 class="toc-title">{{ __('site.laws.on_this_page') }}</h2>

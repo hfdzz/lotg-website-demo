@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LawController::class, 'hub'])->name('laws.index');
 Route::get('/editions', [LawController::class, 'editions'])->name('editions.index');
 Route::get('/laws', [LawController::class, 'index'])->name('laws.list');
+Route::get('/laws/jump', [LawController::class, 'jump'])->name('laws.jump');
 Route::get('/laws/{law:slug}', [LawController::class, 'show'])->name('laws.show');
 Route::get('/updates', [ChangelogController::class, 'index'])->name('updates.index');
 Route::get('/q-and-a', [QaController::class, 'index'])->name('qas.index');
