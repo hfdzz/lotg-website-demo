@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Permission;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.home'));
+        $destination = $request->user()?->hasPermissionTo(Permission::ADMIN_ACCESS)
+            ? route('admin.home')
+            : route('laws.index');
+
+        return redirect()->intended($destination);
     }
 
     public function destroy(Request $request): RedirectResponse

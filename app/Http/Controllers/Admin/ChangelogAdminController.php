@@ -14,6 +14,8 @@ class ChangelogAdminController extends Controller
 {
     public function index(Edition $edition): View
     {
+        $this->authorize('viewAny', ChangelogEntry::class);
+
         return view('admin.changelog.index', [
             'edition' => $edition,
             'entries' => ChangelogEntry::query()
@@ -27,6 +29,7 @@ class ChangelogAdminController extends Controller
 
     public function store(Request $request, Edition $edition): RedirectResponse
     {
+        $this->authorize('create', ChangelogEntry::class);
         $validated = $this->validateEntry($request);
 
         ChangelogEntry::create([
@@ -45,6 +48,7 @@ class ChangelogAdminController extends Controller
 
     public function update(Request $request, Edition $edition, ChangelogEntry $entry): RedirectResponse
     {
+        $this->authorize('update', $entry);
         abort_unless((int) $entry->edition_id === (int) $edition->id, 404);
 
         $validated = $this->validateEntry($request, $entry);

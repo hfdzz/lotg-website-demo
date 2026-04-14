@@ -10,6 +10,8 @@ class AdminHomeController extends Controller
 {
     public function index(): View
     {
+        $this->authorize('access-admin');
+
         return view('admin.home', [
             'activeEdition' => Edition::current(),
         ]);

@@ -47,7 +47,9 @@
                                 </select>
                             </form>
                             @auth
-                                <a class="mobile-nav-link" href="{{ route('admin.home') }}">{{ __('site.nav.admin') }}</a>
+                                @can('access-admin')
+                                    <a class="mobile-nav-link" href="{{ route('admin.home') }}">{{ __('site.nav.admin') }}</a>
+                                @endcan
                                 <form class="mobile-nav-form" action="{{ route('logout') }}" method="post">
                                     @csrf
                                     <button type="submit" class="mobile-nav-button">{{ __('site.nav.logout') }}</button>
@@ -109,7 +111,9 @@
                                 </select>
                             </form>
                             @auth
-                                <a class="nav-link" href="{{ route('admin.home') }}">{{ __('site.nav.admin') }}</a>
+                                @can('access-admin')
+                                    <a class="nav-link" href="{{ route('admin.home') }}">{{ __('site.nav.admin') }}</a>
+                                @endcan
                                 <form action="{{ route('logout') }}" method="post" class="inline-form">
                                     @csrf
                                     <button type="submit">{{ __('site.nav.logout') }}</button>

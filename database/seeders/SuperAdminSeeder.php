@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -36,7 +37,7 @@ class SuperAdminSeeder extends Seeder
             $this->command?->warn('SUPER_ADMIN_PASSWORD is less than 12 characters. Consider using a longer password for better security.');
         }
 
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['email' => $email],
             [
                 'name' => $name,
@@ -44,6 +45,12 @@ class SuperAdminSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        $superAdminRole = Role::query()->where('code', Role::SUPER_ADMIN)->first();
+
+        if ($superAdminRole) {
+            $user->roles()->syncWithoutDetaching([$superAdminRole->id]);
+        }
 
         $this->command?->info('Super admin user seeded.');
     }

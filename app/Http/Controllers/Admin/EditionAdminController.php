@@ -22,6 +22,8 @@ class EditionAdminController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Edition::class);
+
         $selectedEdition = $request->filled('edition')
             ? Edition::query()->find($request->integer('edition'))
             : null;
@@ -45,6 +47,8 @@ class EditionAdminController extends Controller
 
     public function go(Request $request): RedirectResponse
     {
+        $this->authorize('viewAny', Edition::class);
+
         $edition = Edition::query()->findOrFail((int) $request->query('edition'));
 
         return redirect()->route('admin.laws.index', ['edition' => $edition]);
@@ -52,6 +56,8 @@ class EditionAdminController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Edition::class);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:editions,name'],
             'code' => ['nullable', 'string', 'max:255', 'unique:editions,code'],
@@ -95,6 +101,8 @@ class EditionAdminController extends Controller
 
     public function update(Request $request, Edition $edition): RedirectResponse
     {
+        $this->authorize('update', $edition);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:editions,name,'.$edition->id],
             'code' => ['nullable', 'string', 'max:255', 'unique:editions,code,'.$edition->id],
@@ -132,6 +140,8 @@ class EditionAdminController extends Controller
 
     public function activate(Edition $edition): RedirectResponse
     {
+        $this->authorize('activate', $edition);
+
         if ($edition->status !== 'published') {
             return back()->withErrors(['status' => 'Only a published edition can be active.']);
         }
@@ -146,6 +156,8 @@ class EditionAdminController extends Controller
 
     public function destroy(Edition $edition): RedirectResponse
     {
+        $this->authorize('delete', $edition);
+
         if ($edition->is_active) {
             return back()->withErrors(['edition' => 'The active edition cannot be deleted.']);
         }

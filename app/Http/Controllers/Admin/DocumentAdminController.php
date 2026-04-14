@@ -14,6 +14,8 @@ class DocumentAdminController extends Controller
 {
     public function index(): View
     {
+        $this->authorize('viewAny', Document::class);
+
         return view('admin.documents.index', [
             'documents' => Document::query()->with('pages')->orderBy('sort_order')->get(),
         ]);
@@ -21,6 +23,8 @@ class DocumentAdminController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Document::class);
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:documents,slug'],
@@ -52,6 +56,7 @@ class DocumentAdminController extends Controller
 
     public function edit(Document $document): View
     {
+        $this->authorize('update', $document);
         $document->load('pages');
 
         return view('admin.documents.edit', [
@@ -61,6 +66,8 @@ class DocumentAdminController extends Controller
 
     public function update(Request $request, Document $document): RedirectResponse
     {
+        $this->authorize('update', $document);
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:documents,slug,'.$document->id],

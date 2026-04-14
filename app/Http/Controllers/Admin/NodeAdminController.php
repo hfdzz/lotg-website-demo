@@ -19,6 +19,7 @@ class NodeAdminController extends Controller
 {
     public function edit(Edition $edition, Law $law, ContentNode $node): View
     {
+        $this->authorize('update', $node);
         $this->assertLawBelongsToEdition($edition, $law);
         $this->assertNodeBelongsToLaw($law, $node);
         
@@ -38,6 +39,7 @@ class NodeAdminController extends Controller
 
     public function store(Request $request, Edition $edition, Law $law): RedirectResponse
     {
+        $this->authorize('create', ContentNode::class);
         $this->assertLawBelongsToEdition($edition, $law);
         $validated = $this->validateNode($request, $law);
 
@@ -81,6 +83,7 @@ class NodeAdminController extends Controller
 
     public function update(Request $request, Edition $edition, Law $law, ContentNode $node): RedirectResponse
     {
+        $this->authorize('update', $node);
         $this->assertLawBelongsToEdition($edition, $law);
         $this->assertNodeBelongsToLaw($law, $node);
 
@@ -117,6 +120,7 @@ class NodeAdminController extends Controller
 
     public function destroy(Edition $edition, Law $law, ContentNode $node): RedirectResponse
     {
+        $this->authorize('delete', $node);
         $this->assertLawBelongsToEdition($edition, $law);
         $this->assertNodeBelongsToLaw($law, $node);
 

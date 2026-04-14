@@ -17,6 +17,7 @@ class LawQaAdminController extends Controller
 {
     public function edit(Edition $edition, Law $law, LawQa $qa): View
     {
+        $this->authorize('update', $qa);
         $this->assertLawBelongsToEdition($edition, $law);
         $this->assertQaBelongsToLaw($law, $qa);
 
@@ -34,6 +35,7 @@ class LawQaAdminController extends Controller
 
     public function store(Request $request, Edition $edition, Law $law): RedirectResponse
     {
+        $this->authorize('create', LawQa::class);
         $this->assertLawBelongsToEdition($edition, $law);
         $validated = $this->validateQa($request);
 
@@ -56,6 +58,7 @@ class LawQaAdminController extends Controller
 
     public function update(Request $request, Edition $edition, Law $law, LawQa $qa): RedirectResponse
     {
+        $this->authorize('update', $qa);
         $this->assertLawBelongsToEdition($edition, $law);
         $this->assertQaBelongsToLaw($law, $qa);
 
@@ -86,6 +89,7 @@ class LawQaAdminController extends Controller
 
     public function destroy(Edition $edition, Law $law, LawQa $qa): RedirectResponse
     {
+        $this->authorize('delete', $qa);
         $this->assertLawBelongsToEdition($edition, $law);
         $this->assertQaBelongsToLaw($law, $qa);
 

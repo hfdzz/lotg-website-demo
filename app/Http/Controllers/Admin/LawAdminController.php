@@ -16,6 +16,8 @@ class LawAdminController extends Controller
 {
     public function home(): View|RedirectResponse
     {
+        $this->authorize('access-admin');
+
         $activeEdition = Edition::current();
 
         if ($activeEdition) {
@@ -33,6 +35,8 @@ class LawAdminController extends Controller
 
     public function index(Edition $edition): View
     {
+        $this->authorize('viewAny', Law::class);
+
         return view('admin.laws.index', [
             'laws' => Law::query()
                 ->with(['edition', 'translations'])
@@ -48,6 +52,8 @@ class LawAdminController extends Controller
 
     public function store(Request $request, Edition $edition): RedirectResponse
     {
+        $this->authorize('create', Law::class);
+
         $validated = $request->validate([
             'law_number' => ['nullable', 'string', 'max:20'],
             'slug' => ['nullable', 'string', 'max:255'],
@@ -87,6 +93,7 @@ class LawAdminController extends Controller
 
     public function edit(Edition $edition, Law $law): View
     {
+        $this->authorize('update', $law);
         abort_unless((int) $law->edition_id === (int) $edition->id, 404);
 
         $law->load([
@@ -114,6 +121,7 @@ class LawAdminController extends Controller
 
     public function update(Request $request, Edition $edition, Law $law): RedirectResponse
     {
+        $this->authorize('update', $law);
         abort_unless((int) $law->edition_id === (int) $edition->id, 404);
 
         $validated = $request->validate([
