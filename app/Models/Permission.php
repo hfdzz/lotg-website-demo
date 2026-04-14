@@ -11,6 +11,7 @@ class Permission extends Model
 {
     public const ADMIN_ACCESS = 'admin.access';
     public const EDITIONS_MANAGE = 'editions.manage';
+    public const FORCE_ACTIVE = 'force-active';
     public const LAWS_MANAGE = 'laws.manage';
     public const NODES_MANAGE = 'nodes.manage';
     public const DOCUMENTS_MANAGE = 'documents.manage';
@@ -44,6 +45,11 @@ class Permission extends Model
                 'name' => 'Manage editions',
                 'code' => self::EDITIONS_MANAGE,
                 'description' => 'Create, update, activate, and delete editions.',
+            ],
+            [
+                'name' => 'Force activate editions',
+                'code' => self::FORCE_ACTIVE,
+                'description' => 'Bypass blocking completeness checks when activating an edition.',
             ],
             [
                 'name' => 'Manage laws',

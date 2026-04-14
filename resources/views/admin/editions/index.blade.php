@@ -44,11 +44,65 @@
                             <a class="result-link" href="{{ route('admin.laws.index', ['edition' => $edition]) }}">Manage laws in this edition</a>
                             | <a class="result-link" href="{{ route('admin.editions.index', ['edition' => $edition->id]) }}">Edit this edition</a>
                         </p>
+                        @php
+                            $readiness = $readinessReports[$edition->id] ?? null;
+                            $readinessStatus = match ($readiness['overall_status'] ?? 'fail') {
+                                'pass' => 'ready',
+                                'warn' => 'warn',
+                                default => 'blocked',
+                            };
+                        @endphp
+                        @if ($readiness)
+                            <details class="edition-readiness">
+                                <summary class="edition-readiness-summary edition-readiness-summary-{{ $readinessStatus }}">
+                                    <span class="edition-readiness-heading">Edition Completeness</span>
+                                    <span class="edition-readiness-pill edition-readiness-pill-{{ $readinessStatus }}">
+                                        @if (($readiness['overall_status'] ?? null) === 'pass')
+                                            Complete
+                                        @elseif (($readiness['overall_status'] ?? null) === 'warn')
+                                            {{ $readiness['warning_count'] }} warning{{ $readiness['warning_count'] === 1 ? '' : 's' }}
+                                        @else
+                                            {{ $readiness['blocking_count'] }} missing / blocking
+                                        @endif
+                                    </span>
+                                    <span class="edition-readiness-copy">{{ $readiness['summary'] }}</span>
+                                </summary>
+                                <div class="edition-readiness-body">
+                                    <p class="law-meta">{{ $readiness['readiness_note'] }}</p>
+                                    <div class="edition-readiness-checks">
+                                        @foreach ($readiness['checks'] as $check)
+                                            <article class="edition-readiness-check" data-status="{{ $check['status'] }}">
+                                                <div class="edition-readiness-check-header">
+                                                    <strong>{{ $check['label'] }}</strong>
+                                                    <span class="edition-readiness-check-status">{{ strtoupper($check['status']) }}</span>
+                                                </div>
+                                                <p class="law-meta">{{ $check['summary'] }}</p>
+                                                @if (! empty($check['details']))
+                                                    <ul class="edition-readiness-details">
+                                                        @foreach ($check['details'] as $detail)
+                                                            <li>{{ $detail }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            </article>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </details>
+                        @endif
                         @if (! $edition->is_active)
                             <form action="{{ route('admin.editions.activate', $edition) }}" method="post" class="inline-form">
                                 @csrf
                                 <button type="submit">Set as active</button>
                             </form>
+                            @if (($readiness['blocking_count'] ?? 0) > 0)
+                                @can('forceActivate', $edition)
+                                    <form action="{{ route('admin.editions.force-activate', $edition) }}" method="post" class="inline-form" onsubmit="return confirm('Force activate this edition and bypass blocking completeness checks?');">
+                                        @csrf
+                                        <button type="submit" class="video-item-remove">Force set as active</button>
+                                    </form>
+                                @endcan
+                            @endif
                         @endif
                     </article>
                 @empty

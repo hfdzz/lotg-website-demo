@@ -46,6 +46,7 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
     Route::get('/switch-edition', [EditionAdminController::class, 'go'])->name('editions.go');
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');
     Route::post('/editions/{edition}/activate', [EditionAdminController::class, 'activate'])->name('editions.activate');
+    Route::post('/editions/{edition}/force-activate', [EditionAdminController::class, 'forceActivate'])->name('editions.force-activate');
     Route::patch('/editions/{edition}', [EditionAdminController::class, 'update'])->name('editions.update');
     Route::delete('/editions/{edition}', [EditionAdminController::class, 'destroy'])->name('editions.destroy');
 

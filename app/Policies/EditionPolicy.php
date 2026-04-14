@@ -40,4 +40,9 @@ class EditionPolicy
     {
         return $this->allows($user, Permission::EDITIONS_MANAGE);
     }
+
+    public function forceActivate(User $user, Edition $edition): bool
+    {
+        return $this->allows($user, Permission::FORCE_ACTIVE);
+    }
 }

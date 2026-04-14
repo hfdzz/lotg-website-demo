@@ -6,17 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\ChangelogEntry;
 use App\Models\Edition;
 use App\Services\EditionContentCopier;
+use App\Services\EditionReadinessChecker;
 use App\Support\UniqueSlugSuffixer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class EditionAdminController extends Controller
 {
     public function __construct(
-        protected EditionContentCopier $contentCopier
+        protected EditionContentCopier $contentCopier,
+        protected EditionReadinessChecker $readinessChecker
     ) {
     }
 
@@ -35,13 +38,22 @@ class EditionAdminController extends Controller
                 ->orderByDesc('year_end')
                 ->first();
 
+        $editions = Edition::query()
+            ->with([
+                'laws.translations',
+                'laws.contentNodes.translations',
+            ])
+            ->orderByDesc('is_active')
+            ->orderByDesc('year_start')
+            ->orderByDesc('year_end')
+            ->get();
+
         return view('admin.editions.index', [
-            'editions' => Edition::query()
-                ->orderByDesc('is_active')
-                ->orderByDesc('year_start')
-                ->orderByDesc('year_end')
-                ->get(),
+            'editions' => $editions,
             'selectedEdition' => $selectedEdition,
+            'readinessReports' => $editions->mapWithKeys(
+                fn (Edition $edition) => [$edition->id => $this->readinessChecker->check($edition)]
+            ),
         ]);
     }
 
@@ -91,6 +103,10 @@ class EditionAdminController extends Controller
                 }
             }
 
+            if ($validated['status'] === 'published') {
+                $this->assertReadyForPublication($edition);
+            }
+
             return $edition;
         });
 
@@ -114,10 +130,17 @@ class EditionAdminController extends Controller
         $shouldBeActive = $request->boolean('set_active')
             || ($edition->is_active && ! Edition::query()->whereKeyNot($edition->id)->active()->exists());
 
+        $requiresReadiness = ($edition->status !== 'published' && $validated['status'] === 'published')
+            || (! $edition->is_active && $shouldBeActive);
+
         if ($shouldBeActive && $validated['status'] !== 'published') {
             return back()
                 ->withErrors(['status' => 'Only a published edition can be active.'])
                 ->withInput();
+        }
+
+        if ($requiresReadiness) {
+            $this->assertReadyForPublication($edition);
         }
 
         if ($shouldBeActive) {
@@ -146,12 +169,36 @@ class EditionAdminController extends Controller
             return back()->withErrors(['status' => 'Only a published edition can be active.']);
         }
 
+        $report = $this->readinessChecker->check($edition);
+
+        if (! $report['is_ready']) {
+            return redirect()
+                ->route('admin.editions.index', ['edition' => $edition->id])
+                ->withErrors(['edition' => $this->readinessFailureMessage($report)]);
+        }
+
         Edition::query()->update(['is_active' => false]);
         $edition->update(['is_active' => true]);
 
         return redirect()
             ->route('admin.editions.index')
             ->with('status', 'Edition activated.');
+    }
+
+    public function forceActivate(Edition $edition): RedirectResponse
+    {
+        $this->authorize('forceActivate', $edition);
+
+        if ($edition->status !== 'published') {
+            return back()->withErrors(['status' => 'Only a published edition can be active.']);
+        }
+
+        Edition::query()->update(['is_active' => false]);
+        $edition->update(['is_active' => true]);
+
+        return redirect()
+            ->route('admin.editions.index')
+            ->with('status', 'Edition force-activated. Blocking completeness checks were bypassed.');
     }
 
     public function destroy(Edition $edition): RedirectResponse
@@ -185,5 +232,24 @@ class EditionAdminController extends Controller
                 ->where('code', $candidate)
                 ->exists();
         });
+    }
+
+    protected function assertReadyForPublication(Edition $edition): void
+    {
+        $report = $this->readinessChecker->check($edition);
+
+        if (! $report['is_ready']) {
+            throw ValidationException::withMessages([
+                'status' => $this->readinessFailureMessage($report),
+            ]);
+        }
+    }
+
+    /**
+     * @param array{summary: string} $report
+     */
+    protected function readinessFailureMessage(array $report): string
+    {
+        return 'Edition is not ready to publish or activate yet. '.$report['summary'];
     }
 }
