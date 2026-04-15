@@ -45,7 +45,7 @@ class EditionReadinessChecker
             $this->checkLawContent($edition),
             $this->checkTranslations($edition),
             $this->checkNodeTree($edition),
-            $this->checkRequiredDocuments(),
+            $this->checkRequiredDocuments($edition),
             $this->checkQas($edition),
             $this->checkChangelogEntries($edition),
         ];
@@ -353,7 +353,7 @@ class EditionReadinessChecker
     /**
      * @return array{status: string, label: string, summary: string, details: array<int, string>, issue_count: int}
      */
-    protected function checkRequiredDocuments(): array
+    protected function checkRequiredDocuments(Edition $edition): array
     {
         $requiredSlugs = collect(config('lotg.required_document_slugs', []))
             ->filter(fn ($slug) => is_string($slug) && $slug !== '')
@@ -368,6 +368,7 @@ class EditionReadinessChecker
         }
 
         $documents = Document::query()
+            ->forEdition($edition->id)
             ->with('publishedPages')
             ->whereIn('slug', $requiredSlugs)
             ->get()

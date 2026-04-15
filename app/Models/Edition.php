@@ -29,6 +29,11 @@ class Edition extends Model
         return $this->hasMany(Law::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
     public function resolveRouteBinding($value, $field = null): ?Model
     {
         if ($field !== null) {

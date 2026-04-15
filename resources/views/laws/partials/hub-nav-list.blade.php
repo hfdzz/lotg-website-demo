@@ -5,10 +5,15 @@
 
     @foreach ($hubDocuments as $document)
         @php
+            $documentRouteParameters = array_filter([
+                'document' => $document,
+                'lang' => $language,
+                'edition' => $documentEditionQueryId ?? null,
+            ], fn ($value) => $value !== null && $value !== '');
             $firstPage = $document->firstPublishedPage();
             $targetUrl = $document->isCollection() && $firstPage
-                ? route('documents.page', ['document' => $document, 'page' => $firstPage->slug, 'lang' => $language])
-                : route('documents.show', ['document' => $document, 'lang' => $language]);
+                ? route('documents.page', array_merge($documentRouteParameters, ['page' => $firstPage->slug]))
+                : route('documents.show', $documentRouteParameters);
         @endphp
         <a class="hub-nav-link @if (($currentKey ?? null) === 'document-'.$document->slug) is-active @endif" href="{{ $targetUrl }}">
             {{ $document->title }}

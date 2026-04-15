@@ -10,6 +10,7 @@
         @include('laws.partials.hub-nav', [
             'hubDocuments' => $hubDocuments,
             'language' => $language,
+            'documentEditionQueryId' => $editionQueryId ?? null,
             'currentKey' => 'document-'.$document->slug,
         ])
 
@@ -29,7 +30,7 @@
                     <h2>{{ __('site.documents.pages') }}</h2>
                     <div class="document-page-links">
                         @foreach ($pages as $documentPage)
-                            <a class="document-page-link @if ($page && $page->id === $documentPage->id) is-active @endif" href="{{ route('documents.page', ['document' => $document, 'page' => $documentPage->slug, 'lang' => $language]) }}">
+                            <a class="document-page-link @if ($page && $page->id === $documentPage->id) is-active @endif" href="{{ route('documents.page', array_filter(['document' => $document, 'page' => $documentPage->slug, 'lang' => $language, 'edition' => $editionQueryId ?? null], fn ($value) => $value !== null && $value !== '')) }}">
                                 {{ $documentPage->title }}
                             </a>
                         @endforeach

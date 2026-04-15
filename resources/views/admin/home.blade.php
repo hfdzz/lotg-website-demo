@@ -26,9 +26,15 @@
             </p>
         </a>
 
-        <a class="result-card result-link-block" href="{{ route('admin.documents.index') }}">
+        <a class="result-card result-link-block" href="{{ route('admin.documents.home') }}">
             <h2>Manage documents</h2>
-            <p class="law-meta">Edit supporting LotG documents such as VAR Protocol, Glossary, and Guidelines.</p>
+            <p class="law-meta">
+                @if ($activeEdition)
+                    Edit supporting LotG documents for the current working edition: {{ $activeEdition->name }}.
+                @else
+                    Edit supporting LotG documents for the selected working edition.
+                @endif
+            </p>
         </a>
     </section>
 @endsection

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
+use App\Models\Document;
+use App\Models\DocumentPage;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
@@ -16,6 +18,35 @@ class EditionContentCopier
 {
     public function copy(Edition $sourceEdition, Edition $targetEdition): void
     {
+        $documents = Document::query()
+            ->where('edition_id', $sourceEdition->id)
+            ->with('pages')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($documents as $sourceDocument) {
+            $newDocument = Document::create([
+                'edition_id' => $targetEdition->id,
+                'slug' => $this->makeCopiedDocumentSlug($sourceDocument->slug, $targetEdition),
+                'title' => $sourceDocument->title,
+                'type' => $sourceDocument->type,
+                'sort_order' => $sourceDocument->sort_order,
+                'status' => $sourceDocument->status,
+            ]);
+
+            foreach ($sourceDocument->pages as $sourcePage) {
+                DocumentPage::create([
+                    'document_id' => $newDocument->id,
+                    'slug' => $sourcePage->slug,
+                    'title' => $sourcePage->title,
+                    'body_html' => $sourcePage->body_html,
+                    'sort_order' => $sourcePage->sort_order,
+                    'status' => $sourcePage->status,
+                ]);
+            }
+        }
+
         $laws = Law::query()
             ->where('edition_id', $sourceEdition->id)
             ->with([
@@ -117,6 +148,17 @@ class EditionContentCopier
         return UniqueSlugSuffixer::ensureUnique(
             Str::slug($sourceSlug),
             fn (string $candidate) => Law::query()
+                ->where('edition_id', $targetEdition->id)
+                ->where('slug', $candidate)
+                ->exists()
+        );
+    }
+
+    protected function makeCopiedDocumentSlug(string $sourceSlug, Edition $targetEdition): string
+    {
+        return UniqueSlugSuffixer::ensureUnique(
+            Str::slug($sourceSlug),
+            fn (string $candidate) => Document::query()
                 ->where('edition_id', $targetEdition->id)
                 ->where('slug', $candidate)
                 ->exists()

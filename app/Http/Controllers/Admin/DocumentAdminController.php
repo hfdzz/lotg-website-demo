@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Document;
-use App\Models\DocumentPage;
+use App\Models\Edition;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,30 +12,65 @@ use Illuminate\Support\Str;
 
 class DocumentAdminController extends Controller
 {
-    public function index(): View
+    public function home(): View|RedirectResponse
+    {
+        $this->authorize('viewAny', Document::class);
+
+        $activeEdition = Edition::current();
+
+        if ($activeEdition) {
+            return redirect()->route('admin.documents.index', ['edition' => $activeEdition]);
+        }
+
+        $fallbackEdition = Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->first();
+
+        if ($fallbackEdition) {
+            return redirect()->route('admin.documents.index', ['edition' => $fallbackEdition]);
+        }
+
+        return redirect()->route('admin.editions.index');
+    }
+
+    public function index(Edition $edition): View
     {
         $this->authorize('viewAny', Document::class);
 
         return view('admin.documents.index', [
-            'documents' => Document::query()->with('pages')->orderBy('sort_order')->get(),
+            'documents' => Document::query()
+                ->forEdition($edition->id)
+                ->with('pages')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get(),
+            'selectedEdition' => $edition,
+            'editions' => Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->get(),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, Edition $edition): RedirectResponse
     {
         $this->authorize('create', Document::class);
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:documents,slug'],
+            'slug' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'in:single,collection'],
             'sort_order' => ['required', 'integer', 'min:1'],
             'status' => ['required', 'in:draft,published'],
         ]);
 
+        $slug = filled($validated['slug'] ?? null) ? Str::slug($validated['slug']) : Str::slug($validated['title']);
+
+        if ($this->slugExistsInEdition($edition, $slug)) {
+            return back()
+                ->withErrors(['slug' => 'The slug has already been taken in this edition.'])
+                ->withInput();
+        }
+
         $document = Document::create([
+            'edition_id' => $edition->id,
             'title' => $validated['title'],
-            'slug' => filled($validated['slug'] ?? null) ? Str::slug($validated['slug']) : Str::slug($validated['title']),
+            'slug' => $slug,
             'type' => $validated['type'],
             'sort_order' => $validated['sort_order'],
             'status' => $validated['status'],
@@ -51,26 +86,30 @@ class DocumentAdminController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.documents.edit', ['document' => $document])->with('status', 'Document created.');
+        return redirect()->route('admin.documents.edit', ['edition' => $edition, 'document' => $document])->with('status', 'Document created.');
     }
 
-    public function edit(Document $document): View
+    public function edit(Edition $edition, Document $document): View
     {
         $this->authorize('update', $document);
+        abort_unless((int) $document->edition_id === (int) $edition->id, 404);
         $document->load('pages');
 
         return view('admin.documents.edit', [
             'document' => $document,
+            'selectedEdition' => $edition,
+            'editions' => Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->get(),
         ]);
     }
 
-    public function update(Request $request, Document $document): RedirectResponse
+    public function update(Request $request, Edition $edition, Document $document): RedirectResponse
     {
         $this->authorize('update', $document);
+        abort_unless((int) $document->edition_id === (int) $edition->id, 404);
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:documents,slug,'.$document->id],
+            'slug' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'in:single,collection'],
             'sort_order' => ['required', 'integer', 'min:1'],
             'status' => ['required', 'in:draft,published'],
@@ -85,9 +124,17 @@ class DocumentAdminController extends Controller
             'remove_page_ids.*' => ['integer'],
         ]);
 
+        $slug = filled($validated['slug'] ?? null) ? Str::slug($validated['slug']) : Str::slug($validated['title']);
+
+        if ($this->slugExistsInEdition($edition, $slug, $document->id)) {
+            return back()
+                ->withErrors(['slug' => 'The slug has already been taken in this edition.'])
+                ->withInput();
+        }
+
         $document->update([
             'title' => $validated['title'],
-            'slug' => filled($validated['slug'] ?? null) ? Str::slug($validated['slug']) : Str::slug($validated['title']),
+            'slug' => $slug,
             'type' => $validated['type'],
             'sort_order' => $validated['sort_order'],
             'status' => $validated['status'],
@@ -142,6 +189,15 @@ class DocumentAdminController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.documents.edit', ['document' => $document])->with('status', 'Document updated.');
+        return redirect()->route('admin.documents.edit', ['edition' => $edition, 'document' => $document])->with('status', 'Document updated.');
+    }
+
+    protected function slugExistsInEdition(Edition $edition, string $slug, ?int $ignoreDocumentId = null): bool
+    {
+        return Document::query()
+            ->where('edition_id', $edition->id)
+            ->where('slug', $slug)
+            ->when($ignoreDocumentId, fn ($query) => $query->whereKeyNot($ignoreDocumentId))
+            ->exists();
     }
 }

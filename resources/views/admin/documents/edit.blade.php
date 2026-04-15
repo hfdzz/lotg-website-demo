@@ -3,12 +3,14 @@
 @section('title', 'Admin | Edit Document')
 
 @section('content')
-    <a class="back-link" href="{{ route('admin.documents.index') }}">Back to documents</a>
+    <a class="back-link" href="{{ route('admin.documents.index', ['edition' => $selectedEdition]) }}">Back to documents</a>
+
+    @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition, 'editionSwitcherTarget' => 'documents'])
 
     <section class="hero">
         <p class="eyebrow">Admin</p>
         <h1>Edit document</h1>
-        <p>Manage the document record and its pages.</p>
+        <p>Manage the document record and its pages for {{ $selectedEdition->name }}.</p>
     </section>
 
     @if (session('status'))
@@ -17,7 +19,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.documents.update', ['document' => $document]) }}" method="post" class="stack-form">
+    <form action="{{ route('admin.documents.update', ['edition' => $selectedEdition, 'document' => $document]) }}" method="post" class="stack-form">
         @csrf
         @method('patch')
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Models\Edition;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -13,11 +14,16 @@ class DocumentController extends Controller
     public function show(Request $request, Document $document): View|RedirectResponse
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
-        $document->load('publishedPages');
+        $document->load(['publishedPages', 'edition']);
 
-        if ($document->status !== 'published') {
+        if (! $document->edition || $document->status !== 'published' || $document->edition->status !== 'published') {
             return redirect()->route('laws.index', ['lang' => $language]);
         }
+
+        $activeEditionId = Edition::current()?->id;
+        $editionQueryId = (int) $document->edition_id !== (int) $activeEditionId
+            ? $document->edition_id
+            : null;
 
         if ($document->isCollection()) {
             $firstPage = $document->firstPublishedPage();
@@ -27,9 +33,12 @@ class DocumentController extends Controller
             }
 
             return redirect()->route('documents.page', [
-                'document' => $document,
-                'page' => $firstPage->slug,
-                'lang' => $language,
+                ...array_filter([
+                    'document' => $document,
+                    'page' => $firstPage->slug,
+                    'lang' => $language,
+                    'edition' => $editionQueryId,
+                ], fn ($value) => $value !== null && $value !== ''),
             ]);
         }
 
@@ -38,27 +47,41 @@ class DocumentController extends Controller
             'page' => $document->firstPublishedPage(),
             'pages' => collect(),
             'language' => $language,
-            ...$this->hubData(),
+            'editionQueryId' => $editionQueryId,
+            ...$this->hubData($document->edition),
         ]);
     }
 
     public function page(Request $request, Document $document, string $page): View|RedirectResponse
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
-        $document->load('publishedPages');
+        $document->load(['publishedPages', 'edition']);
 
-        if ($document->status !== 'published') {
+        if (! $document->edition || $document->status !== 'published' || $document->edition->status !== 'published') {
             return redirect()->route('laws.index', ['lang' => $language]);
         }
 
+        $activeEditionId = Edition::current()?->id;
+        $editionQueryId = (int) $document->edition_id !== (int) $activeEditionId
+            ? $document->edition_id
+            : null;
+
         if (! $document->isCollection()) {
-            return redirect()->route('documents.show', ['document' => $document, 'lang' => $language]);
+            return redirect()->route('documents.show', array_filter([
+                'document' => $document,
+                'lang' => $language,
+                'edition' => $editionQueryId,
+            ], fn ($value) => $value !== null && $value !== ''));
         }
 
         $selectedPage = $document->publishedPages->firstWhere('slug', $page);
 
         if (! $selectedPage) {
-            return redirect()->route('documents.show', ['document' => $document, 'lang' => $language]);
+            return redirect()->route('documents.show', array_filter([
+                'document' => $document,
+                'lang' => $language,
+                'edition' => $editionQueryId,
+            ], fn ($value) => $value !== null && $value !== ''));
         }
 
         return view('documents.show', [
@@ -66,15 +89,17 @@ class DocumentController extends Controller
             'page' => $selectedPage,
             'pages' => $document->publishedPages,
             'language' => $language,
-            ...$this->hubData(),
+            'editionQueryId' => $editionQueryId,
+            ...$this->hubData($document->edition),
         ]);
     }
 
-    protected function hubData(): array
+    protected function hubData(Edition $edition): array
     {
         return [
             'hubDocuments' => Document::query()
                 ->published()
+                ->forEdition($edition->id)
                 ->with('publishedPages')
                 ->orderBy('sort_order')
                 ->get(),

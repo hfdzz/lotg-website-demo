@@ -38,10 +38,7 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
     Route::get('/', [AdminHomeController::class, 'index'])->name('home');
     Route::get('/editions', [EditionAdminController::class, 'index'])->name('editions.index');
     Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');
-    Route::get('/documents', [DocumentAdminController::class, 'index'])->name('documents.index');
-    Route::post('/documents', [DocumentAdminController::class, 'store'])->name('documents.store');
-    Route::get('/documents/{document}/edit', [DocumentAdminController::class, 'edit'])->name('documents.edit');
-    Route::patch('/documents/{document}', [DocumentAdminController::class, 'update'])->name('documents.update');
+    Route::get('/documents', [DocumentAdminController::class, 'home'])->name('documents.home');
 
     Route::get('/switch-edition', [EditionAdminController::class, 'go'])->name('editions.go');
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');
@@ -55,6 +52,11 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
         Route::post('/laws', [LawAdminController::class, 'store'])->name('laws.store');
         Route::get('/laws/{law}/edit', [LawAdminController::class, 'edit'])->name('laws.edit');
         Route::patch('/laws/{law}', [LawAdminController::class, 'update'])->name('laws.update');
+
+        Route::get('/documents', [DocumentAdminController::class, 'index'])->name('documents.index');
+        Route::post('/documents', [DocumentAdminController::class, 'store'])->name('documents.store');
+        Route::get('/documents/{document}/edit', [DocumentAdminController::class, 'edit'])->name('documents.edit');
+        Route::patch('/documents/{document}', [DocumentAdminController::class, 'update'])->name('documents.update');
 
         Route::post('/laws/{law}/nodes', [NodeAdminController::class, 'store'])->name('nodes.store');
         Route::get('/laws/{law}/nodes/{node}/edit', [NodeAdminController::class, 'edit'])->name('nodes.edit');

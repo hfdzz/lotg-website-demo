@@ -62,8 +62,13 @@ class EditionAdminController extends Controller
         $this->authorize('viewAny', Edition::class);
 
         $edition = Edition::query()->findOrFail((int) $request->query('edition'));
+        $target = (string) $request->query('target', 'laws');
 
-        return redirect()->route('admin.laws.index', ['edition' => $edition]);
+        return match ($target) {
+            'documents' => redirect()->route('admin.documents.index', ['edition' => $edition]),
+            'editions' => redirect()->route('admin.editions.index', ['edition' => $edition->id]),
+            default => redirect()->route('admin.laws.index', ['edition' => $edition]),
+        };
     }
 
     public function store(Request $request): RedirectResponse
@@ -209,8 +214,12 @@ class EditionAdminController extends Controller
             return back()->withErrors(['edition' => 'The active edition cannot be deleted.']);
         }
 
-        if ($edition->laws()->exists() || ChangelogEntry::query()->where('edition_id', $edition->id)->exists()) {
-            return back()->withErrors(['edition' => 'Only an empty edition can be deleted. Remove its laws and law changes first.']);
+        if (
+            $edition->laws()->exists()
+            || $edition->documents()->exists()
+            || ChangelogEntry::query()->where('edition_id', $edition->id)->exists()
+        ) {
+            return back()->withErrors(['edition' => 'Only an empty edition can be deleted. Remove its laws, documents, and law changes first.']);
         }
 
         $edition->delete();

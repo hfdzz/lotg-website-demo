@@ -5,10 +5,12 @@
 @section('content')
     <a class="back-link" href="{{ route('admin.home') }}">Back to admin home</a>
 
+    @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition, 'editionSwitcherTarget' => 'documents'])
+
     <section class="hero">
         <p class="eyebrow">Admin</p>
         <h1>Manage documents</h1>
-        <p>Single documents and small collections for the LotG portal.</p>
+        <p>Single documents and small collections for {{ $selectedEdition->name }}.</p>
     </section>
 
     @if (session('status'))
@@ -22,7 +24,7 @@
             <h2>Create document</h2>
         </summary>
         <div class="collapse-body">
-            <form action="{{ route('admin.documents.store') }}" method="post" class="stack-form">
+            <form action="{{ route('admin.documents.store', ['edition' => $selectedEdition]) }}" method="post" class="stack-form">
                 @csrf
                 <label>
                     <div class="law-meta">Title</div>
@@ -60,7 +62,7 @@
         <div class="result-list stack-top">
             @forelse ($documents as $document)
                 <article class="result-card">
-                    <h3><a class="result-link" href="{{ route('admin.documents.edit', ['document' => $document]) }}">{{ $document->title }}</a></h3>
+                    <h3><a class="result-link" href="{{ route('admin.documents.edit', ['edition' => $selectedEdition, 'document' => $document]) }}">{{ $document->title }}</a></h3>
                     <p class="law-meta">Slug: {{ $document->slug }} | Type: {{ $document->type }} | Status: {{ $document->status }} | Pages: {{ $document->pages->count() }}</p>
                 </article>
             @empty

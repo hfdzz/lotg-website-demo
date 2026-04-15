@@ -29,11 +29,14 @@ class LawController extends Controller
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
                 ->values(),
-            'hubDocuments' => Document::query()
-                ->published()
-                ->with('publishedPages')
-                ->orderBy('sort_order')
-                ->get(),
+            'hubDocuments' => $activeEdition
+                ? Document::query()
+                    ->published()
+                    ->forEdition($activeEdition->id)
+                    ->with('publishedPages')
+                    ->orderBy('sort_order')
+                    ->get()
+                : collect(),
             'language' => $language,
         ]);
     }

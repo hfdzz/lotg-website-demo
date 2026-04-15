@@ -195,7 +195,8 @@ class LotgSeeder extends Seeder
             $this->seedLawTwo($edition);
             $this->seedLawThree($edition);
             $this->seedPreviousEditionLaw($previousEdition);
-            $this->seedDocuments();
+            $this->seedDocuments($edition);
+            $this->seedDocuments($previousEdition);
         });
     }
 
@@ -704,10 +705,10 @@ class LotgSeeder extends Seeder
         );
     }
 
-    protected function seedDocuments(): void
+    protected function seedDocuments(Edition $edition): void
     {
         $about = Document::updateOrCreate(
-            ['slug' => 'about-the-laws'],
+            ['edition_id' => $edition->id, 'slug' => 'about-the-laws'],
             ['title' => 'About the Laws', 'type' => 'single', 'sort_order' => 1, 'status' => 'published']
         );
         $this->syncDocumentPage(
@@ -719,7 +720,7 @@ class LotgSeeder extends Seeder
         );
 
         $notes = Document::updateOrCreate(
-            ['slug' => 'notes-and-modifications'],
+            ['edition_id' => $edition->id, 'slug' => 'notes-and-modifications'],
             ['title' => 'Notes and Modifications', 'type' => 'collection', 'sort_order' => 2, 'status' => 'published']
         );
         $this->syncDocumentPage(
@@ -738,7 +739,7 @@ class LotgSeeder extends Seeder
         );
 
         $var = Document::updateOrCreate(
-            ['slug' => 'var-protocol'],
+            ['edition_id' => $edition->id, 'slug' => 'var-protocol'],
             ['title' => 'VAR Protocol', 'type' => 'single', 'sort_order' => 3, 'status' => 'published']
         );
         $this->syncDocumentPage(
@@ -750,7 +751,7 @@ class LotgSeeder extends Seeder
         );
 
         $glossary = Document::updateOrCreate(
-            ['slug' => 'glossary'],
+            ['edition_id' => $edition->id, 'slug' => 'glossary'],
             ['title' => 'Glossary', 'type' => 'single', 'sort_order' => 4, 'status' => 'published']
         );
         $this->syncDocumentPage(
@@ -762,7 +763,7 @@ class LotgSeeder extends Seeder
         );
 
         $guidelines = Document::updateOrCreate(
-            ['slug' => 'guidelines-for-match-officials'],
+            ['edition_id' => $edition->id, 'slug' => 'guidelines-for-match-officials'],
             ['title' => 'Guidelines for Match Officials', 'type' => 'collection', 'sort_order' => 5, 'status' => 'published']
         );
         $this->syncDocumentPage(
