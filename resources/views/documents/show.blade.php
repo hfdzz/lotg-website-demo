@@ -10,6 +10,7 @@
         @include('laws.partials.hub-nav', [
             'hubDocuments' => $hubDocuments,
             'language' => $language,
+            'lawsEditionQueryId' => $editionQueryId ?? null,
             'documentEditionQueryId' => $editionQueryId ?? null,
             'currentKey' => 'document-'.$document->slug,
         ])

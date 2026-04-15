@@ -66,6 +66,15 @@ class LawController extends Controller
                 'hasActiveEdition' => (bool) $activeEdition,
                 'activeEdition' => $activeEdition,
                 'selectedEdition' => $selectedEdition,
+                'hubDocuments' => $selectedEdition
+                    ? Document::query()
+                        ->published()
+                        ->forEdition($selectedEdition->id)
+                        ->with(['translations', 'publishedPages.translations'])
+                        ->orderBy('sort_order')
+                        ->get()
+                    : collect(),
+                'documentEditionQueryId' => $selectedEdition?->id,
                 'language' => $language,
             ]);
         }
@@ -80,6 +89,15 @@ class LawController extends Controller
             'laws' => $laws,
             'hasActiveEdition' => (bool) $activeEdition,
             'activeEdition' => $activeEdition,
+            'hubDocuments' => $activeEdition
+                ? Document::query()
+                    ->published()
+                    ->forEdition($activeEdition->id)
+                    ->with(['translations', 'publishedPages.translations'])
+                    ->orderBy('sort_order')
+                    ->get()
+                : collect(),
+            'documentEditionQueryId' => null,
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
                 ->values(),

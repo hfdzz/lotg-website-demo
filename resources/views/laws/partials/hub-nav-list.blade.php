@@ -1,5 +1,5 @@
 <div class="hub-nav-list">
-    <a class="hub-nav-link @if (($currentKey ?? null) === 'laws') is-active @endif" href="{{ route('laws.list', ['lang' => $language]) }}">
+    <a class="hub-nav-link @if (($currentKey ?? null) === 'laws') is-active @endif" href="{{ route('laws.list', array_filter(['lang' => $language, 'edition' => $lawsEditionQueryId ?? null], fn ($value) => $value !== null && $value !== '')) }}">
         {{ __('site.hub.laws_entry') }}
     </a>
 
