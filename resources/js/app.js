@@ -547,12 +547,20 @@ function setupDocumentPageEditor() {
                     <input type="text" name="pages[${nextIndex}][slug]" value="">
                 </label>
                 <label>
-                    <div class="law-meta">Page title</div>
-                    <input type="text" name="pages[${nextIndex}][title]" value="">
+                    <div class="law-meta">Page title (ID)</div>
+                    <input type="text" name="pages[${nextIndex}][title_id]" value="">
                 </label>
                 <label>
-                    <div class="law-meta">Body HTML</div>
-                    <textarea name="pages[${nextIndex}][body_html]" rows="10"></textarea>
+                    <div class="law-meta">Page title (EN)</div>
+                    <input type="text" name="pages[${nextIndex}][title_en]" value="">
+                </label>
+                <label>
+                    <div class="law-meta">Body HTML (ID)</div>
+                    <textarea name="pages[${nextIndex}][body_html_id]" rows="10"></textarea>
+                </label>
+                <label>
+                    <div class="law-meta">Body HTML (EN)</div>
+                    <textarea name="pages[${nextIndex}][body_html_en]" rows="10"></textarea>
                 </label>
                 <label data-document-collection-only>
                     <div class="law-meta">Sort order</div>

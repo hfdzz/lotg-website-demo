@@ -33,7 +33,7 @@ class LawController extends Controller
                 ? Document::query()
                     ->published()
                     ->forEdition($activeEdition->id)
-                    ->with('publishedPages')
+                    ->with(['translations', 'publishedPages.translations'])
                     ->orderBy('sort_order')
                     ->get()
                 : collect(),

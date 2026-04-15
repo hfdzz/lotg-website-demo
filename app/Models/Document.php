@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\LotgLanguage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,11 @@ class Document extends Model
     public function pages(): HasMany
     {
         return $this->hasMany(DocumentPage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function translations(): HasMany
+    {
+        return $this->hasMany(DocumentTranslation::class)->orderBy('language_code');
     }
 
     public function publishedPages(): HasMany
@@ -84,6 +90,22 @@ class Document extends Model
         return $this->relationLoaded('publishedPages')
             ? $this->publishedPages->first()
             : $this->publishedPages()->first();
+    }
+
+    public function translationFor(?string $languageCode = null): ?DocumentTranslation
+    {
+        $languageCode = $languageCode ?: app()->getLocale();
+        $translation = $this->translations->firstWhere('language_code', LotgLanguage::normalize($languageCode));
+
+        return $translation
+            ?? $this->translations->firstWhere('language_code', config('app.fallback_locale'))
+            ?? $this->translations->firstWhere('language_code', LotgLanguage::default())
+            ?? $this->translations->first();
+    }
+
+    public function displayTitle(?string $languageCode = null): string
+    {
+        return $this->translationFor($languageCode)?->title ?: $this->title;
     }
 
     public function isCollection(): bool

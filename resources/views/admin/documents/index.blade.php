@@ -19,6 +19,14 @@
         </div>
     @endif
 
+    @if ($errors->any())
+        <div class="flash-message-error">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     <details class="card collapse-card">
         <summary class="collapse-summary">
             <h2>Create document</h2>
@@ -27,8 +35,12 @@
             <form action="{{ route('admin.documents.store', ['edition' => $selectedEdition]) }}" method="post" class="stack-form">
                 @csrf
                 <label>
-                    <div class="law-meta">Title</div>
-                    <input type="text" name="title" value="{{ old('title') }}">
+                    <div class="law-meta">Title (ID)</div>
+                    <input type="text" name="title_id" value="{{ old('title_id') }}">
+                </label>
+                <label>
+                    <div class="law-meta">Title (EN)</div>
+                    <input type="text" name="title_en" value="{{ old('title_en') }}">
                 </label>
                 <label>
                     <div class="law-meta">Slug</div>
@@ -62,7 +74,7 @@
         <div class="result-list stack-top">
             @forelse ($documents as $document)
                 <article class="result-card">
-                    <h3><a class="result-link" href="{{ route('admin.documents.edit', ['edition' => $selectedEdition, 'document' => $document]) }}">{{ $document->title }}</a></h3>
+                    <h3><a class="result-link" href="{{ route('admin.documents.edit', ['edition' => $selectedEdition, 'document' => $document]) }}">{{ $document->displayTitle('id') }}</a></h3>
                     <p class="law-meta">Slug: {{ $document->slug }} | Type: {{ $document->type }} | Status: {{ $document->status }} | Pages: {{ $document->pages->count() }}</p>
                 </article>
             @empty

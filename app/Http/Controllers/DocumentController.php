@@ -14,7 +14,7 @@ class DocumentController extends Controller
     public function show(Request $request, Document $document): View|RedirectResponse
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
-        $document->load(['publishedPages', 'edition']);
+        $document->load(['translations', 'publishedPages.translations', 'edition']);
 
         if (! $document->edition || $document->status !== 'published' || $document->edition->status !== 'published') {
             return redirect()->route('laws.index', ['lang' => $language]);
@@ -55,7 +55,7 @@ class DocumentController extends Controller
     public function page(Request $request, Document $document, string $page): View|RedirectResponse
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
-        $document->load(['publishedPages', 'edition']);
+        $document->load(['translations', 'publishedPages.translations', 'edition']);
 
         if (! $document->edition || $document->status !== 'published' || $document->edition->status !== 'published') {
             return redirect()->route('laws.index', ['lang' => $language]);
@@ -100,7 +100,7 @@ class DocumentController extends Controller
             'hubDocuments' => Document::query()
                 ->published()
                 ->forEdition($edition->id)
-                ->with('publishedPages')
+                ->with(['translations', 'publishedPages.translations'])
                 ->orderBy('sort_order')
                 ->get(),
         ];

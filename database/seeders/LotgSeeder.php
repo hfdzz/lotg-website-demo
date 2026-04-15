@@ -7,6 +7,8 @@ use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
 use App\Models\Document;
 use App\Models\DocumentPage;
+use App\Models\DocumentPageTranslation;
+use App\Models\DocumentTranslation;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
@@ -711,11 +713,18 @@ class LotgSeeder extends Seeder
             ['edition_id' => $edition->id, 'slug' => 'about-the-laws'],
             ['title' => 'About the Laws', 'type' => 'single', 'sort_order' => 1, 'status' => 'published']
         );
+        $this->syncDocumentTranslations($about, [
+            'id' => ['title' => 'Tentang Laws of the Game'],
+            'en' => ['title' => 'About the Laws'],
+        ]);
         $this->syncDocumentPage(
             $about,
             'overview',
-            'About the Laws',
-            '<p>This section introduces how the Laws of the Game are organized, maintained, and applied. It gives readers context before they move into individual law text and supporting materials.</p><p>For this MVP, non-law documents stay intentionally simple and editorial. They sit beside the laws without forcing the whole project into a full CMS abstraction.</p>',
+            ['id' => 'Tentang Laws of the Game', 'en' => 'About the Laws'],
+            [
+                'id' => '<p>This section introduces how the Laws of the Game are organized, maintained, and applied. It gives readers context before they move into individual law text and supporting materials.</p><p>For this MVP, non-law documents stay intentionally simple and editorial. They sit beside the laws without forcing the whole project into a full CMS abstraction.</p>',
+                'en' => '<p>This section introduces how the Laws of the Game are organized, maintained, and applied. It gives readers context before they move into individual law text and supporting materials.</p><p>For this MVP, non-law documents stay intentionally simple and editorial. They sit beside the laws without forcing the whole project into a full CMS abstraction.</p>',
+            ],
             1
         );
 
@@ -723,18 +732,28 @@ class LotgSeeder extends Seeder
             ['edition_id' => $edition->id, 'slug' => 'notes-and-modifications'],
             ['title' => 'Notes and Modifications', 'type' => 'collection', 'sort_order' => 2, 'status' => 'published']
         );
+        $this->syncDocumentTranslations($notes, [
+            'id' => ['title' => 'Catatan dan Modifikasi'],
+            'en' => ['title' => 'Notes and Modifications'],
+        ]);
         $this->syncDocumentPage(
             $notes,
             'introduction',
-            'Introduction',
-            '<p>Competition organizers may publish approved notes and modifications to explain how the laws are interpreted in specific contexts, tournaments, or age groups.</p><p>This seeded collection helps validate the portal-style information architecture where law content and supporting reference documents live together.</p>',
+            ['id' => 'Pendahuluan', 'en' => 'Introduction'],
+            [
+                'id' => '<p>Competition organizers may publish approved notes and modifications to explain how the laws are interpreted in specific contexts, tournaments, or age groups.</p><p>This seeded collection helps validate the portal-style information architecture where law content and supporting reference documents live together.</p>',
+                'en' => '<p>Competition organizers may publish approved notes and modifications to explain how the laws are interpreted in specific contexts, tournaments, or age groups.</p><p>This seeded collection helps validate the portal-style information architecture where law content and supporting reference documents live together.</p>',
+            ],
             1
         );
         $this->syncDocumentPage(
             $notes,
             'modifications',
-            'Modifications',
-            '<p>Specific competition or development pathways may allow documented modifications, provided they remain clearly published and properly governed.</p>',
+            ['id' => 'Modifikasi', 'en' => 'Modifications'],
+            [
+                'id' => '<p>Specific competition or development pathways may allow documented modifications, provided they remain clearly published and properly governed.</p>',
+                'en' => '<p>Specific competition or development pathways may allow documented modifications, provided they remain clearly published and properly governed.</p>',
+            ],
             2
         );
 
@@ -742,11 +761,18 @@ class LotgSeeder extends Seeder
             ['edition_id' => $edition->id, 'slug' => 'var-protocol'],
             ['title' => 'VAR Protocol', 'type' => 'single', 'sort_order' => 3, 'status' => 'published']
         );
+        $this->syncDocumentTranslations($var, [
+            'id' => ['title' => 'Protokol VAR'],
+            'en' => ['title' => 'VAR Protocol'],
+        ]);
         $this->syncDocumentPage(
             $var,
             'overview',
-            'VAR Protocol',
-            '<p>The Video Assistant Referee protocol defines reviewable incidents, operational communication, and the expected sequence for video checks and on-field reviews.</p><p>This sample document is seeded as a single editorial page because the protocol usually reads best as one continuous reference.</p>',
+            ['id' => 'Protokol VAR', 'en' => 'VAR Protocol'],
+            [
+                'id' => '<p>The Video Assistant Referee protocol defines reviewable incidents, operational communication, and the expected sequence for video checks and on-field reviews.</p><p>This sample document is seeded as a single editorial page because the protocol usually reads best as one continuous reference.</p>',
+                'en' => '<p>The Video Assistant Referee protocol defines reviewable incidents, operational communication, and the expected sequence for video checks and on-field reviews.</p><p>This sample document is seeded as a single editorial page because the protocol usually reads best as one continuous reference.</p>',
+            ],
             1
         );
 
@@ -754,11 +780,18 @@ class LotgSeeder extends Seeder
             ['edition_id' => $edition->id, 'slug' => 'glossary'],
             ['title' => 'Glossary', 'type' => 'single', 'sort_order' => 4, 'status' => 'published']
         );
+        $this->syncDocumentTranslations($glossary, [
+            'id' => ['title' => 'Glosarium'],
+            'en' => ['title' => 'Glossary'],
+        ]);
         $this->syncDocumentPage(
             $glossary,
             'overview',
-            'Glossary',
-            '<p>The glossary can hold standard definitions and officiating terms that help readers interpret the laws consistently.</p><ul><li><strong>Review:</strong> A formal video-based check of a potentially match-changing incident.</li><li><strong>Restart:</strong> The lawful method used to resume play after a stoppage.</li></ul>',
+            ['id' => 'Glosarium', 'en' => 'Glossary'],
+            [
+                'id' => '<p>The glossary can hold standard definitions and officiating terms that help readers interpret the laws consistently.</p><ul><li><strong>Review:</strong> A formal video-based check of a potentially match-changing incident.</li><li><strong>Restart:</strong> The lawful method used to resume play after a stoppage.</li></ul>',
+                'en' => '<p>The glossary can hold standard definitions and officiating terms that help readers interpret the laws consistently.</p><ul><li><strong>Review:</strong> A formal video-based check of a potentially match-changing incident.</li><li><strong>Restart:</strong> The lawful method used to resume play after a stoppage.</li></ul>',
+            ],
             1
         );
 
@@ -766,43 +799,100 @@ class LotgSeeder extends Seeder
             ['edition_id' => $edition->id, 'slug' => 'guidelines-for-match-officials'],
             ['title' => 'Guidelines for Match Officials', 'type' => 'collection', 'sort_order' => 5, 'status' => 'published']
         );
+        $this->syncDocumentTranslations($guidelines, [
+            'id' => ['title' => 'Panduan untuk Ofisial Pertandingan'],
+            'en' => ['title' => 'Guidelines for Match Officials'],
+        ]);
         $this->syncDocumentPage(
             $guidelines,
             'pre-match',
-            'Pre-Match',
-            '<p>Pre-match guidance can cover inspections, crew briefings, field checks, team sheet reviews, and operational readiness before kickoff.</p><p>A collection-style document works well here because the material is naturally split into practical phases rather than one uninterrupted article.</p>',
+            ['id' => 'Pra-pertandingan', 'en' => 'Pre-Match'],
+            [
+                'id' => '<p>Pre-match guidance can cover inspections, crew briefings, field checks, team sheet reviews, and operational readiness before kickoff.</p><p>A collection-style document works well here because the material is naturally split into practical phases rather than one uninterrupted article.</p>',
+                'en' => '<p>Pre-match guidance can cover inspections, crew briefings, field checks, team sheet reviews, and operational readiness before kickoff.</p><p>A collection-style document works well here because the material is naturally split into practical phases rather than one uninterrupted article.</p>',
+            ],
             1
         );
         $this->syncDocumentPage(
             $guidelines,
             'during-match',
-            'During Match',
-            '<p>During-match guidance can include positioning, communication, incident management, substitutions, disciplinary procedures, and cooperation between the referee team.</p>',
+            ['id' => 'Saat pertandingan', 'en' => 'During Match'],
+            [
+                'id' => '<p>During-match guidance can include positioning, communication, incident management, substitutions, disciplinary procedures, and cooperation between the referee team.</p>',
+                'en' => '<p>During-match guidance can include positioning, communication, incident management, substitutions, disciplinary procedures, and cooperation between the referee team.</p>',
+            ],
             2
         );
         $this->syncDocumentPage(
             $guidelines,
             'post-match',
-            'Post-Match',
-            '<p>Post-match guidance can include reporting, disciplinary documentation, debriefing, and follow-up administrative tasks after the final whistle.</p>',
+            ['id' => 'Pasca-pertandingan', 'en' => 'Post-Match'],
+            [
+                'id' => '<p>Post-match guidance can include reporting, disciplinary documentation, debriefing, and follow-up administrative tasks after the final whistle.</p>',
+                'en' => '<p>Post-match guidance can include reporting, disciplinary documentation, debriefing, and follow-up administrative tasks after the final whistle.</p>',
+            ],
             3
         );
     }
 
-    protected function syncDocumentPage(Document $document, string $slug, string $title, string $bodyHtml, int $sortOrder): void
+    protected function syncDocumentTranslations(Document $document, array $translations): void
     {
-        DocumentPage::updateOrCreate(
+        foreach (array_keys(LotgLanguage::supported()) as $languageCode) {
+            $payload = $translations[$languageCode] ?? $translations['id'] ?? $translations['en'] ?? null;
+
+            if (! $payload || empty($payload['title'])) {
+                continue;
+            }
+
+            DocumentTranslation::updateOrCreate(
+                [
+                    'document_id' => $document->id,
+                    'language_code' => $languageCode,
+                ],
+                [
+                    'title' => $payload['title'],
+                ]
+            );
+        }
+    }
+
+    protected function syncDocumentPage(Document $document, string $slug, string|array $title, string|array $bodyHtml, int $sortOrder): void
+    {
+        $baseTitle = is_array($title) ? ($title['id'] ?? $title['en'] ?? '') : $title;
+        $baseBodyHtml = is_array($bodyHtml) ? ($bodyHtml['id'] ?? $bodyHtml['en'] ?? null) : $bodyHtml;
+
+        $page = DocumentPage::updateOrCreate(
             [
                 'document_id' => $document->id,
                 'slug' => $slug,
             ],
             [
-                'title' => $title,
-                'body_html' => $bodyHtml,
+                'title' => $baseTitle,
+                'body_html' => $baseBodyHtml,
                 'sort_order' => $sortOrder,
                 'status' => 'published',
             ]
         );
+
+        foreach (array_keys(LotgLanguage::supported()) as $languageCode) {
+            $resolvedTitle = is_array($title) ? ($title[$languageCode] ?? $title['id'] ?? $title['en'] ?? null) : $title;
+            $resolvedBodyHtml = is_array($bodyHtml) ? ($bodyHtml[$languageCode] ?? $bodyHtml['id'] ?? $bodyHtml['en'] ?? null) : $bodyHtml;
+
+            if (! $resolvedTitle && ! $resolvedBodyHtml) {
+                continue;
+            }
+
+            DocumentPageTranslation::updateOrCreate(
+                [
+                    'document_page_id' => $page->id,
+                    'language_code' => $languageCode,
+                ],
+                [
+                    'title' => $resolvedTitle ?: $baseTitle,
+                    'body_html' => $resolvedBodyHtml,
+                ]
+            );
+        }
     }
 
     protected function syncLawQas(Law $law, array $items): void

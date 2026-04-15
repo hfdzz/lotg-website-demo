@@ -6,6 +6,8 @@ use App\Models\ContentNode;
 use App\Models\ContentNodeTranslation;
 use App\Models\Document;
 use App\Models\DocumentPage;
+use App\Models\DocumentPageTranslation;
+use App\Models\DocumentTranslation;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
@@ -20,7 +22,7 @@ class EditionContentCopier
     {
         $documents = Document::query()
             ->where('edition_id', $sourceEdition->id)
-            ->with('pages')
+            ->with(['translations', 'pages.translations'])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -35,8 +37,16 @@ class EditionContentCopier
                 'status' => $sourceDocument->status,
             ]);
 
+            foreach ($sourceDocument->translations as $translation) {
+                DocumentTranslation::create([
+                    'document_id' => $newDocument->id,
+                    'language_code' => $translation->language_code,
+                    'title' => $translation->title,
+                ]);
+            }
+
             foreach ($sourceDocument->pages as $sourcePage) {
-                DocumentPage::create([
+                $newPage = DocumentPage::create([
                     'document_id' => $newDocument->id,
                     'slug' => $sourcePage->slug,
                     'title' => $sourcePage->title,
@@ -44,6 +54,15 @@ class EditionContentCopier
                     'sort_order' => $sourcePage->sort_order,
                     'status' => $sourcePage->status,
                 ]);
+
+                foreach ($sourcePage->translations as $translation) {
+                    DocumentPageTranslation::create([
+                        'document_page_id' => $newPage->id,
+                        'language_code' => $translation->language_code,
+                        'title' => $translation->title,
+                        'body_html' => $translation->body_html,
+                    ]);
+                }
             }
         }
 

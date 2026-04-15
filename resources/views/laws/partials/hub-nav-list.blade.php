@@ -16,7 +16,7 @@
                 : route('documents.show', $documentRouteParameters);
         @endphp
         <a class="hub-nav-link @if (($currentKey ?? null) === 'document-'.$document->slug) is-active @endif" href="{{ $targetUrl }}">
-            {{ $document->title }}
+            {{ $document->displayTitle($language) }}
         </a>
     @endforeach
 </div>

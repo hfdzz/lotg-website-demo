@@ -25,8 +25,12 @@
 
         <div class="card stack-form">
             <label>
-                <div class="law-meta">Title</div>
-                <input type="text" name="title" value="{{ old('title', $document->title) }}">
+                <div class="law-meta">Title (ID)</div>
+                <input type="text" name="title_id" value="{{ old('title_id', $document->translationFor('id')?->title ?: $document->title) }}">
+            </label>
+            <label>
+                <div class="law-meta">Title (EN)</div>
+                <input type="text" name="title_en" value="{{ old('title_en', $document->translationFor('en')?->title) }}">
             </label>
             <label>
                 <div class="law-meta">Slug</div>
@@ -59,8 +63,10 @@
                         return $document->pages->map(fn ($page) => [
                             'id' => $page->id,
                             'slug' => $page->slug,
-                            'title' => $page->title,
-                            'body_html' => $page->body_html,
+                            'title_id' => $page->translationFor('id')?->title ?: $page->title,
+                            'title_en' => $page->translationFor('en')?->title,
+                            'body_html_id' => $page->translationFor('id')?->body_html ?: $page->body_html,
+                            'body_html_en' => $page->translationFor('en')?->body_html,
                             'sort_order' => $page->sort_order,
                             'status' => $page->status,
                         ]);
@@ -70,8 +76,10 @@
                     $pageRows = collect([[
                         'id' => null,
                         'slug' => '',
-                        'title' => '',
-                        'body_html' => '',
+                        'title_id' => '',
+                        'title_en' => '',
+                        'body_html_id' => '',
+                        'body_html_en' => '',
                         'sort_order' => 1,
                         'status' => $document->status,
                     ]]);
@@ -95,12 +103,20 @@
                         <input type="text" name="pages[{{ $index }}][slug]" value="{{ $pageRow['slug'] ?? '' }}">
                     </label>
                     <label>
-                        <div class="law-meta">Page title</div>
-                        <input type="text" name="pages[{{ $index }}][title]" value="{{ $pageRow['title'] ?? '' }}">
+                        <div class="law-meta">Page title (ID)</div>
+                        <input type="text" name="pages[{{ $index }}][title_id]" value="{{ $pageRow['title_id'] ?? '' }}">
                     </label>
                     <label>
-                        <div class="law-meta">Body HTML</div>
-                        <textarea name="pages[{{ $index }}][body_html]" rows="10">{{ $pageRow['body_html'] ?? '' }}</textarea>
+                        <div class="law-meta">Page title (EN)</div>
+                        <input type="text" name="pages[{{ $index }}][title_en]" value="{{ $pageRow['title_en'] ?? '' }}">
+                    </label>
+                    <label>
+                        <div class="law-meta">Body HTML (ID)</div>
+                        <textarea name="pages[{{ $index }}][body_html_id]" rows="10">{{ $pageRow['body_html_id'] ?? '' }}</textarea>
+                    </label>
+                    <label>
+                        <div class="law-meta">Body HTML (EN)</div>
+                        <textarea name="pages[{{ $index }}][body_html_en]" rows="10">{{ $pageRow['body_html_en'] ?? '' }}</textarea>
                     </label>
                     <label data-document-collection-only>
                         <div class="law-meta">Sort order</div>
@@ -120,4 +136,12 @@
         <button type="button" data-document-page-add>Add page</button>
         <button type="submit">Save document</button>
     </form>
+
+    @if ($errors->any())
+        <div class="flash-message-error">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
 @endsection

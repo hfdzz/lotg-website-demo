@@ -38,21 +38,21 @@
                     <details class="card lotg-landing-item">
                         <summary class="lotg-landing-summary">
                             <div>
-                                <h2>{{ $document->title }}</h2>
+                                <h2>{{ $document->displayTitle($language) }}</h2>
                                 <p class="law-meta">{{ __('site.documents.collection_intro') }}</p>
                             </div>
                         </summary>
                         <div class="lotg-landing-children">
                             @foreach ($document->publishedPages as $documentPage)
                                 <a class="hub-nav-law-link" href="{{ route('documents.page', ['document' => $document, 'page' => $documentPage->slug, 'lang' => $language]) }}">
-                                    {{ $documentPage->title }}
+                                    {{ $documentPage->displayTitle($language) }}
                                 </a>
                             @endforeach
                         </div>
                     </details>
                 @else
                     <a class="card lotg-landing-link" href="{{ $targetUrl }}">
-                        <h2>{{ $document->title }}</h2>
+                        <h2>{{ $document->displayTitle($language) }}</h2>
                         <p class="law-meta">{{ __('site.documents.single_intro') }}</p>
                     </a>
                 @endif
