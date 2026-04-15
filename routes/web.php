@@ -52,6 +52,7 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
         Route::post('/laws', [LawAdminController::class, 'store'])->name('laws.store');
         Route::get('/laws/{law}/edit', [LawAdminController::class, 'edit'])->name('laws.edit');
         Route::patch('/laws/{law}', [LawAdminController::class, 'update'])->name('laws.update');
+        Route::delete('/laws/{law}', [LawAdminController::class, 'destroy'])->name('laws.destroy');
 
         Route::get('/documents', [DocumentAdminController::class, 'index'])->name('documents.index');
         Route::post('/documents', [DocumentAdminController::class, 'store'])->name('documents.store');

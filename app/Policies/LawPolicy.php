@@ -33,6 +33,6 @@ class LawPolicy
 
     public function delete(User $user, Law $law): bool
     {
-        return $this->allows($user, Permission::LAWS_MANAGE);
+        return $user->isSuperAdmin();
     }
 }

@@ -158,6 +158,19 @@ class LawAdminController extends Controller
             ->with('status', 'Law updated.');
     }
 
+    public function destroy(Edition $edition, Law $law): RedirectResponse
+    {
+        $this->authorize('delete', $law);
+        abort_unless((int) $law->edition_id === (int) $edition->id, 404);
+
+        $lawLabel = 'Law '.$law->law_number;
+        $law->delete();
+
+        return redirect()
+            ->route('admin.laws.index', ['edition' => $edition])
+            ->with('status', $lawLabel.' deleted.');
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */

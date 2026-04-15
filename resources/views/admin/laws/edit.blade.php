@@ -41,6 +41,14 @@
                 @include('admin.partials.law-fields', ['law' => $law, 'translationsByLanguage' => $translationsByLanguage, 'languages' => $languages, 'selectedEdition' => $selectedEdition])
                 <button type="submit">Save law</button>
             </form>
+
+            @can('delete', $law)
+                <form action="{{ route('admin.laws.destroy', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" class="stack-form stack-top" onsubmit="return confirm('Delete Law {{ $law->law_number }}? This will also remove its nodes and Q&A.')">
+                    @csrf
+                    @method('delete')
+                    <button type="submit">Delete law</button>
+                </form>
+            @endcan
         </div>
     </details>
 
