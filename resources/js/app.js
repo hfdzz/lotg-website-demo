@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLawSlugPreview();
     setupTranslationEditor();
     setupNodeTypeSections();
+    setupMediaTypeSections();
+    setupImageAssetPicker();
     setupVideoGroupEditor();
     setupDocumentPageEditor();
 });
@@ -387,6 +389,111 @@ function setupNodeTypeSections() {
     });
 }
 
+function setupMediaTypeSections() {
+    const selects = Array.from(document.querySelectorAll('[data-media-type-select]'));
+
+    selects.forEach((select) => {
+        if (!(select instanceof HTMLSelectElement)) {
+            return;
+        }
+
+        const form = select.closest('form');
+
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const sections = Array.from(form.querySelectorAll('[data-media-type-section]'));
+
+        const updateSections = () => {
+            sections.forEach((section) => {
+                if (!(section instanceof HTMLElement)) {
+                    return;
+                }
+
+                section.hidden = section.dataset.mediaTypeSection !== select.value;
+            });
+        };
+
+        select.addEventListener('change', updateSections);
+        updateSections();
+    });
+}
+
+function parsePreviewMap(rawValue) {
+    if (!rawValue) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(rawValue);
+    } catch {
+        return {};
+    }
+}
+
+function updateMediaSelectionPreview(container, previewItem) {
+    if (!(container instanceof HTMLElement)) {
+        return;
+    }
+
+    if (!previewItem || !previewItem.url) {
+        container.hidden = true;
+        container.replaceChildren();
+        return;
+    }
+
+    const frame = document.createElement('div');
+    frame.className = 'media-preview-frame media-preview-frame-selection';
+
+    const image = document.createElement('img');
+    image.className = 'media-preview-thumb';
+    image.loading = 'lazy';
+    image.src = previewItem.url;
+    image.alt = previewItem.label || 'Selected media preview';
+    frame.appendChild(image);
+
+    container.replaceChildren(frame);
+    container.hidden = false;
+}
+
+function setupImageAssetPicker() {
+    const sections = Array.from(document.querySelectorAll('[data-existing-image-select]'));
+
+    sections.forEach((select) => {
+        if (!(select instanceof HTMLSelectElement)) {
+            return;
+        }
+
+        const container = select.closest('[data-node-type-section="image"]');
+
+        if (!(container instanceof HTMLElement)) {
+            return;
+        }
+
+        const fields = Array.from(container.querySelectorAll('[data-image-new-field]'));
+        const preview = container.querySelector('[data-image-selection-preview]');
+        const previewMap = parsePreviewMap(select.dataset.previewMap);
+
+        const updateFields = () => {
+            const hasExistingSelection = select.value !== '';
+
+            fields.forEach((field) => {
+                if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                field.disabled = hasExistingSelection;
+            });
+
+            updateMediaSelectionPreview(preview, previewMap[select.value] ?? null);
+        };
+
+        select.addEventListener('change', updateFields);
+        updateFields();
+    });
+}
+
 function setupVideoGroupEditor() {
     const editors = Array.from(document.querySelectorAll('[data-video-group-editor]'));
 
@@ -402,30 +509,67 @@ function setupVideoGroupEditor() {
             return;
         }
 
+        const template = editor.querySelector('[data-video-item-template]');
+        const previewMap = parsePreviewMap(editor.dataset.videoPreviewMap);
+
         const buildItem = (index) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'card video-item-card';
             wrapper.dataset.videoItem = '';
-            wrapper.innerHTML = `
-                <div class="video-item-header">
-                    <h4>Video <span data-video-item-number>${index + 1}</span></h4>
-                    <button type="button" class="button-danger" data-video-remove data-confirm-message="Remove this video row? Unsaved changes in this row will be lost.">Remove video</button>
-                </div>
-                <label>
-                    <div class="law-meta">Source URL</div>
-                    <input type="url" name="video_items[${index}][url]" value="" placeholder="https://www.youtube.com/watch?v=...">
-                </label>
-                <label>
-                    <div class="law-meta">Caption</div>
-                    <input type="text" name="video_items[${index}][caption]" value="">
-                </label>
-                <label>
-                    <div class="law-meta">Credit / attribution</div>
-                    <input type="text" name="video_items[${index}][credit]" value="">
-                </label>
-            `;
+            const templateHtml = template instanceof HTMLTemplateElement
+                ? template.innerHTML
+                : `
+                    <div class="video-item-header">
+                        <h4>Video <span data-video-item-number>__NUMBER__</span></h4>
+                        <button type="button" class="button-danger" data-video-remove data-confirm-message="Remove this video row? Unsaved changes in this row will be lost.">Remove video</button>
+                    </div>
+                    <label>
+                        <div class="law-meta">Use existing video</div>
+                        <select name="video_items[__INDEX__][existing_media_asset_id]" data-video-existing-select>
+                            <option value="">Create a new video from URL below</option>
+                        </select>
+                    </label>
+                    <label>
+                        <div class="law-meta">Source URL</div>
+                        <input type="url" name="video_items[__INDEX__][url]" value="" placeholder="https://www.youtube.com/watch?v=..." data-video-new-field>
+                    </label>
+                    <label>
+                        <div class="law-meta">Caption</div>
+                        <input type="text" name="video_items[__INDEX__][caption]" value="" data-video-new-field>
+                    </label>
+                    <label>
+                        <div class="law-meta">Credit / attribution</div>
+                        <input type="text" name="video_items[__INDEX__][credit]" value="" data-video-new-field>
+                    </label>
+                `;
+            wrapper.innerHTML = templateHtml
+                .replace(/__INDEX__/g, `${index}`)
+                .replace(/__NUMBER__/g, `${index + 1}`);
 
             return wrapper;
+        };
+
+        const updateItemMode = (item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const existingSelect = item.querySelector('[data-video-existing-select]');
+            const newFields = Array.from(item.querySelectorAll('[data-video-new-field]'));
+            const hasExistingSelection = existingSelect instanceof HTMLSelectElement && existingSelect.value !== '';
+            const preview = item.querySelector('[data-video-selection-preview]');
+
+            newFields.forEach((field) => {
+                if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                field.disabled = hasExistingSelection;
+            });
+
+            if (existingSelect instanceof HTMLSelectElement) {
+                updateMediaSelectionPreview(preview, previewMap[existingSelect.value] ?? null);
+            }
         };
 
         const renumberItems = () => {
@@ -458,6 +602,13 @@ function setupVideoGroupEditor() {
                         input.name = `video_items[${index}][credit]`;
                     }
                 });
+
+                const existingSelect = item.querySelector('[data-video-existing-select]');
+                if (existingSelect instanceof HTMLSelectElement) {
+                    existingSelect.name = `video_items[${index}][existing_media_asset_id]`;
+                }
+
+                updateItemMode(item);
             });
         };
 
@@ -499,6 +650,24 @@ function setupVideoGroupEditor() {
             if (item instanceof HTMLElement) {
                 item.remove();
                 ensureAtLeastOneItem();
+            }
+        });
+
+        list.addEventListener('change', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const existingSelect = target.closest('[data-video-existing-select]');
+
+            if (existingSelect instanceof HTMLSelectElement) {
+                const item = existingSelect.closest('[data-video-item]');
+
+                if (item instanceof HTMLElement) {
+                    updateItemMode(item);
+                }
             }
         });
 

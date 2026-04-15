@@ -1,15 +1,35 @@
 @php
     $mediaAssets = $node?->mediaAssets ?? collect();
     $isEditing = (bool) $node;
+    $availableImageAssets = $availableImageAssets ?? collect();
+    $availableVideoAssets = $availableVideoAssets ?? collect();
     $imageAsset = $mediaAssets->firstWhere('asset_type', 'image');
     $translationsByLanguage = $translationsByLanguage ?? collect();
     $languages = $languages ?? \App\Support\LotgLanguage::supported();
+    $selectedImageAssetId = old('existing_image_asset_id', $imageAsset?->id);
+    $imagePreviewMap = $availableImageAssets
+        ->mapWithKeys(fn ($asset) => [
+            (string) $asset->id => [
+                'url' => $asset->thumbnailUrl(),
+                'label' => $asset->adminLabel(),
+            ],
+        ])
+        ->all();
     $videoAssets = $mediaAssets
         ->where('asset_type', 'video')
         ->values();
+    $videoPreviewMap = $availableVideoAssets
+        ->mapWithKeys(fn ($asset) => [
+            (string) $asset->id => [
+                'url' => $asset->thumbnailUrl(),
+                'label' => $asset->adminLabel(),
+            ],
+        ])
+        ->all();
     $videoRows = collect(old('video_items'))
         ->whenEmpty(function () use ($videoAssets) {
             return $videoAssets->map(fn ($asset) => [
+                'existing_media_asset_id' => $asset->id,
                 'url' => $asset->external_url,
                 'caption' => $asset->caption,
                 'credit' => $asset->credit,
@@ -19,6 +39,7 @@
 
     if ($videoRows->isEmpty()) {
         $videoRows = collect([[
+            'existing_media_asset_id' => '',
             'url' => '',
             'caption' => '',
             'credit' => '',
@@ -142,33 +163,49 @@
 
 <div class="card" data-node-type-section="image">
     <h3>Image fields</h3>
-    <p class="nav-meta">Used only when the node type is `image`.</p>
+    <p class="nav-meta">Used only when the node type is `image`. You can pick a reusable asset from <a class="result-link" href="{{ route('admin.media.index') }}">media library</a> or upload a new one.</p>
     <label>
-        <div class="law-meta">Upload image</div>
-        <input type="file" name="image_file" accept="image/*">
+        <div class="law-meta">Use existing image</div>
+        <select name="existing_image_asset_id" data-existing-image-select data-preview-map='@json($imagePreviewMap)'>
+            <option value="">Upload a new image instead</option>
+            @foreach ($availableImageAssets as $availableImageAsset)
+                <option value="{{ $availableImageAsset->id }}" @selected((string) $selectedImageAssetId === (string) $availableImageAsset->id)>
+                    #{{ $availableImageAsset->id }} · {{ $availableImageAsset->adminLabel() }} · used {{ $availableImageAsset->content_nodes_count }}x
+                </option>
+            @endforeach
+        </select>
     </label>
+    <div class="media-selection-preview" data-image-selection-preview hidden></div>
+    <div class="nav-meta">If an existing image is selected, the upload, caption, and credit fields below are ignored. Edit shared details from the media library.</div>
 
-    <label>
-        <div class="law-meta">Current image</div>
-        <input type="text" value="{{ $imageAsset?->file_path }}" disabled>
-    </label>
+    <div class="stack-form" data-image-new-fields>
+        <label>
+            <div class="law-meta">Upload image</div>
+            <input type="file" name="image_file" accept="image/*" data-image-new-field>
+        </label>
 
-    <label>
-        <div class="law-meta">Image caption</div>
-        <input type="text" name="image_caption" value="{{ old('image_caption', $imageAsset?->caption) }}">
-    </label>
+        <label>
+            <div class="law-meta">Current image</div>
+            <input type="text" value="{{ $imageAsset?->adminSource() }}" disabled>
+        </label>
 
-    <label>
-        <div class="law-meta">Image credit</div>
-        <input type="text" name="image_credit" value="{{ old('image_credit', $imageAsset?->credit) }}">
-    </label>
+        <label>
+            <div class="law-meta">Image caption</div>
+            <input type="text" name="image_caption" value="{{ old('image_caption', $imageAsset?->caption) }}" data-image-new-field>
+        </label>
+
+        <label>
+            <div class="law-meta">Image credit</div>
+            <input type="text" name="image_credit" value="{{ old('image_credit', $imageAsset?->credit) }}" data-image-new-field>
+        </label>
+    </div>
 </div>
 
 <div class="card" data-node-type-section="video_group">
     <h3>Video fields</h3>
-    <p class="nav-meta">Used only when the node type is `video_group`.</p>
-    <div class="stack-form" data-video-group-editor>
-        <div class="nav-meta">Add one row per video. Each row keeps the source URL, caption, and credit together.</div>
+    <p class="nav-meta">Used only when the node type is `video_group`. Each row can pick a reusable library video or create a new YouTube asset.</p>
+    <div class="stack-form" data-video-group-editor data-video-preview-map='@json($videoPreviewMap)'>
+        <div class="nav-meta">Add one row per video. If an existing library video is selected for a row, the URL, caption, and credit inputs for that row are ignored.</div>
         <div class="stack-form" data-video-group-list>
             @foreach ($videoRows as $index => $videoRow)
                 <div class="card video-item-card" data-video-item>
@@ -177,20 +214,60 @@
                         <button type="button" class="button-danger" data-video-remove data-confirm-message="Remove this video row? Unsaved changes in this row will be lost.">Remove video</button>
                     </div>
                     <label>
+                        <div class="law-meta">Use existing video</div>
+                        <select name="video_items[{{ $index }}][existing_media_asset_id]" data-video-existing-select>
+                            <option value="">Create a new video from URL below</option>
+                            @foreach ($availableVideoAssets as $availableVideoAsset)
+                                <option value="{{ $availableVideoAsset->id }}" @selected((string) ($videoRow['existing_media_asset_id'] ?? '') === (string) $availableVideoAsset->id)>
+                                    #{{ $availableVideoAsset->id }} · {{ $availableVideoAsset->adminLabel() }} · used {{ $availableVideoAsset->content_nodes_count }}x
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <div class="media-selection-preview" data-video-selection-preview hidden></div>
+                    <label>
                         <div class="law-meta">Source URL</div>
-                        <input type="url" name="video_items[{{ $index }}][url]" value="{{ $videoRow['url'] ?? '' }}" placeholder="https://www.youtube.com/watch?v=...">
+                        <input type="url" name="video_items[{{ $index }}][url]" value="{{ $videoRow['url'] ?? '' }}" placeholder="https://www.youtube.com/watch?v=..." data-video-new-field>
                     </label>
                     <label>
                         <div class="law-meta">Caption</div>
-                        <input type="text" name="video_items[{{ $index }}][caption]" value="{{ $videoRow['caption'] ?? '' }}">
+                        <input type="text" name="video_items[{{ $index }}][caption]" value="{{ $videoRow['caption'] ?? '' }}" data-video-new-field>
                     </label>
                     <label>
                         <div class="law-meta">Credit / attribution</div>
-                        <input type="text" name="video_items[{{ $index }}][credit]" value="{{ $videoRow['credit'] ?? '' }}">
+                        <input type="text" name="video_items[{{ $index }}][credit]" value="{{ $videoRow['credit'] ?? '' }}" data-video-new-field>
                     </label>
                 </div>
             @endforeach
         </div>
+        <template data-video-item-template>
+            <div class="video-item-header">
+                <h4>Video <span data-video-item-number>__NUMBER__</span></h4>
+                <button type="button" class="button-danger" data-video-remove data-confirm-message="Remove this video row? Unsaved changes in this row will be lost.">Remove video</button>
+            </div>
+            <label>
+                <div class="law-meta">Use existing video</div>
+                <select name="video_items[__INDEX__][existing_media_asset_id]" data-video-existing-select>
+                    <option value="">Create a new video from URL below</option>
+                    @foreach ($availableVideoAssets as $availableVideoAsset)
+                        <option value="{{ $availableVideoAsset->id }}">#{{ $availableVideoAsset->id }} · {{ $availableVideoAsset->adminLabel() }} · used {{ $availableVideoAsset->content_nodes_count }}x</option>
+                    @endforeach
+                </select>
+            </label>
+            <div class="media-selection-preview" data-video-selection-preview hidden></div>
+            <label>
+                <div class="law-meta">Source URL</div>
+                <input type="url" name="video_items[__INDEX__][url]" value="" placeholder="https://www.youtube.com/watch?v=..." data-video-new-field>
+            </label>
+            <label>
+                <div class="law-meta">Caption</div>
+                <input type="text" name="video_items[__INDEX__][caption]" value="" data-video-new-field>
+            </label>
+            <label>
+                <div class="law-meta">Credit / attribution</div>
+                <input type="text" name="video_items[__INDEX__][credit]" value="" data-video-new-field>
+            </label>
+        </template>
         <button type="button" data-video-add>Add video</button>
     </div>
 </div>

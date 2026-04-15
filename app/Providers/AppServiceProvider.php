@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
+use App\Models\MediaAsset;
 use App\Models\Permission;
 use App\Models\User;
 use App\Policies\ChangelogEntryPolicy;
@@ -16,6 +17,7 @@ use App\Policies\DocumentPolicy;
 use App\Policies\EditionPolicy;
 use App\Policies\LawPolicy;
 use App\Policies\LawQaPolicy;
+use App\Policies\MediaAssetPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Document::class, DocumentPolicy::class);
         Gate::policy(LawQa::class, LawQaPolicy::class);
         Gate::policy(ChangelogEntry::class, ChangelogEntryPolicy::class);
+        Gate::policy(MediaAsset::class, MediaAssetPolicy::class);
 
         Gate::define('access-admin', function (User $user): bool {
             return $user->hasPermissionTo(Permission::ADMIN_ACCESS);

@@ -34,6 +34,8 @@ class NodeAdminController extends Controller
             'languages' => LotgLanguage::supported(),
             'parentOptions' => $this->buildParentOptions($law, $node),
             'currentParentLabel' => $this->currentParentLabel($law, $node),
+            'availableImageAssets' => $this->availableMediaAssets('image'),
+            'availableVideoAssets' => $this->availableMediaAssets('video'),
         ]);
     }
 
@@ -168,7 +170,39 @@ class NodeAdminController extends Controller
             'title_en' => ['nullable', 'string', 'max:255'],
             'body_html_en' => ['nullable', 'string'],
             'translation_status_en' => ['required', 'in:draft,published'],
+            'existing_image_asset_id' => [
+                'nullable',
+                'integer',
+                'exists:media_assets,id',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! $value) {
+                        return;
+                    }
+
+                    $asset = MediaAsset::query()->find($value);
+
+                    if (! $asset || $asset->asset_type !== 'image' || ! $asset->is_library_item) {
+                        $fail('Selected image must be an existing reusable image asset.');
+                    }
+                },
+            ],
             'video_items' => ['nullable', 'array'],
+            'video_items.*.existing_media_asset_id' => [
+                'nullable',
+                'integer',
+                'exists:media_assets,id',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! $value) {
+                        return;
+                    }
+
+                    $asset = MediaAsset::query()->find($value);
+
+                    if (! $asset || $asset->asset_type !== 'video' || ! $asset->is_library_item) {
+                        $fail('Selected video must be an existing reusable video asset.');
+                    }
+                },
+            ],
             'video_items.*.url' => ['nullable', 'url'],
             'video_items.*.caption' => ['nullable', 'string'],
             'video_items.*.credit' => ['nullable', 'string', 'max:255'],
@@ -226,6 +260,25 @@ class NodeAdminController extends Controller
     protected function syncImageMedia(Request $request, ContentNode $node): void
     {
         $currentImage = $node->mediaAssets()->where('asset_type', 'image')->first();
+        $selectedImageAssetId = $request->integer('existing_image_asset_id');
+
+        if ($selectedImageAssetId > 0) {
+            $selectedAsset = MediaAsset::query()
+                ->libraryItems()
+                ->ofAssetType('image')
+                ->find($selectedImageAssetId);
+
+            if ($selectedAsset) {
+                $this->purgeNodeMedia($node, [$selectedAsset->id]);
+
+                $node->mediaAssets()->sync([
+                    $selectedAsset->id => ['sort_order' => 1],
+                ]);
+
+                return;
+            }
+        }
+
         $path = null;
 
         if ($request->hasFile('image_file')) {
@@ -246,6 +299,7 @@ class NodeAdminController extends Controller
             $currentImage->update([
                 'asset_type' => 'image',
                 'storage_type' => 'upload',
+                'is_library_item' => true,
                 'file_path' => $path,
                 'caption' => $request->input('image_caption'),
                 'credit' => $request->input('image_credit'),
@@ -256,6 +310,7 @@ class NodeAdminController extends Controller
             $asset = MediaAsset::create([
                 'asset_type' => 'image',
                 'storage_type' => 'upload',
+                'is_library_item' => true,
                 'file_path' => $path,
                 'caption' => $request->input('image_caption'),
                 'credit' => $request->input('image_credit'),
@@ -272,12 +327,13 @@ class NodeAdminController extends Controller
         $videoItems = collect($request->input('video_items', []))
             ->map(function ($item) {
                 return [
+                    'existing_media_asset_id' => (int) ($item['existing_media_asset_id'] ?? 0),
                     'url' => trim((string) ($item['url'] ?? '')),
                     'caption' => trim((string) ($item['caption'] ?? '')),
                     'credit' => trim((string) ($item['credit'] ?? '')),
                 ];
             })
-            ->filter(fn (array $item) => $item['url'] !== '')
+            ->filter(fn (array $item) => $item['existing_media_asset_id'] > 0 || $item['url'] !== '')
             ->values();
 
         $this->purgeNodeMedia($node);
@@ -289,13 +345,25 @@ class NodeAdminController extends Controller
         $syncPayload = [];
 
         foreach ($videoItems as $index => $videoItem) {
-            $asset = MediaAsset::create([
-                'asset_type' => 'video',
-                'storage_type' => 'youtube',
-                'external_url' => $videoItem['url'],
-                'caption' => $videoItem['caption'] ?: 'Video '.($index + 1),
-                'credit' => $videoItem['credit'] ?: null,
-            ]);
+            if ($videoItem['existing_media_asset_id'] > 0) {
+                $asset = MediaAsset::query()
+                    ->libraryItems()
+                    ->ofAssetType('video')
+                    ->find($videoItem['existing_media_asset_id']);
+
+                if (! $asset) {
+                    continue;
+                }
+            } else {
+                $asset = MediaAsset::create([
+                    'asset_type' => 'video',
+                    'storage_type' => 'youtube',
+                    'is_library_item' => true,
+                    'external_url' => $videoItem['url'],
+                    'caption' => $videoItem['caption'] ?: 'Video '.($index + 1),
+                    'credit' => $videoItem['credit'] ?: null,
+                ]);
+            }
 
             $syncPayload[$asset->id] = ['sort_order' => $index + 1];
         }
@@ -445,7 +513,7 @@ class NodeAdminController extends Controller
         $node->mediaAssets()->detach($detachIds);
 
         foreach ($assets->whereIn('id', $detachIds) as $asset) {
-            if ($asset->contentNodes()->count() === 0) {
+            if ($asset->contentNodes()->count() === 0 && ! $asset->is_library_item) {
                 $asset->delete();
             }
         }
@@ -599,6 +667,17 @@ class NodeAdminController extends Controller
         return preg_match('/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i', $filename)
             ? 'document'
             : 'file';
+    }
+
+    protected function availableMediaAssets(string $assetType)
+    {
+        return MediaAsset::query()
+            ->libraryItems()
+            ->ofAssetType($assetType)
+            ->withCount('contentNodes')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get();
     }
 
 }

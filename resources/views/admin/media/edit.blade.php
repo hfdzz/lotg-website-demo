@@ -1,0 +1,91 @@
+@extends('layouts.app')
+
+@section('title', 'Admin | Edit Media')
+
+@section('content')
+    <a class="back-link" href="{{ route('admin.media.index') }}">Back to media library</a>
+
+    <section class="hero">
+        <p class="eyebrow">Admin</p>
+        <h1>Edit media</h1>
+        <p>Shared media changes apply everywhere this asset is attached.</p>
+    </section>
+
+    @if (session('status'))
+        <div class="card surface-note flash-message flash-message-success">
+            <strong>{{ session('status') }}</strong>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="flash-message-error">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
+    <section class="card media-summary-card">
+        <h2>{{ ucfirst($media->asset_type) }} summary</h2>
+        @if ($media->thumbnailUrl())
+            <div class="media-preview-frame media-preview-frame-large">
+                <img
+                    src="{{ $media->thumbnailUrl() }}"
+                    alt="{{ $media->adminLabel() }}"
+                    class="media-preview-thumb"
+                    loading="lazy"
+                >
+            </div>
+        @endif
+        <p class="law-meta">Usage: {{ $media->content_nodes_count }} {{ \Illuminate\Support\Str::plural('node', $media->content_nodes_count) }}</p>
+        <p class="law-meta media-source">{{ $media->adminSource() ?: 'No source' }}</p>
+    </section>
+
+    <form action="{{ route('admin.media.update', ['media' => $media]) }}" method="post" enctype="multipart/form-data" class="stack-form">
+        @csrf
+        @method('patch')
+
+        <div class="card stack-form">
+            @include('admin.partials.media-fields', ['media' => $media])
+        </div>
+
+        <button type="submit">Save media</button>
+    </form>
+
+    <section class="card stack-form stack-top">
+        <h2>Where this media is used</h2>
+        @if ($media->contentNodes->isNotEmpty())
+            <div class="stack-top">
+                @foreach ($media->contentNodes as $node)
+                    @php
+                        $nodeTitle = $node->translationFor(\App\Support\LotgLanguage::default())?->title ?: ucfirst(str_replace('_', ' ', $node->node_type));
+                    @endphp
+                    <article class="result-card">
+                        <h3>
+                            <a class="result-link" href="{{ route('admin.nodes.edit', ['edition' => $node->law->edition, 'law' => $node->law, 'node' => $node]) }}">
+                                {{ $nodeTitle }}
+                            </a>
+                        </h3>
+                        <p class="law-meta">Law {{ $node->law->law_number }}: {{ $node->law->displayTitle('id') }}</p>
+                        <p class="law-meta">Node #{{ $node->id }} · {{ $node->node_type }} · Edition: {{ $node->law->edition?->name }}</p>
+                    </article>
+                @endforeach
+            </div>
+        @else
+            <p class="empty-state">This media is not attached to any node right now.</p>
+        @endif
+    </section>
+
+    <section class="card stack-top">
+        <h2>Delete media</h2>
+        @if ($media->content_nodes_count > 0)
+            <p class="law-meta">This media cannot be deleted while it is still attached to nodes.</p>
+        @else
+            <form action="{{ route('admin.media.destroy', ['media' => $media]) }}" method="post" class="stack-form" data-confirm-message="Delete this media asset? This cannot be undone.">
+                @csrf
+                @method('delete')
+                <button type="submit" class="button-danger">Delete media</button>
+            </form>
+        @endif
+    </section>
+@endsection

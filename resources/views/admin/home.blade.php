@@ -36,5 +36,12 @@
                 @endif
             </p>
         </a>
+
+        @if ($canManageMedia)
+            <a class="result-card result-link-block" href="{{ route('admin.media.index') }}">
+                <h2>Manage media</h2>
+                <p class="law-meta">Maintain reusable image and video assets so nodes can select shared media instead of creating duplicates.</p>
+            </a>
+        @endif
     </section>
 @endsection

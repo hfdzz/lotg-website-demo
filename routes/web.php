@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DocumentAdminController;
 use App\Http\Controllers\Admin\EditionAdminController;
 use App\Http\Controllers\Admin\LawAdminController;
 use App\Http\Controllers\Admin\LawQaAdminController;
+use App\Http\Controllers\Admin\MediaAdminController;
 use App\Http\Controllers\Admin\NodeAdminController;
 use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\DocumentController;
@@ -39,6 +40,11 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
     Route::get('/editions', [EditionAdminController::class, 'index'])->name('editions.index');
     Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');
     Route::get('/documents', [DocumentAdminController::class, 'home'])->name('documents.home');
+    Route::get('/media', [MediaAdminController::class, 'index'])->name('media.index');
+    Route::post('/media', [MediaAdminController::class, 'store'])->name('media.store');
+    Route::get('/media/{media}/edit', [MediaAdminController::class, 'edit'])->name('media.edit');
+    Route::patch('/media/{media}', [MediaAdminController::class, 'update'])->name('media.update');
+    Route::delete('/media/{media}', [MediaAdminController::class, 'destroy'])->name('media.destroy');
 
     Route::get('/switch-edition', [EditionAdminController::class, 'go'])->name('editions.go');
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');

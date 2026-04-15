@@ -4,18 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
 
 class MediaAsset extends Model
 {
     protected $fillable = [
         'asset_type',
         'storage_type',
+        'is_library_item',
         'file_path',
         'external_url',
         'thumbnail_path',
         'caption',
         'credit',
     ];
+
+    protected $casts = [
+        'id' => 'integer',
+        'is_library_item' => 'boolean',
+    ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $mediaAsset): void {
+            if (! $mediaAsset->isDirty('is_library_item') && in_array($mediaAsset->asset_type, ['image', 'video'], true)) {
+                $mediaAsset->is_library_item = true;
+            }
+        });
+    }
 
     public function contentNodes(): BelongsToMany
     {
@@ -24,21 +40,55 @@ class MediaAsset extends Model
             ->withTimestamps();
     }
 
+    public function scopeLibraryItems(Builder $query): Builder
+    {
+        return $query->where('is_library_item', true);
+    }
+
+    public function scopeOfAssetType(Builder $query, string $assetType): Builder
+    {
+        return $query->where('asset_type', $assetType);
+    }
+
+    public function adminLabel(): string
+    {
+        return $this->caption
+            ?: ($this->storage_type === 'upload' && $this->file_path
+                ? basename($this->file_path)
+                : ($this->external_url ?: ucfirst($this->asset_type).' #'.$this->id));
+    }
+
+    public function adminSource(): ?string
+    {
+        return $this->storage_type === 'upload' ? $this->file_path : $this->external_url;
+    }
+
+    public function thumbnailUrl(): ?string
+    {
+        if ($this->thumbnail_path) {
+            return $this->resolveAssetUrl($this->thumbnail_path);
+        }
+
+        if ($this->asset_type === 'image') {
+            return $this->publicUrl();
+        }
+
+        if ($this->asset_type === 'video') {
+            $youtubeId = $this->youtubeId();
+
+            return $youtubeId ? 'https://i.ytimg.com/vi/'.$youtubeId.'/hqdefault.jpg' : null;
+        }
+
+        return null;
+    }
+
     public function publicUrl(): ?string
     {
         if (! $this->file_path) {
             return null;
         }
 
-        if (str_starts_with($this->file_path, 'http://') || str_starts_with($this->file_path, 'https://')) {
-            return $this->file_path;
-        }
-
-        if (str_starts_with($this->file_path, 'demo/')) {
-            return asset($this->file_path);
-        }
-
-        return asset('storage/'.$this->file_path);
+        return $this->resolveAssetUrl($this->file_path);
     }
 
     public function youtubeId(): ?string
@@ -109,5 +159,18 @@ class MediaAsset extends Model
         }
 
         return null;
+    }
+
+    protected function resolveAssetUrl(string $path): string
+    {
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        if (str_starts_with($path, 'demo/')) {
+            return asset($path);
+        }
+
+        return asset('storage/'.$path);
     }
 }

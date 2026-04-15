@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawTranslation;
+use App\Models\MediaAsset;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -112,6 +113,8 @@ class LawAdminController extends Controller
             'languages' => LotgLanguage::supported(),
             'nodeTree' => $this->buildNodeTree($law),
             'parentOptions' => $this->buildParentOptions($law),
+            'availableImageAssets' => $this->availableMediaAssets('image'),
+            'availableVideoAssets' => $this->availableMediaAssets('video'),
             'qas' => $law->qas->sortBy([
                 ['sort_order', 'asc'],
                 ['id', 'asc'],
@@ -301,5 +304,16 @@ class LawAdminController extends Controller
             ->where('slug', $slug)
             ->when($ignoreLawId, fn ($query) => $query->whereKeyNot($ignoreLawId))
             ->exists();
+    }
+
+    protected function availableMediaAssets(string $assetType)
+    {
+        return MediaAsset::query()
+            ->libraryItems()
+            ->ofAssetType($assetType)
+            ->withCount('contentNodes')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get();
     }
 }
