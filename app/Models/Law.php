@@ -54,6 +54,32 @@ class Law extends Model
         return $this->contentNodes()->where('is_published', true);
     }
 
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        if ($field !== 'slug') {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        $slugQuery = $this->newQuery()->where('slug', (string) $value);
+        $requestedEditionId = request()?->integer('edition');
+
+        if ($requestedEditionId) {
+            return (clone $slugQuery)
+                ->where('edition_id', $requestedEditionId)
+                ->first();
+        }
+
+        $activeEditionId = Edition::current()?->id;
+
+        if ($activeEditionId) {
+            return (clone $slugQuery)
+                ->where('edition_id', $activeEditionId)
+                ->first();
+        }
+
+        return null;
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', 'published');

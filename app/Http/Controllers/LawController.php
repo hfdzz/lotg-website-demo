@@ -118,6 +118,7 @@ class LawController extends Controller
             ->orderBy('id')
             ->get(['id', 'law_number', 'slug', 'sort_order', 'status']);
         $currentIndex = $orderedLaws->search(fn (Law $item) => $item->id === $law->id);
+        $editionQueryId = $this->publicEditionQueryIdForLaw($law);
 
         return view('laws.show', [
             'law' => $law,
@@ -127,6 +128,7 @@ class LawController extends Controller
             'jumpLaws' => $orderedLaws,
             'previousLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex - 1) : null,
             'nextLaw' => $currentIndex !== false ? $orderedLaws->get($currentIndex + 1) : null,
+            'editionQueryId' => $editionQueryId,
         ]);
     }
 
@@ -156,6 +158,25 @@ class LawController extends Controller
             return redirect()->route('laws.list', $fallbackParameters);
         }
 
-        return redirect()->route('laws.show', ['law' => $law, 'lang' => $language]);
+        return redirect()->route('laws.show', array_filter([
+            'law' => $law,
+            'lang' => $language,
+            'edition' => $this->publicEditionQueryIdForLaw($law),
+        ], fn ($value) => $value !== null && $value !== ''));
+    }
+
+    protected function publicEditionQueryIdForLaw(Law $law): ?int
+    {
+        if (! $law->edition_id) {
+            return null;
+        }
+
+        $activeEditionId = Edition::current()?->id;
+
+        if (! $activeEditionId || (int) $law->edition_id !== (int) $activeEditionId) {
+            return (int) $law->edition_id;
+        }
+
+        return null;
     }
 }

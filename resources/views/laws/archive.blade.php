@@ -27,7 +27,7 @@
             @forelse ($laws as $law)
                 <article class="law-list-item">
                     <h2>
-                        <a class="result-link" href="{{ route('laws.show', $law).'?lang='.$language }}">
+                        <a class="result-link" href="{{ route('laws.show', ['law' => $law, 'lang' => $language, 'edition' => $selectedEdition->id]) }}">
                             {{ __('site.laws.law_number', ['number' => $law->law_number]) }}: {{ $law->displayTitle($language) }}
                         </a>
                     </h2>

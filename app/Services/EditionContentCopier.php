@@ -115,8 +115,11 @@ class EditionContentCopier
     protected function makeCopiedLawSlug(string $sourceSlug, Edition $targetEdition): string
     {
         return UniqueSlugSuffixer::ensureUnique(
-            Str::slug($sourceSlug.'-'.$targetEdition->code),
-            fn (string $candidate) => Law::query()->where('slug', $candidate)->exists()
+            Str::slug($sourceSlug),
+            fn (string $candidate) => Law::query()
+                ->where('edition_id', $targetEdition->id)
+                ->where('slug', $candidate)
+                ->exists()
         );
     }
 }

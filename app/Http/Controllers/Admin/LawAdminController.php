@@ -70,9 +70,9 @@ class LawAdminController extends Controller
         $lawNumber = $validated['law_number'] ?: $this->nextLawNumber($edition);
         $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $validated['title_id'] ?? null);
 
-        if (Law::query()->where('slug', $slug)->exists()) {
+        if ($this->slugExistsInEdition($edition, $slug)) {
             return back()
-                ->withErrors(['slug' => 'The slug has already been taken.'])
+                ->withErrors(['slug' => 'The slug has already been taken in this edition.'])
                 ->withInput();
         }
 
@@ -139,9 +139,9 @@ class LawAdminController extends Controller
 
         $slug = $this->normalizedLawSlug($validated['slug'] ?? null, $validated['title_id'] ?? null);
 
-        if (Law::query()->where('slug', $slug)->whereKeyNot($law->id)->exists()) {
+        if ($this->slugExistsInEdition($edition, $slug, $law->id)) {
             return back()
-                ->withErrors(['slug' => 'The slug has already been taken.'])
+                ->withErrors(['slug' => 'The slug has already been taken in this edition.'])
                 ->withInput();
         }
 
@@ -279,5 +279,14 @@ class LawAdminController extends Controller
     protected function normalizedLawSlug(?string $slug, ?string $titleId): string
     {
         return Str::slug($slug ?: ($titleId ?: 'law'));
+    }
+
+    protected function slugExistsInEdition(Edition $edition, string $slug, ?int $ignoreLawId = null): bool
+    {
+        return Law::query()
+            ->where('edition_id', $edition->id)
+            ->where('slug', $slug)
+            ->when($ignoreLawId, fn ($query) => $query->whereKeyNot($ignoreLawId))
+            ->exists();
     }
 }

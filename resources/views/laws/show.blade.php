@@ -11,17 +11,24 @@
 @endsection
 
 @section('content')
-    <a class="back-link" href="{{ route('laws.list', ['lang' => $language]) }}">{{ __('site.laws.back') }}</a>
+    @php
+        $lawListRouteParameters = array_filter([
+            'lang' => $language,
+            'edition' => $editionQueryId ?? null,
+        ], fn ($value) => $value !== null && $value !== '');
+    @endphp
+
+    <a class="back-link" href="{{ route('laws.list', $lawListRouteParameters) }}">{{ __('site.laws.back') }}</a>
 
     @section('mobile_law_prev')
         @if ($previousLaw)
-            {{ route('laws.show', $previousLaw).'?lang='.$language }}
+            {{ route('laws.show', array_filter(['law' => $previousLaw, 'lang' => $language, 'edition' => $editionQueryId ?? null], fn ($value) => $value !== null && $value !== '')) }}
         @endif
     @endsection
 
     @section('mobile_law_next')
         @if ($nextLaw)
-            {{ route('laws.show', $nextLaw).'?lang='.$language }}
+            {{ route('laws.show', array_filter(['law' => $nextLaw, 'lang' => $language, 'edition' => $editionQueryId ?? null], fn ($value) => $value !== null && $value !== '')) }}
         @endif
     @endsection
 
@@ -35,7 +42,7 @@
             <p>{{ $law->displayDescription($language) ?: __('site.laws.hero_intro') }}</p>
             <div class="law-hero-nav">
                 @if ($previousLaw)
-                    <a class="law-nav-link" href="{{ route('laws.show', $previousLaw).'?lang='.$language }}" data-nav-pending-link>
+                    <a class="law-nav-link" href="{{ route('laws.show', array_filter(['law' => $previousLaw, 'lang' => $language, 'edition' => $editionQueryId ?? null], fn ($value) => $value !== null && $value !== '')) }}" data-nav-pending-link>
                         <div class="law-nav-label">{{ __('site.laws.previous_law') }}</div>
                         <div class="left">
                             <span class="law-nav-arrow" aria-hidden="true">&larr;</span>
@@ -45,7 +52,7 @@
                 @endif
 
                 @if ($nextLaw)
-                    <a class="law-nav-link" href="{{ route('laws.show', $nextLaw).'?lang='.$language }}" data-nav-pending-link>
+                    <a class="law-nav-link" href="{{ route('laws.show', array_filter(['law' => $nextLaw, 'lang' => $language, 'edition' => $editionQueryId ?? null], fn ($value) => $value !== null && $value !== '')) }}" data-nav-pending-link>
                         <div class="law-nav-label">{{ __('site.laws.next_law') }}</div>
                         <div class="right">
                             <span>{{ __('site.laws.law_number', ['number' => $nextLaw->law_number]) }}</span>
