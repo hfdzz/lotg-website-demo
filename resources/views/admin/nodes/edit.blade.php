@@ -45,10 +45,10 @@
     <section class="card">
         <h2>Delete node</h2>
         <p class="law-meta">Deleting a node removes its descendants recursively in the application layer.</p>
-        <form action="{{ route('admin.nodes.destroy', ['edition' => request()->route('edition'), 'law' => $law, 'node' => $node]) }}" method="post" class="stack-top">
+        <form action="{{ route('admin.nodes.destroy', ['edition' => request()->route('edition'), 'law' => $law, 'node' => $node]) }}" method="post" class="stack-top" data-confirm-message="Delete this node? This will also remove all child nodes under it.">
             @csrf
             @method('delete')
-            <button type="submit">Delete node</button>
+            <button type="submit" class="button-danger">Delete node</button>
         </form>
     </section>
 @endsection

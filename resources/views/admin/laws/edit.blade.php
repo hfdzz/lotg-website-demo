@@ -43,10 +43,10 @@
             </form>
 
             @can('delete', $law)
-                <form action="{{ route('admin.laws.destroy', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" class="stack-form stack-top" onsubmit="return confirm('Delete Law {{ $law->law_number }}? This will also remove its nodes and Q&A.')">
+                <form action="{{ route('admin.laws.destroy', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" class="stack-form stack-top" data-confirm-message="Delete Law {{ $law->law_number }}? This will also remove its nodes and Q&amp;A.">
                     @csrf
                     @method('delete')
-                    <button type="submit">Delete law</button>
+                    <button type="submit" class="button-danger">Delete law</button>
                 </form>
             @endcan
         </div>

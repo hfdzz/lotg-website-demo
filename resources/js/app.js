@@ -3,6 +3,7 @@ import './bootstrap';
 document.addEventListener('DOMContentLoaded', () => {
     setupMobileHeader();
     setupSearchPopover();
+    setupConfirmForms();
     setupTableOfContentsTracking();
     setupEditionCodePlaceholders();
     setupLawSlugPreview();
@@ -174,6 +175,24 @@ function setupSearchPopover() {
         if (event.key === 'Escape') {
             popovers.forEach((popover) => popover.removeAttribute('open'));
         }
+    });
+}
+
+function setupConfirmForms() {
+    const forms = Array.from(document.querySelectorAll('form[data-confirm-message]'));
+
+    forms.forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        form.addEventListener('submit', (event) => {
+            const message = form.dataset.confirmMessage;
+
+            if (message && !window.confirm(message)) {
+                event.preventDefault();
+            }
+        });
     });
 }
 
@@ -390,7 +409,7 @@ function setupVideoGroupEditor() {
             wrapper.innerHTML = `
                 <div class="video-item-header">
                     <h4>Video <span data-video-item-number>${index + 1}</span></h4>
-                    <button type="button" class="video-item-remove" data-video-remove>Remove video</button>
+                    <button type="button" class="button-danger" data-video-remove data-confirm-message="Remove this video row? Unsaved changes in this row will be lost.">Remove video</button>
                 </div>
                 <label>
                     <div class="law-meta">Source URL</div>
@@ -466,6 +485,14 @@ function setupVideoGroupEditor() {
             const removeButton = target.closest('[data-video-remove]');
             if (!removeButton) {
                 return;
+            }
+
+            if (removeButton instanceof HTMLElement) {
+                const confirmMessage = removeButton.dataset.confirmMessage;
+
+                if (confirmMessage && !window.confirm(confirmMessage)) {
+                    return;
+                }
             }
 
             const item = removeButton.closest('[data-video-item]');

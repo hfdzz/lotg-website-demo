@@ -174,7 +174,7 @@
                 <div class="card video-item-card" data-video-item>
                     <div class="video-item-header">
                         <h4>Video <span data-video-item-number>{{ $index + 1 }}</span></h4>
-                        <button type="button" class="video-item-remove" data-video-remove>Remove video</button>
+                        <button type="button" class="button-danger" data-video-remove data-confirm-message="Remove this video row? Unsaved changes in this row will be lost.">Remove video</button>
                     </div>
                     <label>
                         <div class="law-meta">Source URL</div>

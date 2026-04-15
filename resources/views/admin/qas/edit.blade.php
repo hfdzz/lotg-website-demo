@@ -30,10 +30,10 @@
             <button type="submit">Save Q&amp;A</button>
         </form>
 
-        <form action="{{ route('admin.qas.destroy', ['edition' => $selectedEdition, 'law' => $law, 'qa' => $qa]) }}" method="post" class="stack-top" onsubmit="return confirm('Delete this Q&A item?');">
+        <form action="{{ route('admin.qas.destroy', ['edition' => $selectedEdition, 'law' => $law, 'qa' => $qa]) }}" method="post" class="stack-top" data-confirm-message="Delete this Q&amp;A item?">
             @csrf
             @method('delete')
-            <button type="submit" class="video-item-remove">Delete Q&amp;A</button>
+            <button type="submit" class="button-danger">Delete Q&amp;A</button>
         </form>
     </section>
 @endsection

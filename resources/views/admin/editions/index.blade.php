@@ -97,9 +97,9 @@
                             </form>
                             @if (($readiness['blocking_count'] ?? 0) > 0)
                                 @can('forceActivate', $edition)
-                                    <form action="{{ route('admin.editions.force-activate', $edition) }}" method="post" class="inline-form" onsubmit="return confirm('Force activate this edition and bypass blocking completeness checks?');">
+                                    <form action="{{ route('admin.editions.force-activate', $edition) }}" method="post" class="inline-form" data-confirm-message="Force activate this edition and bypass blocking completeness checks?">
                                         @csrf
-                                        <button type="submit" class="video-item-remove">Force set as active</button>
+                                        <button type="submit" class="button-secondary">Force set as active</button>
                                     </form>
                                 @endcan
                             @endif
@@ -214,10 +214,10 @@
                 </form>
 
                 @if (! $selectedEdition->is_active)
-                    <form action="{{ route('admin.editions.destroy', $selectedEdition) }}" method="post" class="stack-top" onsubmit="return confirm('Delete this edition? This only works for empty editions.');">
+                    <form action="{{ route('admin.editions.destroy', $selectedEdition) }}" method="post" class="stack-top" data-confirm-message="Delete this edition? This only works for empty editions.">
                         @csrf
                         @method('delete')
-                        <button type="submit" class="video-item-remove">Delete edition</button>
+                        <button type="submit" class="button-danger">Delete edition</button>
                     </form>
                 @endif
             @else

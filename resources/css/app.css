@@ -102,6 +102,29 @@ button:hover {
     border-color: var(--accent-strong);
 }
 
+.button-secondary {
+    border-color: var(--line-strong);
+    background: #ffffff;
+    color: var(--ink);
+}
+
+.button-secondary:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-muted);
+    color: var(--ink);
+}
+
+.button-danger {
+    border-color: #b91c1c;
+    background: #b91c1c;
+    color: #ffffff;
+}
+
+.button-danger:hover {
+    border-color: #991b1b;
+    background: #991b1b;
+}
+
 .shell {
     width: min(100%, 1160px);
     margin: 0 auto;
@@ -240,18 +263,6 @@ button:hover {
 
 .video-item-header h4 {
     margin: 0;
-}
-
-.video-item-remove {
-    border: 1px solid var(--line-strong);
-    background: #ffffff;
-    color: var(--ink);
-}
-
-.video-item-remove:hover {
-    border-color: var(--line-strong);
-    background: var(--surface-muted);
-    color: var(--ink);
 }
 
 .inline-form {
