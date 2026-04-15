@@ -232,6 +232,18 @@ class DocumentAdminController extends Controller
         return redirect()->route('admin.documents.edit', ['edition' => $edition, 'document' => $document])->with('status', 'Document updated.');
     }
 
+    public function destroy(Edition $edition, Document $document): RedirectResponse
+    {
+        $this->authorize('delete', $document);
+        abort_unless((int) $document->edition_id === (int) $edition->id, 404);
+
+        $document->delete();
+
+        return redirect()
+            ->route('admin.documents.index', ['edition' => $edition])
+            ->with('status', 'Document deleted.');
+    }
+
     protected function syncDocumentTranslations(Document $document, array $validated): void
     {
         foreach (['id', 'en'] as $languageCode) {

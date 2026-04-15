@@ -58,6 +58,7 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
         Route::post('/documents', [DocumentAdminController::class, 'store'])->name('documents.store');
         Route::get('/documents/{document}/edit', [DocumentAdminController::class, 'edit'])->name('documents.edit');
         Route::patch('/documents/{document}', [DocumentAdminController::class, 'update'])->name('documents.update');
+        Route::delete('/documents/{document}', [DocumentAdminController::class, 'destroy'])->name('documents.destroy');
 
         Route::post('/laws/{law}/nodes', [NodeAdminController::class, 'store'])->name('nodes.store');
         Route::get('/laws/{law}/nodes/{node}/edit', [NodeAdminController::class, 'edit'])->name('nodes.edit');

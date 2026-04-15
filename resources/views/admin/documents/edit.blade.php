@@ -19,6 +19,14 @@
         </div>
     @endif
 
+    @if ($errors->any())
+        <div class="flash-message-error">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     <form action="{{ route('admin.documents.update', ['edition' => $selectedEdition, 'document' => $document]) }}" method="post" class="stack-form">
         @csrf
         @method('patch')
@@ -58,8 +66,15 @@
 
         <div class="stack-form" data-document-pages-editor>
             @php
-                $pageRows = collect(old('pages'))
-                    ->whenEmpty(function () use ($document) {
+                $oldInput = session()->getOldInput();
+                $hasOldPageState = is_array($oldInput)
+                    && (array_key_exists('pages', $oldInput) || array_key_exists('remove_page_ids', $oldInput));
+                $removedPageIds = collect(old('remove_page_ids', []))
+                    ->map(fn ($id) => (int) $id)
+                    ->filter(fn ($id) => $id > 0)
+                    ->values();
+                $pageRows = collect($hasOldPageState ? old('pages', []) : [])
+                    ->when(! $hasOldPageState, function () use ($document) {
                         return $document->pages->map(fn ($page) => [
                             'id' => $page->id,
                             'slug' => $page->slug,
@@ -72,7 +87,7 @@
                         ]);
                     })
                     ->values();
-                if ($pageRows->isEmpty()) {
+                if ($pageRows->isEmpty() && ! $hasOldPageState) {
                     $pageRows = collect([[
                         'id' => null,
                         'slug' => '',
@@ -86,16 +101,17 @@
                 }
             @endphp
 
+            <div data-document-removed-pages hidden>
+                @foreach ($removedPageIds as $removedPageId)
+                    <input type="hidden" name="remove_page_ids[]" value="{{ $removedPageId }}">
+                @endforeach
+            </div>
+
             @foreach ($pageRows as $index => $pageRow)
-                <div class="card stack-form document-page-card" data-document-page-item>
+                <div class="card stack-form document-page-card" data-document-page-item @if (!empty($pageRow['id'])) data-document-page-id="{{ $pageRow['id'] }}" @endif>
                     <div class="video-item-header">
                         <h2>Page <span data-document-page-number>{{ $index + 1 }}</span></h2>
-                        @if (!empty($pageRow['id']))
-                            <label class="law-meta">
-                                <input type="checkbox" name="remove_page_ids[]" value="{{ $pageRow['id'] }}">
-                                Remove page
-                            </label>
-                        @endif
+                        <button type="button" class="button-danger" data-document-page-remove data-confirm-message="Remove this page? Unsaved changes in this page will be lost.">Remove page</button>
                     </div>
                     <input type="hidden" name="pages[{{ $index }}][id]" value="{{ $pageRow['id'] ?? '' }}">
                     <label>
@@ -137,11 +153,11 @@
         <button type="submit">Save document</button>
     </form>
 
-    @if ($errors->any())
-        <div class="flash-message-error">
-            @foreach ($errors->all() as $error)
-                <div>{{ $error }}</div>
-            @endforeach
-        </div>
-    @endif
+    @can('delete', $document)
+        <form action="{{ route('admin.documents.destroy', ['edition' => $selectedEdition, 'document' => $document]) }}" method="post" class="stack-form stack-top" data-confirm-message="Delete this document? This will also remove all of its pages and translations.">
+            @csrf
+            @method('delete')
+            <button type="submit" class="button-danger">Delete document</button>
+        </form>
+    @endcan
 @endsection

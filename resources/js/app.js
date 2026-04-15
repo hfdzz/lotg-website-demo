@@ -517,6 +517,7 @@ function setupDocumentPageEditor() {
         const form = editor.closest('form');
         const addButton = form?.querySelector('[data-document-page-add]');
         const typeSelect = form?.querySelector('[data-document-type-select]');
+        const removedPagesContainer = form?.querySelector('[data-document-removed-pages]');
 
         if (!(form instanceof HTMLFormElement) || !(addButton instanceof HTMLButtonElement)) {
             return;
@@ -567,6 +568,7 @@ function setupDocumentPageEditor() {
             wrapper.innerHTML = `
                 <div class="video-item-header">
                     <h2>Page <span data-document-page-number>${nextIndex + 1}</span></h2>
+                    <button type="button" class="button-danger" data-document-page-remove data-confirm-message="Remove this page? Unsaved changes in this page will be lost.">Remove page</button>
                 </div>
                 <input type="hidden" name="pages[${nextIndex}][id]" value="">
                 <label>
@@ -604,6 +606,45 @@ function setupDocumentPageEditor() {
             editor.appendChild(wrapper);
             renumberItems();
             updateTypeVisibility();
+        });
+
+        editor.addEventListener('click', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const removeButton = target.closest('[data-document-page-remove]');
+            if (!(removeButton instanceof HTMLElement)) {
+                return;
+            }
+
+            const confirmMessage = removeButton.dataset.confirmMessage;
+            if (confirmMessage && !window.confirm(confirmMessage)) {
+                return;
+            }
+
+            const item = removeButton.closest('[data-document-page-item]');
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const existingPageId = item.dataset.documentPageId;
+            if (existingPageId && removedPagesContainer instanceof HTMLElement) {
+                const alreadyMarked = removedPagesContainer.querySelector(`input[value="${existingPageId}"]`);
+
+                if (!alreadyMarked) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'remove_page_ids[]';
+                    hiddenInput.value = existingPageId;
+                    removedPagesContainer.appendChild(hiddenInput);
+                }
+            }
+
+            item.remove();
+            renumberItems();
         });
 
         if (typeSelect instanceof HTMLSelectElement) {

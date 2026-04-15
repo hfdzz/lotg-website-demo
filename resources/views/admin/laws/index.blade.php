@@ -56,13 +56,6 @@
                         <p class="eyebrow">Law {{ $law->law_number }}</p>
                         <h3><a href="{{ route('admin.laws.edit', ['edition' => $selectedEdition, 'law' => $law]) }}">Edit law {{ $law->law_number }}</a></h3>
                         <p class="law-meta">{{ $law->displayTitle('id') }} | Edition: {{ $law->edition?->name ?? 'None' }} | Status: {{ $law->status }} | Sort: {{ $law->sort_order }}</p>
-                        @can('delete', $law)
-                            <form action="{{ route('admin.laws.destroy', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" class="stack-top" data-confirm-message="Delete Law {{ $law->law_number }}? This will also remove its nodes and Q&amp;A.">
-                                @csrf
-                                @method('delete')
-                                <button type="submit" class="button-danger">Delete law</button>
-                            </form>
-                        @endcan
                     </article>
                 @empty
                     <p class="empty-state">No laws yet.</p>
