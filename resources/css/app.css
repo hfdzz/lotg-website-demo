@@ -1116,12 +1116,14 @@ h4.node-title {
     margin-bottom: 0.75rem;
     font-size: 1.12rem;
     letter-spacing: 0.02em;
+    font-weight: 700;
 }
 
 h5.node-title {
     margin-top: 1.15rem;
     margin-bottom: 0.7rem;
     font-size: 1rem;
+    font-weight: 700;
 }
 
 .node-body {
@@ -1259,7 +1261,6 @@ h5.node-title {
 
 .media-frame {
     margin: 0 auto;
-    max-width: 80ch;
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 14px;
