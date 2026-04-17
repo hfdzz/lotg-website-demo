@@ -23,6 +23,8 @@ use InvalidArgumentException;
 
 class EditionJsonImporter
 {
+    protected const SUPPORTED_NODE_TYPES = ['section', 'rich_text', 'image', 'video_group', 'resource_list'];
+
     /**
      * @param array<string, mixed> $payload
      * @return array{edition: \App\Models\Edition, counts: array<string, int>, warnings: array<int, string>}
@@ -87,6 +89,48 @@ class EditionJsonImporter
                 'warnings' => $warnings,
             ];
         });
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{edition: \App\Models\Edition, counts: array<string, int>, warnings: array<int, string>, errors: array<int, string>, can_import: bool}
+     */
+    public function dryRun(array $payload, ?Edition $targetEdition = null, bool $replace = false): array
+    {
+        $warnings = [];
+        $errors = [];
+        $counts = $this->summarizePayload($payload);
+
+        try {
+            $this->validatePayload($payload);
+        } catch (InvalidArgumentException $exception) {
+            $errors[] = $exception->getMessage();
+
+            return [
+                'edition' => $this->previewEdition($payload, $targetEdition),
+                'counts' => $counts,
+                'warnings' => $warnings,
+                'errors' => $errors,
+                'can_import' => false,
+            ];
+        }
+
+        $edition = $this->previewEdition($payload, $targetEdition);
+
+        $this->inspectImportTarget($edition, Arr::get($payload, 'edition', []), $replace, $warnings, $errors);
+
+        $knownMediaKeys = $this->analyzeMediaAssets(Arr::get($payload, 'media_assets', []), $warnings, $errors);
+        $this->analyzeDocuments(Arr::get($payload, 'documents', []), $warnings, $errors);
+        $this->analyzeLaws(Arr::get($payload, 'laws', []), $knownMediaKeys, $warnings, $errors);
+        $this->analyzeChangelogEntries(Arr::get($payload, 'changelog_entries', []), $warnings, $errors);
+
+        return [
+            'edition' => $edition,
+            'counts' => $counts,
+            'warnings' => $warnings,
+            'errors' => $errors,
+            'can_import' => $errors === [],
+        ];
     }
 
     /**
@@ -178,6 +222,512 @@ class EditionJsonImporter
                 $mediaAsset->delete();
             }
         }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    protected function previewEdition(array $payload, ?Edition $targetEdition): Edition
+    {
+        if ($targetEdition) {
+            return $targetEdition;
+        }
+
+        $editionData = Arr::get($payload, 'edition', []);
+        $payloadCode = trim((string) ($editionData['code'] ?? ''));
+
+        if ($payloadCode !== '') {
+            $existingEdition = Edition::query()->where('code', $payloadCode)->first();
+
+            if ($existingEdition) {
+                return $existingEdition;
+            }
+        }
+
+        return new Edition([
+            'name' => (string) ($editionData['name'] ?? ($payloadCode !== '' ? $payloadCode : 'Dry Run Edition')),
+            'code' => $payloadCode,
+            'year_start' => (int) ($editionData['year_start'] ?? now()->year),
+            'year_end' => (int) ($editionData['year_end'] ?? now()->year + 1),
+            'status' => (string) ($editionData['status'] ?? 'draft'),
+            'is_active' => false,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $editionData
+     * @param array<int, string> $warnings
+     * @param array<int, string> $errors
+     */
+    protected function inspectImportTarget(Edition $edition, array $editionData, bool $replace, array &$warnings, array &$errors): void
+    {
+        $hasExistingContent = $edition->exists && ($edition->laws()->exists() || $edition->documents()->exists());
+
+        if ($hasExistingContent && ! $replace) {
+            $errors[] = 'Target edition already has content. Re-run the import with --replace to overwrite it.';
+        }
+
+        if ($hasExistingContent && $replace) {
+            $warnings[] = 'Replace mode is enabled. Existing target edition content would be deleted before import.';
+        }
+
+        $desiredCode = trim((string) ($editionData['code'] ?? $edition->code ?? ''));
+        $codeInUse = $desiredCode !== '' && Edition::query()
+            ->where('code', $desiredCode)
+            ->when($edition->exists, fn ($query) => $query->whereKeyNot($edition->id))
+            ->exists();
+
+        if ($codeInUse) {
+            $warnings[] = 'Edition code '.$desiredCode.' is already in use, so the import would keep the current target edition code instead.';
+        }
+
+        $payloadStatus = (string) ($editionData['status'] ?? $edition->status ?? 'draft');
+
+        if (! in_array($payloadStatus, ['draft', 'published'], true)) {
+            $warnings[] = 'Edition status '.$payloadStatus.' is not supported and would be normalized to draft during import.';
+        }
+
+        if ($edition->is_active && $payloadStatus !== 'published') {
+            $warnings[] = 'Target edition is active, so imported status would be forced to published.';
+        }
+
+        if (($editionData['is_active'] ?? false) && ! $edition->is_active) {
+            $warnings[] = 'The JSON marks this edition as active, but import does not auto-activate editions.';
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, int>
+     */
+    protected function summarizePayload(array $payload): array
+    {
+        $counts = $this->emptyCounts();
+        $counts['media_assets'] = is_array($payload['media_assets'] ?? null) ? count($payload['media_assets']) : 0;
+        $counts['documents'] = is_array($payload['documents'] ?? null) ? count($payload['documents']) : 0;
+        $counts['laws'] = is_array($payload['laws'] ?? null) ? count($payload['laws']) : 0;
+        $counts['changelog_entries'] = is_array($payload['changelog_entries'] ?? null) ? count($payload['changelog_entries']) : 0;
+
+        foreach (($payload['documents'] ?? []) as $documentPayload) {
+            if (! is_array($documentPayload)) {
+                continue;
+            }
+
+            $counts['document_pages'] += is_array($documentPayload['pages'] ?? null)
+                ? count($documentPayload['pages'])
+                : 0;
+        }
+
+        foreach (($payload['laws'] ?? []) as $lawPayload) {
+            if (! is_array($lawPayload)) {
+                continue;
+            }
+
+            $counts['qas'] += is_array($lawPayload['qas'] ?? null)
+                ? count($lawPayload['qas'])
+                : 0;
+            $counts['nodes'] += $this->countNodeBranch($lawPayload['nodes'] ?? []);
+        }
+
+        return $counts;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    protected function emptyCounts(): array
+    {
+        return [
+            'media_assets' => 0,
+            'laws' => 0,
+            'nodes' => 0,
+            'qas' => 0,
+            'documents' => 0,
+            'document_pages' => 0,
+            'changelog_entries' => 0,
+        ];
+    }
+
+    /**
+     * @param mixed $nodes
+     */
+    protected function countNodeBranch(mixed $nodes): int
+    {
+        if (! is_array($nodes)) {
+            return 0;
+        }
+
+        $count = 0;
+
+        foreach ($nodes as $nodePayload) {
+            if (! is_array($nodePayload)) {
+                continue;
+            }
+
+            $count++;
+            $count += $this->countNodeBranch($nodePayload['children'] ?? []);
+        }
+
+        return $count;
+    }
+
+    /**
+     * @param array<int, mixed> $mediaPayloads
+     * @param array<int, string> $warnings
+     * @param array<int, string> $errors
+     * @return array<string, bool>
+     */
+    protected function analyzeMediaAssets(array $mediaPayloads, array &$warnings, array &$errors): array
+    {
+        $knownMediaKeys = [];
+
+        foreach ($mediaPayloads as $index => $mediaPayload) {
+            $label = 'Media asset #'.($index + 1);
+
+            if (! is_array($mediaPayload)) {
+                $errors[] = $label.' must be an object.';
+
+                continue;
+            }
+
+            $key = trim((string) ($mediaPayload['key'] ?? ''));
+
+            if ($key === '') {
+                $errors[] = $label.' is missing key.';
+
+                continue;
+            }
+
+            if (isset($knownMediaKeys[$key])) {
+                $errors[] = 'Duplicate media key detected in import payload: '.$key;
+
+                continue;
+            }
+
+            $knownMediaKeys[$key] = true;
+
+            $storageType = (string) ($mediaPayload['storage_type'] ?? 'external');
+            $filePath = (string) (($mediaPayload['file']['path'] ?? null) ?? ($mediaPayload['file_path'] ?? ''));
+            $externalUrl = trim((string) ($mediaPayload['external_url'] ?? ''));
+
+            if ($storageType === 'upload' && $filePath === '') {
+                $errors[] = $label.' ('.$key.') uses upload storage but has no file path.';
+            }
+
+            if ($storageType !== 'upload' && $filePath === '' && $externalUrl === '') {
+                $errors[] = $label.' ('.$key.') is missing both file_path and external_url.';
+            }
+        }
+
+        return $knownMediaKeys;
+    }
+
+    /**
+     * @param array<int, mixed> $documents
+     * @param array<int, string> $warnings
+     * @param array<int, string> $errors
+     */
+    protected function analyzeDocuments(array $documents, array &$warnings, array &$errors): void
+    {
+        $seenSlugs = [];
+
+        foreach ($documents as $index => $documentPayload) {
+            $label = 'Document #'.($index + 1);
+
+            if (! is_array($documentPayload)) {
+                $errors[] = $label.' must be an object.';
+
+                continue;
+            }
+
+            $slug = trim((string) ($documentPayload['slug'] ?? ''));
+
+            if ($slug === '') {
+                $warnings[] = $label.' is missing slug and would receive an auto-generated slug during import.';
+            } elseif (isset($seenSlugs[$slug])) {
+                $warnings[] = $label.' duplicates document slug '.$slug.' in this payload and would be auto-suffixed during import.';
+            } else {
+                $seenSlugs[$slug] = true;
+            }
+
+            $translations = $documentPayload['translations'] ?? [];
+
+            if (! is_array($translations)) {
+                $errors[] = $label.' translations must be an object keyed by language code.';
+            } elseif (! $this->hasTranslationValue($translations, 'id', 'title')) {
+                $warnings[] = $label.' is missing Indonesian title translation.';
+            }
+
+            $pages = $documentPayload['pages'] ?? [];
+
+            if (! is_array($pages)) {
+                $errors[] = $label.' pages must be an array.';
+
+                continue;
+            }
+
+            $seenPageSlugs = [];
+
+            foreach ($pages as $pageIndex => $pagePayload) {
+                $pageLabel = $label.' page #'.($pageIndex + 1);
+
+                if (! is_array($pagePayload)) {
+                    $errors[] = $pageLabel.' must be an object.';
+
+                    continue;
+                }
+
+                $pageSlug = trim((string) ($pagePayload['slug'] ?? ''));
+
+                if ($pageSlug === '') {
+                    $warnings[] = $pageLabel.' is missing slug and would receive a generated fallback during import.';
+                } elseif (isset($seenPageSlugs[$pageSlug])) {
+                    $warnings[] = $pageLabel.' duplicates page slug '.$pageSlug.' within the same document.';
+                } else {
+                    $seenPageSlugs[$pageSlug] = true;
+                }
+
+                $pageTranslations = $pagePayload['translations'] ?? [];
+
+                if (! is_array($pageTranslations)) {
+                    $errors[] = $pageLabel.' translations must be an object keyed by language code.';
+                } elseif (! $this->hasTranslationValue($pageTranslations, 'id', 'title')) {
+                    $warnings[] = $pageLabel.' is missing Indonesian title translation.';
+                }
+            }
+        }
+    }
+
+    /**
+     * @param array<int, mixed> $laws
+     * @param array<string, bool> $knownMediaKeys
+     * @param array<int, string> $warnings
+     * @param array<int, string> $errors
+     */
+    protected function analyzeLaws(array $laws, array $knownMediaKeys, array &$warnings, array &$errors): void
+    {
+        $seenSlugs = [];
+
+        foreach ($laws as $index => $lawPayload) {
+            $label = 'Law #'.($index + 1);
+
+            if (! is_array($lawPayload)) {
+                $errors[] = $label.' must be an object.';
+
+                continue;
+            }
+
+            $lawNumber = trim((string) ($lawPayload['law_number'] ?? ''));
+
+            if ($lawNumber === '') {
+                $warnings[] = $label.' is missing law_number and would be assigned sequentially during import.';
+            }
+
+            $slug = trim((string) ($lawPayload['slug'] ?? ''));
+
+            if ($slug === '') {
+                $warnings[] = $label.' is missing slug and would be generated from title data during import.';
+            } elseif (isset($seenSlugs[$slug])) {
+                $warnings[] = $label.' duplicates law slug '.$slug.' in this payload and would be auto-suffixed during import.';
+            } else {
+                $seenSlugs[$slug] = true;
+            }
+
+            $translations = $lawPayload['translations'] ?? [];
+
+            if (! is_array($translations)) {
+                $errors[] = $label.' translations must be an object keyed by language code.';
+            } elseif (! $this->hasTranslationValue($translations, 'id', 'title')) {
+                $warnings[] = $label.' is missing Indonesian title translation.';
+            }
+
+            $nodes = $lawPayload['nodes'] ?? [];
+
+            if (! is_array($nodes)) {
+                $errors[] = $label.' nodes must be an array.';
+            } else {
+                foreach ($nodes as $nodeIndex => $nodePayload) {
+                    $this->analyzeNode(
+                        $nodePayload,
+                        $label.' node '.($nodeIndex + 1),
+                        $knownMediaKeys,
+                        $warnings,
+                        $errors,
+                    );
+                }
+            }
+
+            $qas = $lawPayload['qas'] ?? [];
+
+            if (! is_array($qas)) {
+                $errors[] = $label.' qas must be an array.';
+
+                continue;
+            }
+
+            foreach ($qas as $qaIndex => $qaPayload) {
+                $qaLabel = $label.' Q&A #'.($qaIndex + 1);
+
+                if (! is_array($qaPayload)) {
+                    $errors[] = $qaLabel.' must be an object.';
+
+                    continue;
+                }
+
+                $qaTranslations = $qaPayload['translations'] ?? [];
+
+                if (! is_array($qaTranslations)) {
+                    $errors[] = $qaLabel.' translations must be an object keyed by language code.';
+                    continue;
+                }
+
+                if (! $this->hasTranslationValue($qaTranslations, 'id', 'question')) {
+                    $warnings[] = $qaLabel.' is missing Indonesian question translation.';
+                }
+
+                if (! $this->hasTranslationValue($qaTranslations, 'id', 'answer_html')) {
+                    $warnings[] = $qaLabel.' is missing Indonesian answer translation.';
+                }
+            }
+        }
+    }
+
+    /**
+     * @param mixed $nodePayload
+     * @param array<string, bool> $knownMediaKeys
+     * @param array<int, string> $warnings
+     * @param array<int, string> $errors
+     */
+    protected function analyzeNode(mixed $nodePayload, string $label, array $knownMediaKeys, array &$warnings, array &$errors): void
+    {
+        if (! is_array($nodePayload)) {
+            $errors[] = $label.' must be an object.';
+
+            return;
+        }
+
+        $nodeType = (string) ($nodePayload['node_type'] ?? '');
+
+        if (! in_array($nodeType, self::SUPPORTED_NODE_TYPES, true)) {
+            $errors[] = $label.' has unsupported node_type '.$nodeType.'.';
+        }
+
+        $translations = $nodePayload['translations'] ?? [];
+
+        if (! is_array($translations)) {
+            $errors[] = $label.' translations must be an object keyed by language code.';
+        } elseif (in_array($nodeType, ['section', 'rich_text'], true) && ! $this->hasAnyTranslationContent($translations, 'id')) {
+            $warnings[] = $label.' is missing Indonesian translated content.';
+        }
+
+        $media = $nodePayload['media'] ?? [];
+
+        if (! is_array($media)) {
+            $errors[] = $label.' media must be an array.';
+        } else {
+            foreach ($media as $mediaIndex => $mediaReference) {
+                if (! is_array($mediaReference)) {
+                    $errors[] = $label.' media #'.($mediaIndex + 1).' must be an object.';
+
+                    continue;
+                }
+
+                $mediaKey = trim((string) ($mediaReference['media_key'] ?? ''));
+
+                if ($mediaKey === '') {
+                    $errors[] = $label.' media #'.($mediaIndex + 1).' is missing media_key.';
+                    continue;
+                }
+
+                if (! isset($knownMediaKeys[$mediaKey])) {
+                    $errors[] = 'Missing media asset for key: '.$mediaKey.' referenced by '.$label.'.';
+                }
+            }
+        }
+
+        if (in_array($nodeType, ['image', 'video_group', 'resource_list'], true) && $media === []) {
+            $warnings[] = $label.' is a '.$nodeType.' node with no attached media items.';
+        }
+
+        $children = $nodePayload['children'] ?? [];
+
+        if (! is_array($children)) {
+            $errors[] = $label.' children must be an array.';
+
+            return;
+        }
+
+        foreach ($children as $childIndex => $childPayload) {
+            $this->analyzeNode(
+                $childPayload,
+                $label.'.'.($childIndex + 1),
+                $knownMediaKeys,
+                $warnings,
+                $errors,
+            );
+        }
+    }
+
+    /**
+     * @param array<int, mixed> $entries
+     * @param array<int, string> $warnings
+     * @param array<int, string> $errors
+     */
+    protected function analyzeChangelogEntries(array $entries, array &$warnings, array &$errors): void
+    {
+        foreach ($entries as $index => $entryPayload) {
+            $label = 'Changelog entry #'.($index + 1);
+
+            if (! is_array($entryPayload)) {
+                $errors[] = $label.' must be an object.';
+
+                continue;
+            }
+
+            if (trim((string) ($entryPayload['title'] ?? '')) === '') {
+                $warnings[] = $label.' is missing title.';
+            }
+
+            if (trim((string) ($entryPayload['language_code'] ?? '')) === '') {
+                $warnings[] = $label.' is missing language_code and would default to id during import.';
+            }
+        }
+    }
+
+    /**
+     * @param mixed $translations
+     */
+    protected function hasTranslationValue(mixed $translations, string $languageCode, string $field): bool
+    {
+        if (! is_array($translations)) {
+            return false;
+        }
+
+        $translation = $translations[$languageCode] ?? null;
+
+        if (! is_array($translation)) {
+            return false;
+        }
+
+        return filled($translation[$field] ?? null);
+    }
+
+    /**
+     * @param mixed $translations
+     */
+    protected function hasAnyTranslationContent(mixed $translations, string $languageCode): bool
+    {
+        if (! is_array($translations)) {
+            return false;
+        }
+
+        $translation = $translations[$languageCode] ?? null;
+
+        if (! is_array($translation)) {
+            return false;
+        }
+
+        return filled($translation['title'] ?? null) || filled($translation['body_html'] ?? null);
     }
 
     /**
@@ -368,7 +918,7 @@ class EditionJsonImporter
     {
         $nodeType = (string) ($nodePayload['node_type'] ?? '');
 
-        if (! in_array($nodeType, ['section', 'rich_text', 'image', 'video_group', 'resource_list'], true)) {
+        if (! in_array($nodeType, self::SUPPORTED_NODE_TYPES, true)) {
             throw new InvalidArgumentException('Unsupported node type in import payload: '.$nodeType);
         }
 
@@ -480,6 +1030,10 @@ class EditionJsonImporter
 
         if (array_key_exists('changelog_entries', $payload) && ! is_array($payload['changelog_entries'])) {
             throw new InvalidArgumentException('Edition import payload changelog_entries must be an array when present.');
+        }
+
+        if (trim((string) Arr::get($payload, 'edition.code', '')) === '') {
+            throw new InvalidArgumentException('Edition import payload must include a non-empty edition.code value.');
         }
     }
 }

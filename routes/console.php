@@ -60,7 +60,7 @@ Artisan::command('lotg:edition-export {edition : Edition id or code} {path? : Ou
     return Command::SUCCESS;
 })->purpose('Export one LotG edition to JSON');
 
-Artisan::command('lotg:edition-import {path : Path to edition JSON file} {--edition= : Existing edition id or code to import into} {--replace : Replace existing content in the target edition}', function (
+Artisan::command('lotg:edition-import {path : Path to edition JSON file} {--edition= : Existing edition id or code to import into} {--replace : Replace existing content in the target edition} {--dry-run : Validate the import without saving changes}', function (
     EditionJsonImporter $importer,
     string $path
 ) {
@@ -99,19 +99,24 @@ Artisan::command('lotg:edition-import {path : Path to edition JSON file} {--edit
         }
     }
 
+    $replace = (bool) $this->option('replace');
+    $isDryRun = (bool) $this->option('dry-run');
+
     try {
-        $result = $importer->import(
-            $payload,
-            $targetEdition,
-            (bool) $this->option('replace'),
-        );
+        $result = $isDryRun
+            ? $importer->dryRun($payload, $targetEdition, $replace)
+            : $importer->import($payload, $targetEdition, $replace);
     } catch (\Throwable $exception) {
         $this->error($exception->getMessage());
 
         return Command::FAILURE;
     }
 
-    $this->info('Edition import completed for '.$result['edition']->name.' ('.$result['edition']->code.').');
+    $editionLabel = trim($result['edition']->code ?? '') !== ''
+        ? $result['edition']->name.' ('.$result['edition']->code.')'
+        : $result['edition']->name;
+
+    $this->info(($isDryRun ? 'Edition dry run summary for ' : 'Edition import completed for ').$editionLabel.'.');
     $this->line('Laws: '.$result['counts']['laws']);
     $this->line('Nodes: '.$result['counts']['nodes']);
     $this->line('Q&A: '.$result['counts']['qas']);
@@ -122,6 +127,22 @@ Artisan::command('lotg:edition-import {path : Path to edition JSON file} {--edit
 
     foreach ($result['warnings'] as $warning) {
         $this->warn($warning);
+    }
+
+    if ($isDryRun && ! empty($result['errors'])) {
+        $this->error('Dry run found blocking issues. No changes were saved.');
+
+        foreach ($result['errors'] as $error) {
+            $this->error($error);
+        }
+
+        return Command::FAILURE;
+    }
+
+    if ($isDryRun) {
+        $this->info('Dry run passed. No changes were saved.');
+
+        return Command::SUCCESS;
     }
 
     return Command::SUCCESS;

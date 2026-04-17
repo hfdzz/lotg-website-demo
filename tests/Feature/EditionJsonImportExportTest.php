@@ -15,7 +15,9 @@ use App\Models\LawQa;
 use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
 use App\Models\MediaAsset;
+use App\Services\EditionJsonExporter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -339,7 +341,8 @@ class EditionJsonImportExportTest extends TestCase
 
     public function test_it_uses_the_configured_default_export_directory_when_path_is_omitted(): void
     {
-        config(['lotg.export_default_dir' => 'storage/app/testing-default-exports']);
+        $exportDirectory = 'storage/app/testing-default-exports/'.Str::random(8);
+        config(['lotg.export_default_dir' => $exportDirectory]);
 
         $edition = Edition::create([
             'name' => 'Config Export Edition',
@@ -350,12 +353,8 @@ class EditionJsonImportExportTest extends TestCase
             'is_active' => false,
         ]);
 
-        $targetDirectory = storage_path('app/testing-default-exports');
+        $targetDirectory = base_path($exportDirectory);
         File::ensureDirectoryExists($targetDirectory);
-
-        foreach (File::glob($targetDirectory.DIRECTORY_SEPARATOR.'lotg-edition-'.$edition->code.'-*.json') as $existingFile) {
-            File::delete($existingFile);
-        }
 
         $this->artisan('lotg:edition-export', [
             'edition' => (string) $edition->id,
@@ -364,5 +363,256 @@ class EditionJsonImportExportTest extends TestCase
         $matches = File::glob($targetDirectory.DIRECTORY_SEPARATOR.'lotg-edition-'.$edition->code.'-*.json');
 
         $this->assertCount(1, $matches);
+    }
+
+    public function test_it_can_dry_run_an_import_without_saving_changes(): void
+    {
+        $path = $this->writeEditionJson('edition-dry-run-pass.json', $this->makeDryRunPayload());
+
+        $this->artisan('lotg:edition-import', [
+            'path' => $path,
+            '--dry-run' => true,
+        ])
+            ->expectsOutputToContain('Edition dry run summary for Dry Run Edition (dry-run-edition).')
+            ->expectsOutputToContain('Laws: 1')
+            ->expectsOutputToContain('Nodes: 2')
+            ->expectsOutputToContain('Q&A: 1')
+            ->expectsOutputToContain('Documents: 1')
+            ->expectsOutputToContain('Document pages: 1')
+            ->expectsOutputToContain('Changelog entries: 1')
+            ->expectsOutputToContain('Media assets: 1')
+            ->expectsOutputToContain('Dry run passed. No changes were saved.')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseMissing('editions', ['code' => 'dry-run-edition']);
+        $this->assertSame(0, Law::query()->count());
+        $this->assertSame(0, Document::query()->count());
+        $this->assertSame(0, ChangelogEntry::query()->count());
+    }
+
+    public function test_dry_run_reports_blocking_errors_without_saving_changes(): void
+    {
+        $payload = $this->makeDryRunPayload();
+        $payload['laws'][] = [
+            'law_number' => '2',
+            'slug' => 'law-one',
+            'sort_order' => 2,
+            'status' => 'published',
+            'translations' => [
+                'id' => [
+                    'title' => 'Hukum Duplikat',
+                ],
+            ],
+            'nodes' => [
+                [
+                    'node_type' => 'video_group',
+                    'sort_order' => 1,
+                    'is_published' => true,
+                    'translations' => [
+                        'id' => [
+                            'title' => 'Video Rusak',
+                        ],
+                    ],
+                    'media' => [
+                        ['media_key' => 'missing-media', 'sort_order' => 1],
+                    ],
+                    'children' => [],
+                ],
+            ],
+            'qas' => [],
+        ];
+
+        $path = $this->writeEditionJson('edition-dry-run-fail.json', $payload);
+
+        $this->artisan('lotg:edition-import', [
+            'path' => $path,
+            '--dry-run' => true,
+        ])
+            ->expectsOutputToContain('Laws: 2')
+            ->expectsOutputToContain('Dry run found blocking issues. No changes were saved.')
+            ->expectsOutputToContain('duplicates law slug law-one in this payload')
+            ->expectsOutputToContain('Missing media asset for key: missing-media')
+            ->assertExitCode(1);
+
+        $this->assertDatabaseMissing('editions', ['code' => 'dry-run-edition']);
+        $this->assertSame(0, Law::query()->count());
+        $this->assertSame(0, Document::query()->count());
+        $this->assertSame(0, MediaAsset::query()->count());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function makeDryRunPayload(): array
+    {
+        return [
+            'schema_version' => EditionJsonExporter::SCHEMA_VERSION,
+            'edition' => [
+                'name' => 'Dry Run Edition',
+                'code' => 'dry-run-edition',
+                'year_start' => 2026,
+                'year_end' => 2027,
+                'status' => 'published',
+                'is_active' => false,
+            ],
+            'media_assets' => [
+                [
+                    'key' => 'media-intro-video',
+                    'asset_type' => 'video',
+                    'storage_type' => 'youtube',
+                    'is_library_item' => true,
+                    'file_path' => null,
+                    'external_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    'thumbnail_path' => null,
+                    'caption' => 'Intro video',
+                    'credit' => 'YouTube',
+                    'file' => null,
+                    'thumbnail_file' => null,
+                ],
+            ],
+            'changelog_entries' => [
+                [
+                    'language_code' => 'id',
+                    'title' => 'Perubahan Edisi',
+                    'body' => 'Ringkasan perubahan.',
+                    'sort_order' => 1,
+                    'published_at' => now()->toIso8601String(),
+                ],
+            ],
+            'documents' => [
+                [
+                    'slug' => 'var-protocol',
+                    'type' => 'single',
+                    'sort_order' => 1,
+                    'status' => 'published',
+                    'base_title' => 'VAR Protocol',
+                    'translations' => [
+                        'id' => [
+                            'title' => 'Protokol VAR',
+                        ],
+                        'en' => [
+                            'title' => 'VAR Protocol',
+                        ],
+                    ],
+                    'pages' => [
+                        [
+                            'slug' => 'overview',
+                            'sort_order' => 1,
+                            'status' => 'published',
+                            'base_title' => 'Overview',
+                            'base_body_html' => '<p>Overview body.</p>',
+                            'translations' => [
+                                'id' => [
+                                    'title' => 'Ikhtisar',
+                                    'body_html' => '<p>Isi ikhtisar.</p>',
+                                ],
+                                'en' => [
+                                    'title' => 'Overview',
+                                    'body_html' => '<p>Overview body.</p>',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'laws' => [
+                [
+                    'law_number' => '1',
+                    'slug' => 'law-one',
+                    'sort_order' => 1,
+                    'status' => 'published',
+                    'translations' => [
+                        'id' => [
+                            'title' => 'Hukum Satu',
+                            'subtitle' => null,
+                            'description_text' => 'Deskripsi hukum satu.',
+                        ],
+                        'en' => [
+                            'title' => 'Law One',
+                            'subtitle' => null,
+                            'description_text' => 'Law one description.',
+                        ],
+                    ],
+                    'nodes' => [
+                        [
+                            'node_type' => 'section',
+                            'sort_order' => 1,
+                            'is_published' => true,
+                            'settings_json' => null,
+                            'translations' => [
+                                'id' => [
+                                    'title' => 'Pendahuluan',
+                                    'body_html' => '<p>Isi pendahuluan.</p>',
+                                    'status' => 'published',
+                                ],
+                                'en' => [
+                                    'title' => 'Introduction',
+                                    'body_html' => '<p>Intro body.</p>',
+                                    'status' => 'published',
+                                ],
+                            ],
+                            'media' => [],
+                            'children' => [
+                                [
+                                    'node_type' => 'video_group',
+                                    'sort_order' => 1,
+                                    'is_published' => true,
+                                    'settings_json' => null,
+                                    'translations' => [
+                                        'id' => [
+                                            'title' => 'Video Penjelasan',
+                                            'body_html' => null,
+                                            'status' => 'published',
+                                        ],
+                                        'en' => [
+                                            'title' => 'Video Explainer',
+                                            'body_html' => null,
+                                            'status' => 'published',
+                                        ],
+                                    ],
+                                    'media' => [
+                                        ['media_key' => 'media-intro-video', 'sort_order' => 1],
+                                    ],
+                                    'children' => [],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'qas' => [
+                        [
+                            'sort_order' => 1,
+                            'is_published' => true,
+                            'translations' => [
+                                'id' => [
+                                    'question' => 'Apa inti hukum ini?',
+                                    'answer_html' => '<p>Ini jawaban singkat.</p>',
+                                    'status' => 'published',
+                                ],
+                                'en' => [
+                                    'question' => 'What is the core of this law?',
+                                    'answer_html' => '<p>This is the short answer.</p>',
+                                    'status' => 'published',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    protected function writeEditionJson(string $filename, array $payload): string
+    {
+        $path = storage_path('app/testing/'.$filename);
+        File::ensureDirectoryExists(dirname($path));
+        File::put(
+            $path,
+            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
+        );
+
+        return $path;
     }
 }
