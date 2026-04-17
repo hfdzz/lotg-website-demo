@@ -181,7 +181,7 @@
     <div class="stack-form" data-image-new-fields>
         <label>
             <div class="law-meta">Upload image</div>
-            <input type="file" name="image_file" accept="image/*" data-image-new-field>
+            <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.avif,image/jpeg,image/png,image/gif,image/bmp,image/webp,image/avif" data-image-new-field>
         </label>
 
         <label>

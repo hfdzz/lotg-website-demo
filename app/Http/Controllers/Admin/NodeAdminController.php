@@ -213,7 +213,12 @@ class NodeAdminController extends Controller
             'remove_resource_asset_ids.*' => ['integer'],
             'image_caption' => ['nullable', 'string'],
             'image_credit' => ['nullable', 'string', 'max:255'],
-            'image_file' => ['nullable', 'image', 'max:5120'],
+            'image_file' => [
+                'nullable',
+                'file',
+                'mimetypes:image/jpeg,image/png,image/gif,image/bmp,image/webp,image/avif',
+                'max:5120',
+            ],
         ]);
     }
 
