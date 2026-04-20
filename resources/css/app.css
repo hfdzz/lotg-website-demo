@@ -892,6 +892,12 @@ button:hover {
     margin-bottom: 1rem;
 }
 
+.law-detail-mobile-toc[open] {
+    max-height: min(70vh, 32rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
 .toc-card {
     display: none;
 }
@@ -2033,6 +2039,9 @@ body.has-mobile-law-context {
         top: 7rem;
         display: grid;
         gap: 0.85rem;
+        max-height: calc(100vh - 8rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 0;
         border: 0;
         border-radius: 0;
