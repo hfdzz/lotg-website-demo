@@ -390,6 +390,30 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertSame(0, ChangelogEntry::query()->count());
     }
 
+    public function test_it_can_import_json_from_a_storage_disk(): void
+    {
+        Storage::fake('s3');
+
+        $payload = $this->makeDryRunPayload();
+        Storage::disk('s3')->put(
+            'lotg-exports/edition-from-s3.json',
+            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
+        );
+
+        $this->artisan('lotg:edition-import', [
+            'path' => 'lotg-exports/edition-from-s3.json',
+            '--disk' => 's3',
+        ])
+            ->expectsOutputToContain('Edition import completed for Dry Run Edition (dry-run-edition).')
+            ->assertExitCode(0);
+
+        $edition = Edition::query()->where('code', 'dry-run-edition')->firstOrFail();
+
+        $this->assertSame(1, Law::query()->where('edition_id', $edition->id)->count());
+        $this->assertSame(1, Document::query()->where('edition_id', $edition->id)->count());
+        $this->assertSame(1, ChangelogEntry::query()->where('edition_id', $edition->id)->count());
+    }
+
     public function test_dry_run_reports_blocking_errors_without_saving_changes(): void
     {
         $payload = $this->makeDryRunPayload();

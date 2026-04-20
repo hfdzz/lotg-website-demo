@@ -6,6 +6,7 @@ use App\Services\EditionJsonImporter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Command\Command;
 
@@ -60,22 +61,29 @@ Artisan::command('lotg:edition-export {edition : Edition id or code} {path? : Ou
     return Command::SUCCESS;
 })->purpose('Export one LotG edition to JSON');
 
-Artisan::command('lotg:edition-import {path : Path to edition JSON file} {--edition= : Existing edition id or code to import into} {--replace : Replace existing content in the target edition} {--dry-run : Validate the import without saving changes}', function (
+Artisan::command('lotg:edition-import {path : Path to edition JSON file, or object key when --disk is used} {--edition= : Existing edition id or code to import into} {--replace : Replace existing content in the target edition} {--dry-run : Validate the import without saving changes} {--disk= : Laravel filesystem disk to read the import JSON from, for example s3}', function (
     EditionJsonImporter $importer,
     string $path
 ) {
-    $importPath = lotg_console_path($path);
+    $disk = trim((string) $this->option('disk'));
+    $importSource = $disk !== ''
+        ? $disk.'://'.$path
+        : lotg_console_path($path);
 
-    if (! File::exists($importPath)) {
-        $this->error('Import file not found: '.$importPath);
+    if ($disk === '' && ! File::exists($importSource)) {
+        $this->error('Import file not found: '.$importSource);
 
         return Command::FAILURE;
     }
 
     try {
-        $payload = json_decode(File::get($importPath), true, 512, JSON_THROW_ON_ERROR);
+        $contents = $disk !== ''
+            ? Storage::disk($disk)->get($path)
+            : File::get($importSource);
+
+        $payload = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
     } catch (\Throwable $exception) {
-        $this->error($exception->getMessage());
+        $this->error('Unable to read import JSON from '.$importSource.': '.$exception->getMessage());
 
         return Command::FAILURE;
     }
