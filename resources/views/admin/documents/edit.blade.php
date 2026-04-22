@@ -199,7 +199,13 @@
                                         <div class="law-meta">Media key</div>
                                         <input type="text" name="pages[{{ $index }}][media][{{ $mediaIndex }}][media_key]" value="{{ $mediaKey }}" placeholder="example-key" data-document-media-key>
                                     </label>
-                                    <p class="nav-meta">Placeholder: <code data-document-media-placeholder>{{ $mediaKey ? '{{media:'.$mediaKey.'}}' : '{{media:example-key}}' }}</code></p>
+                                    @php
+                                        $placeholderKey = $mediaKey ?: 'example-key';
+                                        $placeholder = '{'.'{media:'.$placeholderKey.'}'.'}';
+                                    @endphp
+                                    <p class="nav-meta">
+                                        Placeholder: <code data-document-media-placeholder>{{ $placeholder }}</code>
+                                    </p>
                                     <label>
                                         <div class="law-meta">Use existing image</div>
                                         <select name="pages[{{ $index }}][media][{{ $mediaIndex }}][existing_media_asset_id]" data-document-media-existing-select>
