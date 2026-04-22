@@ -212,7 +212,7 @@ class EditionJsonImportExportTest extends TestCase
             'document_id' => $document->id,
             'slug' => 'overview',
             'title' => 'Overview',
-            'body_html' => '<p>Initial page body.</p>',
+            'body_html' => '<p>Initial page body.</p>{{media:field-diagram}}',
             'sort_order' => 1,
             'status' => 'published',
         ]);
@@ -221,14 +221,21 @@ class EditionJsonImportExportTest extends TestCase
             'document_page_id' => $page->id,
             'language_code' => 'id',
             'title' => 'Ikhtisar',
-            'body_html' => '<p>Isi halaman awal.</p>',
+            'body_html' => '<p>Isi halaman awal.</p>{{media:field-diagram}}',
         ]);
 
         DocumentPageTranslation::create([
             'document_page_id' => $page->id,
             'language_code' => 'en',
             'title' => 'Overview',
-            'body_html' => '<p>Initial page body.</p>',
+            'body_html' => '<p>Initial page body.</p>{{media:field-diagram}}',
+        ]);
+
+        $page->mediaAssets()->sync([
+            $imageAsset->id => [
+                'media_key' => 'field-diagram',
+                'sort_order' => 1,
+            ],
         ]);
 
         ChangelogEntry::create([
@@ -254,6 +261,8 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertCount(1, $payload['documents']);
         $this->assertCount(2, $payload['media_assets']);
         $this->assertCount(1, $payload['changelog_entries']);
+        $this->assertCount(1, $payload['documents'][0]['pages'][0]['media']);
+        $this->assertSame('field-diagram', $payload['documents'][0]['pages'][0]['media'][0]['media_key']);
         $this->assertNotEmpty($payload['media_assets'][0]['key']);
 
         $payload['edition']['code'] = 'imported-edition';
@@ -276,7 +285,7 @@ class EditionJsonImportExportTest extends TestCase
             ->firstOrFail();
         $importedDocument = Document::query()
             ->where('edition_id', $importedEdition->id)
-            ->with(['translations', 'pages.translations'])
+            ->with(['translations', 'pages.translations', 'pages.mediaAssets'])
             ->firstOrFail();
 
         $this->assertSame('Imported Edition', $importedEdition->name);
@@ -302,7 +311,9 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertSame('var-protocol', $importedDocument->slug);
         $this->assertCount(2, $importedDocument->translations);
         $this->assertCount(1, $importedDocument->pages);
+        $this->assertCount(1, $importedDocument->pages->first()?->mediaAssets);
         $this->assertSame('Protokol VAR', $importedDocument->translations->firstWhere('language_code', 'id')?->title);
+        $this->assertStringContainsString('document-inline-media', $importedDocument->pages->first()?->renderBodyWithMedia('id'));
         $this->assertSame(1, ChangelogEntry::query()->where('edition_id', $importedEdition->id)->count());
         $this->assertSame('Perubahan Penting', ChangelogEntry::query()->where('edition_id', $importedEdition->id)->first()?->title);
 

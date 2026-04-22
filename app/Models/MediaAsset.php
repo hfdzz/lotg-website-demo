@@ -40,6 +40,13 @@ class MediaAsset extends Model
             ->withTimestamps();
     }
 
+    public function documentPages(): BelongsToMany
+    {
+        return $this->belongsToMany(DocumentPage::class, 'document_page_media')
+            ->withPivot(['id', 'media_key', 'sort_order'])
+            ->withTimestamps();
+    }
+
     public function scopeLibraryItems(Builder $query): Builder
     {
         return $query->where('is_library_item', true);

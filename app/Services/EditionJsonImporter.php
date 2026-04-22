@@ -76,7 +76,7 @@ class EditionJsonImporter
             }
 
             foreach (Arr::get($payload, 'documents', []) as $documentPayload) {
-                $this->importDocument($edition, $documentPayload, $counts);
+                $this->importDocument($edition, $documentPayload, $mediaKeyMap, $counts);
             }
 
             foreach (Arr::get($payload, 'laws', []) as $lawPayload) {
@@ -120,7 +120,7 @@ class EditionJsonImporter
         $this->inspectImportTarget($edition, Arr::get($payload, 'edition', []), $replace, $warnings, $errors);
 
         $knownMediaKeys = $this->analyzeMediaAssets(Arr::get($payload, 'media_assets', []), $warnings, $errors);
-        $this->analyzeDocuments(Arr::get($payload, 'documents', []), $warnings, $errors);
+        $this->analyzeDocuments(Arr::get($payload, 'documents', []), $knownMediaKeys, $warnings, $errors);
         $this->analyzeLaws(Arr::get($payload, 'laws', []), $knownMediaKeys, $warnings, $errors);
         $this->analyzeChangelogEntries(Arr::get($payload, 'changelog_entries', []), $warnings, $errors);
 
@@ -208,6 +208,7 @@ class EditionJsonImporter
     {
         $mediaAssets = MediaAsset::query()
             ->whereHas('contentNodes.law', fn ($query) => $query->where('edition_id', $edition->id))
+            ->orWhereHas('documentPages.document', fn ($query) => $query->where('edition_id', $edition->id))
             ->get()
             ->unique('id');
 
@@ -216,7 +217,7 @@ class EditionJsonImporter
         Law::query()->forEdition($edition->id)->delete();
 
         foreach ($mediaAssets as $mediaAsset) {
-            if (! $mediaAsset->contentNodes()->exists()) {
+            if (! $mediaAsset->contentNodes()->exists() && ! $mediaAsset->documentPages()->exists()) {
                 $this->deleteStoredFileIfNeeded($mediaAsset->file_path);
                 $this->deleteStoredFileIfNeeded($mediaAsset->thumbnail_path);
                 $mediaAsset->delete();
@@ -375,7 +376,7 @@ class EditionJsonImporter
      * @param array<int, mixed> $mediaPayloads
      * @param array<int, string> $warnings
      * @param array<int, string> $errors
-     * @return array<string, bool>
+     * @return array<string, string>
      */
     protected function analyzeMediaAssets(array $mediaPayloads, array &$warnings, array &$errors): array
     {
@@ -404,7 +405,7 @@ class EditionJsonImporter
                 continue;
             }
 
-            $knownMediaKeys[$key] = true;
+            $knownMediaKeys[$key] = (string) ($mediaPayload['asset_type'] ?? 'file');
 
             $storageType = (string) ($mediaPayload['storage_type'] ?? 'external');
             $filePath = (string) (($mediaPayload['file']['path'] ?? null) ?? ($mediaPayload['file_path'] ?? ''));
@@ -424,10 +425,11 @@ class EditionJsonImporter
 
     /**
      * @param array<int, mixed> $documents
+     * @param array<string, string> $knownMediaKeys
      * @param array<int, string> $warnings
      * @param array<int, string> $errors
      */
-    protected function analyzeDocuments(array $documents, array &$warnings, array &$errors): void
+    protected function analyzeDocuments(array $documents, array $knownMediaKeys, array &$warnings, array &$errors): void
     {
         $seenSlugs = [];
 
@@ -494,13 +496,58 @@ class EditionJsonImporter
                 } elseif (! $this->hasTranslationValue($pageTranslations, 'id', 'title')) {
                     $warnings[] = $pageLabel.' is missing Indonesian title translation.';
                 }
+
+                $pageMedia = $pagePayload['media'] ?? [];
+
+                if (! is_array($pageMedia)) {
+                    $errors[] = $pageLabel.' media must be an array.';
+                    continue;
+                }
+
+                $seenMediaKeys = [];
+                $attachedMediaKeys = [];
+
+                foreach ($pageMedia as $mediaIndex => $mediaReference) {
+                    $mediaLabel = $pageLabel.' media #'.($mediaIndex + 1);
+
+                    if (! is_array($mediaReference)) {
+                        $errors[] = $mediaLabel.' must be an object.';
+                        continue;
+                    }
+
+                    $mediaKey = trim((string) ($mediaReference['media_key'] ?? ''));
+                    $assetKey = trim((string) ($mediaReference['asset_key'] ?? ''));
+
+                    if ($mediaKey === '') {
+                        $errors[] = $mediaLabel.' is missing media_key.';
+                    } elseif (isset($seenMediaKeys[$mediaKey])) {
+                        $errors[] = $mediaLabel.' duplicates media_key '.$mediaKey.' within the same document page.';
+                    } else {
+                        $seenMediaKeys[$mediaKey] = true;
+                        $attachedMediaKeys[$mediaKey] = true;
+                    }
+
+                    if ($assetKey === '') {
+                        $errors[] = $mediaLabel.' is missing asset_key.';
+                    } elseif (! isset($knownMediaKeys[$assetKey])) {
+                        $errors[] = $mediaLabel.' references missing media asset key '.$assetKey.'.';
+                    } elseif ($knownMediaKeys[$assetKey] !== 'image') {
+                        $errors[] = $mediaLabel.' must reference an image media asset.';
+                    }
+                }
+
+                foreach ($this->documentMediaPlaceholders($pagePayload, $pageTranslations) as $placeholderKey) {
+                    if (! isset($attachedMediaKeys[$placeholderKey])) {
+                        $errors[] = $pageLabel.' contains placeholder {{media:'.$placeholderKey.'}} but no attached media uses that key.';
+                    }
+                }
             }
         }
     }
 
     /**
      * @param array<int, mixed> $laws
-     * @param array<string, bool> $knownMediaKeys
+     * @param array<string, string> $knownMediaKeys
      * @param array<int, string> $warnings
      * @param array<int, string> $errors
      */
@@ -594,7 +641,7 @@ class EditionJsonImporter
 
     /**
      * @param mixed $nodePayload
-     * @param array<string, bool> $knownMediaKeys
+     * @param array<string, string> $knownMediaKeys
      * @param array<int, string> $warnings
      * @param array<int, string> $errors
      */
@@ -695,6 +742,40 @@ class EditionJsonImporter
     }
 
     /**
+     * @param array<string, mixed> $pagePayload
+     * @param mixed $translations
+     * @return array<int, string>
+     */
+    protected function documentMediaPlaceholders(array $pagePayload, mixed $translations): array
+    {
+        $bodies = [
+            Arr::get($pagePayload, 'base_body_html'),
+        ];
+
+        if (is_array($translations)) {
+            foreach ($translations as $translationPayload) {
+                if (is_array($translationPayload)) {
+                    $bodies[] = Arr::get($translationPayload, 'body_html');
+                }
+            }
+        }
+
+        $placeholders = [];
+
+        foreach ($bodies as $body) {
+            if (! is_string($body) || $body === '') {
+                continue;
+            }
+
+            if (preg_match_all('/\{\{\s*media:([A-Za-z0-9_-]+)\s*\}\}/', $body, $matches)) {
+                $placeholders = array_merge($placeholders, $matches[1]);
+            }
+        }
+
+        return array_values(array_unique($placeholders));
+    }
+
+    /**
      * @param mixed $translations
      */
     protected function hasTranslationValue(mixed $translations, string $languageCode, string $field): bool
@@ -769,9 +850,10 @@ class EditionJsonImporter
 
     /**
      * @param array<string, mixed> $documentPayload
+     * @param array<string, \App\Models\MediaAsset> $mediaKeyMap
      * @param array<string, int> $counts
      */
-    protected function importDocument(Edition $edition, array $documentPayload, array &$counts): void
+    protected function importDocument(Edition $edition, array $documentPayload, array $mediaKeyMap, array &$counts): void
     {
         $translations = Arr::get($documentPayload, 'translations', []);
         $baseTitle = (string) (
@@ -838,6 +920,26 @@ class EditionJsonImporter
                     'title' => (string) ($translationPayload['title'] ?? $pageBaseTitle),
                     'body_html' => Arr::get($translationPayload, 'body_html'),
                 ]);
+            }
+
+            $mediaSyncPayload = [];
+
+            foreach (Arr::get($pagePayload, 'media', []) as $mediaReference) {
+                $mediaKey = trim((string) ($mediaReference['media_key'] ?? ''));
+                $assetKey = trim((string) ($mediaReference['asset_key'] ?? ''));
+
+                if ($mediaKey === '' || $assetKey === '' || ! isset($mediaKeyMap[$assetKey])) {
+                    throw new InvalidArgumentException('Missing document page media asset for key: '.$assetKey);
+                }
+
+                $mediaSyncPayload[$mediaKeyMap[$assetKey]->id] = [
+                    'media_key' => $mediaKey,
+                    'sort_order' => (int) ($mediaReference['sort_order'] ?? 1),
+                ];
+            }
+
+            if ($mediaSyncPayload !== []) {
+                $page->mediaAssets()->sync($mediaSyncPayload);
             }
         }
     }

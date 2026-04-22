@@ -21,7 +21,7 @@ class EditionJsonExporter
     {
         $documents = Document::query()
             ->forEdition($edition->id)
-            ->with(['translations', 'pages.translations'])
+            ->with(['translations', 'pages.translations', 'pages.mediaAssets'])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -38,8 +38,16 @@ class EditionJsonExporter
             ->orderBy('id')
             ->get();
 
-        $mediaAssets = $laws
+        $lawMediaAssets = $laws
             ->flatMap(fn (Law $law) => $law->contentNodes->flatMap(fn (ContentNode $node) => $node->mediaAssets))
+            ->values();
+
+        $documentMediaAssets = $documents
+            ->flatMap(fn (Document $document) => $document->pages->flatMap(fn (DocumentPage $page) => $page->mediaAssets))
+            ->values();
+
+        $mediaAssets = $lawMediaAssets
+            ->merge($documentMediaAssets)
             ->unique('id')
             ->sortBy('id')
             ->values();
@@ -84,7 +92,7 @@ class EditionJsonExporter
                 ->values()
                 ->all(),
             'documents' => $documents
-                ->map(fn (Document $document) => $this->exportDocument($document))
+                ->map(fn (Document $document) => $this->exportDocument($document, $mediaKeyById))
                 ->values()
                 ->all(),
         ];
@@ -129,7 +137,7 @@ class EditionJsonExporter
         ];
     }
 
-    protected function exportDocument(Document $document): array
+    protected function exportDocument(Document $document, array $mediaKeyById): array
     {
         return [
             'slug' => $document->slug,
@@ -155,6 +163,15 @@ class EditionJsonExporter
                         'title',
                         'body_html',
                     ]),
+                    'media' => $page->mediaAssets
+                        ->sortBy(fn (MediaAsset $mediaAsset) => (int) ($mediaAsset->pivot->sort_order ?? 1))
+                        ->map(fn (MediaAsset $mediaAsset) => [
+                            'media_key' => $mediaAsset->pivot->media_key,
+                            'asset_key' => $mediaKeyById[$mediaAsset->id] ?? $this->mediaKey($mediaAsset),
+                            'sort_order' => (int) ($mediaAsset->pivot->sort_order ?? 1),
+                        ])
+                        ->values()
+                        ->all(),
                 ])
                 ->values()
                 ->all(),

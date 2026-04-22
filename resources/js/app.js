@@ -692,6 +692,91 @@ function setupDocumentPageEditor() {
             return;
         }
 
+        const slugify = (value) =>
+            value
+                .toString()
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .replace(/-{2,}/g, '-');
+
+        const updateDocumentMediaPlaceholder = (item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const keyInput = item.querySelector('[data-document-media-key]');
+            const placeholder = item.querySelector('[data-document-media-placeholder]');
+
+            if (!(keyInput instanceof HTMLInputElement) || !(placeholder instanceof HTMLElement)) {
+                return;
+            }
+
+            const mediaKey = slugify(keyInput.value) || 'example-key';
+            placeholder.textContent = `{{media:${mediaKey}}}`;
+        };
+
+        const updateDocumentMediaRowMode = (item) => {
+            if (!(item instanceof HTMLElement) || item.hidden) {
+                return;
+            }
+
+            const editorElement = item.closest('[data-document-media-editor]');
+            const existingSelect = item.querySelector('[data-document-media-existing-select]');
+            const newFields = Array.from(item.querySelectorAll('[data-document-media-new-field]'));
+            const preview = item.querySelector('[data-document-media-selection-preview]');
+            const previewMap = editorElement instanceof HTMLElement
+                ? parsePreviewMap(editorElement.dataset.documentMediaPreviewMap)
+                : {};
+            const hasExistingSelection = existingSelect instanceof HTMLSelectElement && existingSelect.value !== '';
+
+            newFields.forEach((field) => {
+                if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                field.disabled = hasExistingSelection;
+            });
+
+            if (existingSelect instanceof HTMLSelectElement) {
+                updateMediaSelectionPreview(preview, previewMap[existingSelect.value] ?? null);
+            }
+        };
+
+        const renumberMediaItems = (pageItem, pageIndex) => {
+            if (!(pageItem instanceof HTMLElement)) {
+                return;
+            }
+
+            const mediaItems = Array.from(pageItem.querySelectorAll('[data-document-media-item]'));
+
+            mediaItems.forEach((mediaItem, mediaIndex) => {
+                if (!(mediaItem instanceof HTMLElement)) {
+                    return;
+                }
+
+                const number = mediaItem.querySelector('[data-document-media-number]');
+                if (number && !mediaItem.hidden) {
+                    number.textContent = `${mediaIndex + 1}`;
+                }
+
+                Array.from(mediaItem.querySelectorAll('input, select')).forEach((field) => {
+                    if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) {
+                        return;
+                    }
+
+                    field.name = field.name
+                        .replace(/pages\[\d+\]/, `pages[${pageIndex}]`)
+                        .replace(/media\[\d+\]/, `media[${mediaIndex}]`);
+                });
+
+                updateDocumentMediaPlaceholder(mediaItem);
+                updateDocumentMediaRowMode(mediaItem);
+            });
+        };
+
         const renumberItems = () => {
             const items = Array.from(editor.querySelectorAll('[data-document-page-item]'));
 
@@ -712,6 +797,8 @@ function setupDocumentPageEditor() {
 
                     field.name = field.name.replace(/pages\[\d+\]/, `pages[${index}]`);
                 });
+
+                renumberMediaItems(item, index);
             });
         };
 
@@ -731,6 +818,9 @@ function setupDocumentPageEditor() {
 
         addButton.addEventListener('click', () => {
             const nextIndex = editor.querySelectorAll('[data-document-page-item]').length;
+            const mediaTemplate = editor.querySelector('[data-document-media-template]');
+            const mediaTemplateHtml = mediaTemplate instanceof HTMLTemplateElement ? mediaTemplate.outerHTML : '';
+            const mediaPreviewMap = editor.querySelector('[data-document-media-editor]')?.getAttribute('data-document-media-preview-map') || '{}';
             const wrapper = document.createElement('div');
             wrapper.className = 'card stack-form document-page-card';
             wrapper.dataset.documentPageItem = '';
@@ -771,7 +861,22 @@ function setupDocumentPageEditor() {
                         <option value="published">Published</option>
                     </select>
                 </label>
+                <div class="document-inline-media-editor" data-document-media-editor data-document-media-preview-map="{}">
+                    <div class="video-item-header">
+                        <div>
+                            <h3>Inline media</h3>
+                            <p class="nav-meta">Attach image assets to this page, then place them in the body with placeholders like <code>{{media:example-key}}</code>.</p>
+                        </div>
+                        <button type="button" data-document-media-add>Add image</button>
+                    </div>
+                    <div class="stack-form" data-document-media-list></div>
+                    ${mediaTemplateHtml}
+                </div>
             `;
+            const mediaEditor = wrapper.querySelector('[data-document-media-editor]');
+            if (mediaEditor instanceof HTMLElement) {
+                mediaEditor.setAttribute('data-document-media-preview-map', mediaPreviewMap);
+            }
             editor.appendChild(wrapper);
             renumberItems();
             updateTypeVisibility();
@@ -781,6 +886,58 @@ function setupDocumentPageEditor() {
             const target = event.target;
 
             if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const addMediaButton = target.closest('[data-document-media-add]');
+            if (addMediaButton instanceof HTMLElement) {
+                const mediaEditor = addMediaButton.closest('[data-document-media-editor]');
+                const pageItem = addMediaButton.closest('[data-document-page-item]');
+                const list = mediaEditor?.querySelector('[data-document-media-list]');
+                const template = mediaEditor?.querySelector('[data-document-media-template]');
+
+                if (!(mediaEditor instanceof HTMLElement) || !(pageItem instanceof HTMLElement) || !(list instanceof HTMLElement) || !(template instanceof HTMLTemplateElement)) {
+                    return;
+                }
+
+                const pageIndex = Array.from(editor.querySelectorAll('[data-document-page-item]')).indexOf(pageItem);
+                const mediaIndex = list.querySelectorAll('[data-document-media-item]').length;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'card document-media-card';
+                wrapper.dataset.documentMediaItem = '';
+                wrapper.innerHTML = template.innerHTML
+                    .replace(/__PAGE_INDEX__/g, `${pageIndex}`)
+                    .replace(/__MEDIA_INDEX__/g, `${mediaIndex}`)
+                    .replace(/__NUMBER__/g, `${mediaIndex + 1}`);
+
+                list.appendChild(wrapper);
+                renumberItems();
+                return;
+            }
+
+            const removeMediaButton = target.closest('[data-document-media-remove]');
+            if (removeMediaButton instanceof HTMLElement) {
+                const confirmMessage = removeMediaButton.dataset.confirmMessage;
+                if (confirmMessage && !window.confirm(confirmMessage)) {
+                    return;
+                }
+
+                const mediaItem = removeMediaButton.closest('[data-document-media-item]');
+
+                if (!(mediaItem instanceof HTMLElement)) {
+                    return;
+                }
+
+                const removeInput = mediaItem.querySelector('[data-document-media-remove-input]');
+
+                if (mediaItem.dataset.documentMediaPivotId && removeInput instanceof HTMLInputElement) {
+                    removeInput.value = '1';
+                    mediaItem.hidden = true;
+                } else {
+                    mediaItem.remove();
+                }
+
+                renumberItems();
                 return;
             }
 
@@ -814,6 +971,34 @@ function setupDocumentPageEditor() {
 
             item.remove();
             renumberItems();
+        });
+
+        editor.addEventListener('input', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const keyInput = target.closest('[data-document-media-key]');
+
+            if (keyInput instanceof HTMLInputElement) {
+                updateDocumentMediaPlaceholder(keyInput.closest('[data-document-media-item]'));
+            }
+        });
+
+        editor.addEventListener('change', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const existingSelect = target.closest('[data-document-media-existing-select]');
+
+            if (existingSelect instanceof HTMLSelectElement) {
+                updateDocumentMediaRowMode(existingSelect.closest('[data-document-media-item]'));
+            }
         });
 
         if (typeSelect instanceof HTMLSelectElement) {

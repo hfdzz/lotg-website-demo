@@ -37,7 +37,10 @@
                 >
             </div>
         @endif
-        <p class="law-meta">Usage: {{ $media->content_nodes_count }} {{ \Illuminate\Support\Str::plural('node', $media->content_nodes_count) }}</p>
+        @php
+            $usedCount = (int) $media->content_nodes_count + (int) $media->document_pages_count;
+        @endphp
+        <p class="law-meta">Usage: {{ $usedCount }} {{ \Illuminate\Support\Str::plural('place', $usedCount) }}</p>
         <p class="law-meta media-source">{{ $media->adminSource() ?: 'No source' }}</p>
     </section>
 
@@ -54,7 +57,7 @@
 
     <section class="card stack-form stack-top">
         <h2>Where this media is used</h2>
-        @if ($media->contentNodes->isNotEmpty())
+        @if ($media->contentNodes->isNotEmpty() || $media->documentPages->isNotEmpty())
             <div class="stack-top">
                 @foreach ($media->contentNodes as $node)
                     @php
@@ -70,16 +73,27 @@
                         <p class="law-meta">Node #{{ $node->id }} · {{ $node->node_type }} · Edition: {{ $node->law->edition?->name }}</p>
                     </article>
                 @endforeach
+                @foreach ($media->documentPages as $page)
+                    <article class="result-card">
+                        <h3>
+                            <a class="result-link" href="{{ route('admin.documents.edit', ['edition' => $page->document->edition, 'document' => $page->document]) }}">
+                                {{ $page->displayTitle('id') }}
+                            </a>
+                        </h3>
+                        <p class="law-meta">Document: {{ $page->document->displayTitle('id') }}</p>
+                        <p class="law-meta">Page #{{ $page->id }} · Key: {{ $page->pivot->media_key }} · Edition: {{ $page->document->edition?->name }}</p>
+                    </article>
+                @endforeach
             </div>
         @else
-            <p class="empty-state">This media is not attached to any node right now.</p>
+            <p class="empty-state">This media is not attached anywhere right now.</p>
         @endif
     </section>
 
     <section class="card stack-top">
         <h2>Delete media</h2>
-        @if ($media->content_nodes_count > 0)
-            <p class="law-meta">This media cannot be deleted while it is still attached to nodes.</p>
+        @if ($usedCount > 0)
+            <p class="law-meta">This media cannot be deleted while it is still attached to nodes or document pages.</p>
         @else
             <form action="{{ route('admin.media.destroy', ['media' => $media]) }}" method="post" class="stack-form" data-confirm-message="Delete this media asset? This cannot be undone.">
                 @csrf

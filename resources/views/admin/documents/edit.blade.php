@@ -3,6 +3,18 @@
 @section('title', 'Admin | Edit Document')
 
 @section('content')
+    @php
+        $availableImageAssets = $availableImageAssets ?? collect();
+        $imagePreviewMap = $availableImageAssets
+            ->mapWithKeys(fn ($asset) => [
+                (string) $asset->id => [
+                    'url' => $asset->thumbnailUrl(),
+                    'label' => $asset->adminLabel(),
+                ],
+            ])
+            ->all();
+    @endphp
+
     <a class="back-link" href="{{ route('admin.documents.index', ['edition' => $selectedEdition]) }}">Back to documents</a>
 
     @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition, 'editionSwitcherTarget' => 'documents'])
@@ -27,7 +39,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.documents.update', ['edition' => $selectedEdition, 'document' => $document]) }}" method="post" class="stack-form">
+    <form action="{{ route('admin.documents.update', ['edition' => $selectedEdition, 'document' => $document]) }}" method="post" enctype="multipart/form-data" class="stack-form">
         @csrf
         @method('patch')
 
@@ -84,6 +96,15 @@
                             'body_html_en' => $page->translationFor('en')?->body_html,
                             'sort_order' => $page->sort_order,
                             'status' => $page->status,
+                            'media' => $page->mediaAssets->map(fn ($asset) => [
+                                'pivot_id' => $asset->pivot->id,
+                                'media_key' => $asset->pivot->media_key,
+                                'existing_media_asset_id' => $asset->id,
+                                'caption' => $asset->caption,
+                                'credit' => $asset->credit,
+                                'sort_order' => $asset->pivot->sort_order,
+                                'remove' => 0,
+                            ])->values()->all(),
                         ]);
                     })
                     ->values();
@@ -97,6 +118,7 @@
                         'body_html_en' => '',
                         'sort_order' => 1,
                         'status' => $document->status,
+                        'media' => [],
                     ]]);
                 }
             @endphp
@@ -145,6 +167,117 @@
                             <option value="published" @selected(($pageRow['status'] ?? $document->status) === 'published')>Published</option>
                         </select>
                     </label>
+
+                    @php
+                        $mediaRows = collect($pageRow['media'] ?? [])->values();
+                    @endphp
+
+                    <div class="document-inline-media-editor" data-document-media-editor data-document-media-preview-map='@json($imagePreviewMap)'>
+                        <div class="video-item-header">
+                            <div>
+                                <h3>Inline media</h3>
+                                <p class="nav-meta">Attach image assets to this page, then place them in the body with placeholders like <code>@{{media:example-key}}</code>.</p>
+                            </div>
+                            <button type="button" data-document-media-add>Add image</button>
+                        </div>
+
+                        <div class="stack-form" data-document-media-list>
+                            @foreach ($mediaRows as $mediaIndex => $mediaRow)
+                                @php
+                                    $selectedMediaId = $mediaRow['existing_media_asset_id'] ?? '';
+                                    $mediaKey = $mediaRow['media_key'] ?? '';
+                                    $isRemoved = (bool) ($mediaRow['remove'] ?? false);
+                                @endphp
+                                <div class="card document-media-card" data-document-media-item @if (! empty($mediaRow['pivot_id'])) data-document-media-pivot-id="{{ $mediaRow['pivot_id'] }}" @endif @if($isRemoved) hidden @endif>
+                                    <div class="video-item-header">
+                                        <h4>Image <span data-document-media-number>{{ $mediaIndex + 1 }}</span></h4>
+                                        <button type="button" class="button-danger" data-document-media-remove data-confirm-message="Remove this inline image from the page?">Remove image</button>
+                                    </div>
+                                    <input type="hidden" name="pages[{{ $index }}][media][{{ $mediaIndex }}][pivot_id]" value="{{ $mediaRow['pivot_id'] ?? '' }}">
+                                    <input type="hidden" name="pages[{{ $index }}][media][{{ $mediaIndex }}][remove]" value="{{ $isRemoved ? 1 : 0 }}" data-document-media-remove-input>
+                                    <label>
+                                        <div class="law-meta">Media key</div>
+                                        <input type="text" name="pages[{{ $index }}][media][{{ $mediaIndex }}][media_key]" value="{{ $mediaKey }}" placeholder="example-key" data-document-media-key>
+                                    </label>
+                                    <p class="nav-meta">Placeholder: <code data-document-media-placeholder>{{ $mediaKey ? '{{media:'.$mediaKey.'}}' : '{{media:example-key}}' }}</code></p>
+                                    <label>
+                                        <div class="law-meta">Use existing image</div>
+                                        <select name="pages[{{ $index }}][media][{{ $mediaIndex }}][existing_media_asset_id]" data-document-media-existing-select>
+                                            <option value="">Upload a new image instead</option>
+                                            @foreach ($availableImageAssets as $availableImageAsset)
+                                                @php
+                                                    $usedCount = (int) ($availableImageAsset->content_nodes_count ?? 0) + (int) ($availableImageAsset->document_pages_count ?? 0);
+                                                @endphp
+                                                <option value="{{ $availableImageAsset->id }}" @selected((string) $selectedMediaId === (string) $availableImageAsset->id)>
+                                                    #{{ $availableImageAsset->id }} · {{ $availableImageAsset->adminLabel() }} · used {{ $usedCount }}x
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </label>
+                                    <div class="media-selection-preview" data-document-media-selection-preview hidden></div>
+                                    <label>
+                                        <div class="law-meta">Upload image</div>
+                                        <input type="file" name="pages[{{ $index }}][media][{{ $mediaIndex }}][image_file]" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/bmp,image/webp,image/avif,image/svg+xml" data-document-media-new-field>
+                                    </label>
+                                    <label>
+                                        <div class="law-meta">Caption</div>
+                                        <input type="text" name="pages[{{ $index }}][media][{{ $mediaIndex }}][caption]" value="{{ $mediaRow['caption'] ?? '' }}" data-document-media-new-field>
+                                    </label>
+                                    <label>
+                                        <div class="law-meta">Credit / attribution</div>
+                                        <input type="text" name="pages[{{ $index }}][media][{{ $mediaIndex }}][credit]" value="{{ $mediaRow['credit'] ?? '' }}" data-document-media-new-field>
+                                    </label>
+                                    <label>
+                                        <div class="law-meta">Sort order</div>
+                                        <input type="number" min="1" name="pages[{{ $index }}][media][{{ $mediaIndex }}][sort_order]" value="{{ $mediaRow['sort_order'] ?? ($mediaIndex + 1) }}">
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <template data-document-media-template>
+                            <div class="video-item-header">
+                                <h4>Image <span data-document-media-number>__NUMBER__</span></h4>
+                                <button type="button" class="button-danger" data-document-media-remove data-confirm-message="Remove this inline image from the page?">Remove image</button>
+                            </div>
+                            <input type="hidden" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][pivot_id]" value="">
+                            <input type="hidden" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][remove]" value="0" data-document-media-remove-input>
+                            <label>
+                                <div class="law-meta">Media key</div>
+                                <input type="text" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][media_key]" value="" placeholder="example-key" data-document-media-key>
+                            </label>
+                            <p class="nav-meta">Placeholder: <code data-document-media-placeholder>@{{media:example-key}}</code></p>
+                            <label>
+                                <div class="law-meta">Use existing image</div>
+                                <select name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][existing_media_asset_id]" data-document-media-existing-select>
+                                    <option value="">Upload a new image instead</option>
+                                    @foreach ($availableImageAssets as $availableImageAsset)
+                                        @php
+                                            $usedCount = (int) ($availableImageAsset->content_nodes_count ?? 0) + (int) ($availableImageAsset->document_pages_count ?? 0);
+                                        @endphp
+                                        <option value="{{ $availableImageAsset->id }}">#{{ $availableImageAsset->id }} · {{ $availableImageAsset->adminLabel() }} · used {{ $usedCount }}x</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <div class="media-selection-preview" data-document-media-selection-preview hidden></div>
+                            <label>
+                                <div class="law-meta">Upload image</div>
+                                <input type="file" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][image_file]" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/bmp,image/webp,image/avif,image/svg+xml" data-document-media-new-field>
+                            </label>
+                            <label>
+                                <div class="law-meta">Caption</div>
+                                <input type="text" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][caption]" value="" data-document-media-new-field>
+                            </label>
+                            <label>
+                                <div class="law-meta">Credit / attribution</div>
+                                <input type="text" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][credit]" value="" data-document-media-new-field>
+                            </label>
+                            <label>
+                                <div class="law-meta">Sort order</div>
+                                <input type="number" min="1" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][sort_order]" value="__NUMBER__">
+                            </label>
+                        </template>
+                    </div>
                 </div>
             @endforeach
         </div>

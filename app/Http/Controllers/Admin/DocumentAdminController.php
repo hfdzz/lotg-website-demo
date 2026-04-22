@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Document;
 use App\Models\DocumentPage;
 use App\Models\Edition;
+use App\Models\MediaAsset;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -105,12 +106,13 @@ class DocumentAdminController extends Controller
     {
         $this->authorize('update', $document);
         abort_unless((int) $document->edition_id === (int) $edition->id, 404);
-        $document->load(['translations', 'pages.translations']);
+        $document->load(['translations', 'pages.translations', 'pages.mediaAssets']);
 
         return view('admin.documents.edit', [
             'document' => $document,
             'selectedEdition' => $edition,
             'editions' => Edition::query()->orderByDesc('year_start')->orderByDesc('year_end')->get(),
+            'availableImageAssets' => $this->availableImageAssets(),
         ]);
     }
 
@@ -135,9 +137,44 @@ class DocumentAdminController extends Controller
             'pages.*.body_html_en' => ['nullable', 'string'],
             'pages.*.sort_order' => ['nullable', 'integer', 'min:1'],
             'pages.*.status' => ['nullable', 'in:draft,published'],
+            'pages.*.media' => ['nullable', 'array'],
+            'pages.*.media.*.pivot_id' => ['nullable', 'integer'],
+            'pages.*.media.*.media_key' => ['nullable', 'string', 'max:80'],
+            'pages.*.media.*.existing_media_asset_id' => [
+                'nullable',
+                'integer',
+                'exists:media_assets,id',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! $value) {
+                        return;
+                    }
+
+                    $asset = MediaAsset::query()->find($value);
+
+                    if (! $asset || $asset->asset_type !== 'image' || ! $asset->is_library_item) {
+                        $fail('Selected document media must be an existing reusable image asset.');
+                    }
+                },
+            ],
+            'pages.*.media.*.caption' => ['nullable', 'string'],
+            'pages.*.media.*.credit' => ['nullable', 'string', 'max:255'],
+            'pages.*.media.*.sort_order' => ['nullable', 'integer', 'min:1'],
+            'pages.*.media.*.remove' => ['nullable', 'boolean'],
+            'pages.*.media.*.image_file' => [
+                'nullable',
+                'file',
+                'mimetypes:image/jpeg,image/png,image/gif,image/bmp,image/webp,image/avif,image/svg+xml',
+                'max:5120',
+            ],
             'remove_page_ids' => ['nullable', 'array'],
             'remove_page_ids.*' => ['integer'],
         ]);
+
+        if ($mediaKeyErrors = $this->documentMediaKeyErrors($request)) {
+            return back()
+                ->withErrors($mediaKeyErrors)
+                ->withInput();
+        }
 
         $baseTitle = $validated['title_id'] ?: ($validated['title_en'] ?? '');
         $slug = filled($validated['slug'] ?? null) ? Str::slug($validated['slug']) : Str::slug($baseTitle);
@@ -205,10 +242,12 @@ class DocumentAdminController extends Controller
                 if ($page) {
                     $page->update($payload);
                     $this->syncDocumentPageTranslations($page, $pageData);
+                    $this->syncDocumentPageMedia($request, $page, $index);
                 }
             } else {
                 $page = $document->pages()->create($payload);
                 $this->syncDocumentPageTranslations($page, $pageData);
+                $this->syncDocumentPageMedia($request, $page, $index);
             }
         }
 
@@ -280,6 +319,112 @@ class DocumentAdminController extends Controller
         }
     }
 
+    protected function syncDocumentPageMedia(Request $request, DocumentPage $page, int $pageIndex): void
+    {
+        $rows = collect($request->input("pages.$pageIndex.media", []))->values();
+        $currentAssets = $page->mediaAssets()->get()->keyBy(fn (MediaAsset $asset) => (int) $asset->pivot->id);
+        $syncPayload = [];
+        $usedKeys = [];
+
+        foreach ($rows as $mediaIndex => $row) {
+            $pivotId = (int) ($row['pivot_id'] ?? 0);
+            $isRemoved = (bool) ($row['remove'] ?? false);
+
+            if ($isRemoved) {
+                continue;
+            }
+
+            $asset = null;
+            $selectedAssetId = (int) ($row['existing_media_asset_id'] ?? 0);
+
+            if ($selectedAssetId > 0) {
+                $asset = MediaAsset::query()
+                    ->libraryItems()
+                    ->ofAssetType('image')
+                    ->find($selectedAssetId);
+            } elseif ($request->hasFile("pages.$pageIndex.media.$mediaIndex.image_file")) {
+                $uploadedFile = $request->file("pages.$pageIndex.media.$mediaIndex.image_file");
+                $path = $uploadedFile->store('lotg-media/images', 'public');
+
+                $asset = MediaAsset::create([
+                    'asset_type' => 'image',
+                    'storage_type' => 'upload',
+                    'is_library_item' => true,
+                    'file_path' => $path,
+                    'caption' => trim((string) ($row['caption'] ?? '')) ?: $uploadedFile->getClientOriginalName(),
+                    'credit' => trim((string) ($row['credit'] ?? '')) ?: null,
+                ]);
+            } elseif ($pivotId > 0 && $currentAssets->has($pivotId)) {
+                $asset = $currentAssets->get($pivotId);
+            }
+
+            if (! $asset) {
+                continue;
+            }
+
+            $mediaKey = $this->normalizeDocumentMediaKey(
+                (string) ($row['media_key'] ?? ''),
+                $asset,
+                $mediaIndex + 1,
+            );
+
+            if (isset($usedKeys[$mediaKey])) {
+                continue;
+            }
+
+            $usedKeys[$mediaKey] = true;
+            $syncPayload[$asset->id] = [
+                'media_key' => $mediaKey,
+                'sort_order' => (int) ($row['sort_order'] ?? ($mediaIndex + 1)),
+            ];
+        }
+
+        $page->mediaAssets()->sync($syncPayload);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function documentMediaKeyErrors(Request $request): array
+    {
+        $errors = [];
+
+        foreach ($request->input('pages', []) as $pageIndex => $pageData) {
+            $seenKeys = [];
+
+            foreach (($pageData['media'] ?? []) as $mediaIndex => $mediaRow) {
+                if ((bool) ($mediaRow['remove'] ?? false)) {
+                    continue;
+                }
+
+                $mediaKey = Str::slug((string) ($mediaRow['media_key'] ?? ''));
+
+                if ($mediaKey === '') {
+                    continue;
+                }
+
+                if (isset($seenKeys[$mediaKey])) {
+                    $errors["pages.$pageIndex.media.$mediaIndex.media_key"] = 'Document media keys must be unique within the same page.';
+                }
+
+                $seenKeys[$mediaKey] = true;
+            }
+        }
+
+        return $errors;
+    }
+
+    protected function normalizeDocumentMediaKey(string $mediaKey, MediaAsset $asset, int $fallbackIndex): string
+    {
+        $normalized = Str::slug($mediaKey);
+
+        if ($normalized !== '') {
+            return $normalized;
+        }
+
+        return Str::slug($asset->caption ?: $asset->adminLabel()) ?: 'media-'.$fallbackIndex;
+    }
+
     protected function slugExistsInEdition(Edition $edition, string $slug, ?int $ignoreDocumentId = null): bool
     {
         return Document::query()
@@ -287,5 +432,16 @@ class DocumentAdminController extends Controller
             ->where('slug', $slug)
             ->when($ignoreDocumentId, fn ($query) => $query->whereKeyNot($ignoreDocumentId))
             ->exists();
+    }
+
+    protected function availableImageAssets()
+    {
+        return MediaAsset::query()
+            ->libraryItems()
+            ->ofAssetType('image')
+            ->withCount(['contentNodes', 'documentPages'])
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get();
     }
 }

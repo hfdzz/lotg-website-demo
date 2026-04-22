@@ -41,7 +41,7 @@
 
             <article class="document-article">
                 @if ($page?->displayBody($language))
-                    <div class="node-body">{!! $page->displayBody($language) !!}</div>
+                    <div class="node-body">{!! $page->renderBodyWithMedia($language) !!}</div>
                 @else
                     <p class="law-meta">{{ __('site.documents.empty') }}</p>
                 @endif

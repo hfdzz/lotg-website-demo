@@ -21,7 +21,7 @@
 <div @if (! $isEditing) data-media-type-section="image" @elseif($media->asset_type !== 'image') hidden @endif>
     <label>
         <div class="law-meta">{{ $isEditing && $media->asset_type === 'image' ? 'Replace image file' : 'Image file' }}</div>
-        <input type="file" name="media_file" accept="image/*">
+        <input type="file" name="media_file" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/webp,image/avif,image/svg+xml">
     </label>
 
     @if ($isEditing && $media->asset_type === 'image')

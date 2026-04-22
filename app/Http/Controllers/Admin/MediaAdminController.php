@@ -18,7 +18,7 @@ class MediaAdminController extends Controller
 
         return view('admin.media.index', [
             'mediaAssets' => $this->mediaLibraryQuery()
-                ->withCount('contentNodes')
+                ->withCount(['contentNodes', 'documentPages'])
                 ->orderByRaw("case when asset_type = 'image' then 1 else 2 end")
                 ->orderByDesc('updated_at')
                 ->orderByDesc('id')
@@ -44,11 +44,16 @@ class MediaAdminController extends Controller
         $this->authorize('update', $media);
         $this->assertLibraryMedia($media);
 
-        $media->loadCount('contentNodes');
+        $media->loadCount(['contentNodes', 'documentPages']);
         $media->load([
             'contentNodes' => fn ($query) => $query
                 ->with(['law.edition', 'law.translations', 'translations'])
                 ->orderBy('law_id')
+                ->orderBy('sort_order')
+                ->orderBy('id'),
+            'documentPages' => fn ($query) => $query
+                ->with(['document.edition', 'translations'])
+                ->orderBy('document_id')
                 ->orderBy('sort_order')
                 ->orderBy('id'),
         ]);
@@ -86,9 +91,9 @@ class MediaAdminController extends Controller
         $this->authorize('delete', $media);
         $this->assertLibraryMedia($media);
 
-        if ($media->contentNodes()->exists()) {
+        if ($media->contentNodes()->exists() || $media->documentPages()->exists()) {
             return back()->withErrors([
-                'media' => 'This media is still attached to one or more nodes. Remove those links before deleting it.',
+                'media' => 'This media is still attached to one or more nodes or document pages. Remove those links before deleting it.',
             ]);
         }
 
@@ -106,7 +111,7 @@ class MediaAdminController extends Controller
 
         $validator = Validator::make($request->all(), [
             'asset_type' => [$media ? 'nullable' : 'required', 'in:image,video'],
-            'media_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,svg', 'max:5120'],
+            'media_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,avif,svg', 'max:5120'],
             'external_url' => ['nullable', 'url'],
             'caption' => ['nullable', 'string'],
             'credit' => ['nullable', 'string', 'max:255'],

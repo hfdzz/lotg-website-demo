@@ -8,7 +8,7 @@
     <section class="hero">
         <p class="eyebrow">Admin</p>
         <h1>Manage media</h1>
-        <p>Reusable image and video assets for law nodes. Editing a shared asset updates every node that uses it.</p>
+        <p>Reusable image and video assets for law nodes and document pages. Editing a shared asset updates every place that uses it.</p>
     </section>
 
     @if (session('status'))
@@ -56,7 +56,10 @@
                     <div class="media-library-copy">
                         <p class="eyebrow">{{ ucfirst($media->asset_type) }}</p>
                         <h3><a class="result-link" href="{{ route('admin.media.edit', ['media' => $media]) }}">{{ $media->adminLabel() }}</a></h3>
-                        <p class="law-meta">Used by {{ $media->content_nodes_count }} {{ \Illuminate\Support\Str::plural('node', $media->content_nodes_count) }}</p>
+                        @php
+                            $usedCount = (int) $media->content_nodes_count + (int) $media->document_pages_count;
+                        @endphp
+                        <p class="law-meta">Used in {{ $usedCount }} {{ \Illuminate\Support\Str::plural('place', $usedCount) }}</p>
                         <p class="law-meta media-source">{{ $media->adminSource() ?: 'No source' }}</p>
                     </div>
                 </article>
