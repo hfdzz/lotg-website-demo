@@ -421,10 +421,21 @@ class DocumentAdminController extends Controller
 
         foreach ($request->input('pages', []) as $pageIndex => $pageData) {
             $seenKeys = [];
+            $seenAssetIds = [];
 
             foreach (($pageData['media'] ?? []) as $mediaIndex => $mediaRow) {
                 if ((bool) ($mediaRow['remove'] ?? false)) {
                     continue;
+                }
+
+                $assetId = (int) ($mediaRow['existing_media_asset_id'] ?? 0);
+
+                if ($assetId > 0) {
+                    if (isset($seenAssetIds[$assetId])) {
+                        $errors["pages.$pageIndex.media.$mediaIndex.existing_media_asset_id"] = 'The same image can only be attached once within the same page.';
+                    }
+
+                    $seenAssetIds[$assetId] = true;
                 }
 
                 $mediaKey = Str::slug((string) ($mediaRow['media_key'] ?? ''));

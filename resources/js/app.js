@@ -934,6 +934,78 @@ function setupDocumentPageEditor() {
             preview.textContent = slugify(slugInput.value || fallbackTitle) || '-';
         };
 
+        const updateDocumentPageSummary = (item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const titleInput = item.querySelector('[data-document-page-title-id-input]');
+            const slugPreview = item.querySelector('[data-document-page-slug-preview]');
+            const statusSelect = item.querySelector('[data-document-page-status-select]');
+            const titleSummary = item.querySelector('[data-document-page-summary-title]');
+            const slugSummary = item.querySelector('[data-document-page-summary-slug]');
+            const statusSummary = item.querySelector('[data-document-page-summary-status]');
+            const mediaCountSummary = item.querySelector('[data-document-page-summary-media-count]');
+            const mediaSuffixSummary = item.querySelector('[data-document-page-summary-media-suffix]');
+
+            if (titleSummary instanceof HTMLElement) {
+                titleSummary.textContent = titleInput instanceof HTMLInputElement && titleInput.value.trim() !== ''
+                    ? titleInput.value.trim()
+                    : 'Untitled page';
+            }
+
+            if (slugSummary instanceof HTMLElement) {
+                slugSummary.textContent = slugPreview instanceof HTMLElement && slugPreview.textContent?.trim()
+                    ? slugPreview.textContent.trim()
+                    : '-';
+            }
+
+            if (statusSummary instanceof HTMLElement && statusSelect instanceof HTMLSelectElement) {
+                statusSummary.textContent = statusSelect.value.charAt(0).toUpperCase() + statusSelect.value.slice(1);
+            }
+
+            if (mediaCountSummary instanceof HTMLElement) {
+                const visibleMediaCount = Array.from(item.querySelectorAll('[data-document-media-item]'))
+                    .filter((mediaItem) => mediaItem instanceof HTMLElement && !mediaItem.hidden)
+                    .length;
+                mediaCountSummary.textContent = `${visibleMediaCount}`;
+
+                if (mediaSuffixSummary instanceof HTMLElement) {
+                    mediaSuffixSummary.textContent = visibleMediaCount === 1 ? '' : 's';
+                }
+            }
+        };
+
+        const updateDocumentMediaSummary = (item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const keyInput = item.querySelector('[data-document-media-key]');
+            const captionInput = item.querySelector('[data-document-media-caption-input]');
+            const existingSelect = item.querySelector('[data-document-media-existing-select]');
+            const titleSummary = item.querySelector('[data-document-media-summary-title]');
+            const keySummary = item.querySelector('[data-document-media-summary-key]');
+            const captionSummary = item.querySelector('[data-document-media-summary-caption]');
+            const keyText = keyInput instanceof HTMLInputElement ? slugify(keyInput.value).trim() : '';
+            const captionText = captionInput instanceof HTMLInputElement ? captionInput.value.trim() : '';
+            const selectedLabel = existingSelect instanceof HTMLSelectElement && existingSelect.value !== '' && existingSelect.selectedOptions[0]
+                ? existingSelect.selectedOptions[0].textContent?.trim().replace(/\s+/g, ' ')
+                : '';
+
+            if (titleSummary instanceof HTMLElement) {
+                titleSummary.textContent = keyText || captionText || selectedLabel || 'Untitled image';
+            }
+
+            if (keySummary instanceof HTMLElement) {
+                keySummary.textContent = keyText || '-';
+            }
+
+            if (captionSummary instanceof HTMLElement) {
+                captionSummary.textContent = captionText || selectedLabel || 'No caption';
+            }
+        };
+
         const updateDocumentMediaRowMode = (item) => {
             if (!(item instanceof HTMLElement) || item.hidden) {
                 return;
@@ -959,6 +1031,8 @@ function setupDocumentPageEditor() {
             if (existingSelect instanceof HTMLSelectElement) {
                 updateMediaSelectionPreview(preview, previewMap[existingSelect.value] ?? null);
             }
+
+            updateDocumentMediaSummary(item);
         };
 
         const renumberMediaItems = (pageItem, pageIndex) => {
@@ -973,10 +1047,11 @@ function setupDocumentPageEditor() {
                     return;
                 }
 
-                const number = mediaItem.querySelector('[data-document-media-number]');
-                if (number && !mediaItem.hidden) {
-                    number.textContent = `${mediaIndex + 1}`;
-                }
+                Array.from(mediaItem.querySelectorAll('[data-document-media-number]')).forEach((number) => {
+                    if (number && !mediaItem.hidden) {
+                        number.textContent = `${mediaIndex + 1}`;
+                    }
+                });
 
                 Array.from(mediaItem.querySelectorAll('input, select')).forEach((field) => {
                     if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) {
@@ -990,6 +1065,7 @@ function setupDocumentPageEditor() {
 
                 updateDocumentMediaPlaceholder(mediaItem);
                 updateDocumentMediaRowMode(mediaItem);
+                updateDocumentMediaSummary(mediaItem);
             });
         };
 
@@ -1001,10 +1077,9 @@ function setupDocumentPageEditor() {
                     return;
                 }
 
-                const number = item.querySelector('[data-document-page-number]');
-                if (number) {
+                Array.from(item.querySelectorAll('[data-document-page-number]')).forEach((number) => {
                     number.textContent = `${index + 1}`;
-                }
+                });
 
                 Array.from(item.querySelectorAll('input, textarea, select')).forEach((field) => {
                     if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) {
@@ -1016,6 +1091,7 @@ function setupDocumentPageEditor() {
 
                 renumberMediaItems(item, index);
                 updateDocumentPageSlugPreview(item);
+                updateDocumentPageSummary(item);
             });
         };
 
@@ -1038,57 +1114,70 @@ function setupDocumentPageEditor() {
             const mediaTemplate = editor.querySelector('[data-document-media-template]');
             const mediaTemplateHtml = mediaTemplate instanceof HTMLTemplateElement ? mediaTemplate.outerHTML : '';
             const mediaPreviewMap = editor.querySelector('[data-document-media-editor]')?.getAttribute('data-document-media-preview-map') || '{}';
-            const wrapper = document.createElement('div');
-            wrapper.className = 'card stack-form document-page-card';
+            const wrapper = document.createElement('details');
+            wrapper.className = 'card document-page-card document-collapse-card';
             wrapper.dataset.documentPageItem = '';
+            wrapper.open = true;
             wrapper.innerHTML = `
-                <div class="video-item-header">
-                    <h2>Page <span data-document-page-number>${nextIndex + 1}</span></h2>
-                    <button type="button" class="button-danger" data-document-page-remove data-confirm-message="Remove this page? Unsaved changes in this page will be lost.">Remove page</button>
-                </div>
-                <input type="hidden" name="pages[${nextIndex}][id]" value="">
-                <label>
-                    <div class="law-meta">Page slug</div>
-                    <input type="text" name="pages[${nextIndex}][slug]" value="" placeholder="Leave blank to generate from page ID title" data-document-page-slug-input>
-                    <div class="nav-meta">Result: <span data-document-page-slug-preview>-</span></div>
-                </label>
-                <label>
-                    <div class="law-meta">Page title (ID)</div>
-                    <input type="text" name="pages[${nextIndex}][title_id]" value="" data-document-page-title-id-input>
-                </label>
-                <label>
-                    <div class="law-meta">Page title (EN)</div>
-                    <input type="text" name="pages[${nextIndex}][title_en]" value="">
-                </label>
-                <label>
-                    <div class="law-meta">Body HTML (ID)</div>
-                    <textarea name="pages[${nextIndex}][body_html_id]" rows="10"></textarea>
-                </label>
-                <label>
-                    <div class="law-meta">Body HTML (EN)</div>
-                    <textarea name="pages[${nextIndex}][body_html_en]" rows="10"></textarea>
-                </label>
-                <label data-document-collection-only>
-                    <div class="law-meta">Sort order</div>
-                    <input type="number" min="1" name="pages[${nextIndex}][sort_order]" value="${nextIndex + 1}">
-                </label>
-                <label>
-                    <div class="law-meta">Page status</div>
-                    <select name="pages[${nextIndex}][status]">
-                        <option value="draft">Draft</option>
-                        <option value="published">Published</option>
-                    </select>
-                </label>
-                <div class="document-inline-media-editor" data-document-media-editor data-document-media-preview-map="{}">
+                <summary class="document-collapse-summary">
+                    <span class="document-summary-main">
+                        <span class="document-summary-title">Page <span data-document-page-number>${nextIndex + 1}</span>: <span data-document-page-summary-title>Untitled page</span></span>
+                        <span class="document-summary-meta">
+                            Slug: <span data-document-page-summary-slug>-</span>
+                            - <span data-document-page-summary-media-count>0</span> image<span data-document-page-summary-media-suffix>s</span>
+                            - <span data-document-page-summary-status>Draft</span>
+                        </span>
+                    </span>
+                </summary>
+                <div class="collapse-body stack-form">
                     <div class="video-item-header">
-                        <div>
-                            <h3>Inline media</h3>
-                            <p class="nav-meta">Attach image assets to this page, then place them in the body with placeholders like <code>{{media:example-key}}</code>.</p>
-                        </div>
-                        <button type="button" data-document-media-add>Add image</button>
+                        <h2>Page <span data-document-page-number>${nextIndex + 1}</span></h2>
+                        <button type="button" class="button-danger" data-document-page-remove data-confirm-message="Remove this page? Unsaved changes in this page will be lost.">Remove page</button>
                     </div>
-                    <div class="stack-form" data-document-media-list></div>
-                    ${mediaTemplateHtml}
+                    <input type="hidden" name="pages[${nextIndex}][id]" value="">
+                    <label>
+                        <div class="law-meta">Page slug</div>
+                        <input type="text" name="pages[${nextIndex}][slug]" value="" placeholder="Leave blank to generate from page ID title" data-document-page-slug-input>
+                        <div class="nav-meta">Result: <span data-document-page-slug-preview>-</span></div>
+                    </label>
+                    <label>
+                        <div class="law-meta">Page title (ID)</div>
+                        <input type="text" name="pages[${nextIndex}][title_id]" value="" data-document-page-title-id-input>
+                    </label>
+                    <label>
+                        <div class="law-meta">Page title (EN)</div>
+                        <input type="text" name="pages[${nextIndex}][title_en]" value="">
+                    </label>
+                    <label>
+                        <div class="law-meta">Body HTML (ID)</div>
+                        <textarea name="pages[${nextIndex}][body_html_id]" rows="10"></textarea>
+                    </label>
+                    <label>
+                        <div class="law-meta">Body HTML (EN)</div>
+                        <textarea name="pages[${nextIndex}][body_html_en]" rows="10"></textarea>
+                    </label>
+                    <label data-document-collection-only>
+                        <div class="law-meta">Sort order</div>
+                        <input type="number" min="1" name="pages[${nextIndex}][sort_order]" value="${nextIndex + 1}">
+                    </label>
+                    <label>
+                        <div class="law-meta">Page status</div>
+                        <select name="pages[${nextIndex}][status]" data-document-page-status-select>
+                            <option value="draft">Draft</option>
+                            <option value="published">Published</option>
+                        </select>
+                    </label>
+                    <div class="document-inline-media-editor" data-document-media-editor data-document-media-preview-map="{}">
+                        <div class="video-item-header">
+                            <div>
+                                <h3>Inline media</h3>
+                                <p class="nav-meta">Attach image assets to this page, then place them in the body with placeholders like <code>{{media:example-key}}</code>.</p>
+                            </div>
+                            <button type="button" data-document-media-add>Add image</button>
+                        </div>
+                        <div class="stack-form" data-document-media-list></div>
+                        ${mediaTemplateHtml}
+                    </div>
                 </div>
             `;
             const mediaEditor = wrapper.querySelector('[data-document-media-editor]');
@@ -1120,9 +1209,10 @@ function setupDocumentPageEditor() {
 
                 const pageIndex = Array.from(editor.querySelectorAll('[data-document-page-item]')).indexOf(pageItem);
                 const mediaIndex = list.querySelectorAll('[data-document-media-item]').length;
-                const wrapper = document.createElement('div');
-                wrapper.className = 'card document-media-card';
+                const wrapper = document.createElement('details');
+                wrapper.className = 'card document-media-card document-collapse-card';
                 wrapper.dataset.documentMediaItem = '';
+                wrapper.open = true;
                 wrapper.innerHTML = template.innerHTML
                     .replace(/__PAGE_INDEX__/g, `${pageIndex}`)
                     .replace(/__MEDIA_INDEX__/g, `${mediaIndex}`)
@@ -1199,13 +1289,23 @@ function setupDocumentPageEditor() {
             }
 
             if (target.closest('[data-document-page-slug-input]') || target.closest('[data-document-page-title-id-input]')) {
-                updateDocumentPageSlugPreview(target.closest('[data-document-page-item]'));
+                const pageItem = target.closest('[data-document-page-item]');
+                updateDocumentPageSlugPreview(pageItem);
+                updateDocumentPageSummary(pageItem);
             }
 
             const keyInput = target.closest('[data-document-media-key]');
 
             if (keyInput instanceof HTMLInputElement) {
-                updateDocumentMediaPlaceholder(keyInput.closest('[data-document-media-item]'));
+                const mediaItem = keyInput.closest('[data-document-media-item]');
+                updateDocumentMediaPlaceholder(mediaItem);
+                updateDocumentMediaSummary(mediaItem);
+            }
+
+            const captionInput = target.closest('[data-document-media-caption-input]');
+
+            if (captionInput instanceof HTMLInputElement) {
+                updateDocumentMediaSummary(captionInput.closest('[data-document-media-item]'));
             }
         });
 
@@ -1220,6 +1320,12 @@ function setupDocumentPageEditor() {
 
             if (existingSelect instanceof HTMLSelectElement) {
                 updateDocumentMediaRowMode(existingSelect.closest('[data-document-media-item]'));
+            }
+
+            const statusSelect = target.closest('[data-document-page-status-select]');
+
+            if (statusSelect instanceof HTMLSelectElement) {
+                updateDocumentPageSummary(statusSelect.closest('[data-document-page-item]'));
             }
         });
 

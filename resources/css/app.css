@@ -18,6 +18,10 @@
     box-sizing: border-box;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -732,8 +736,7 @@ button:hover {
 }
 
 .document-media-card {
-    display: grid;
-    gap: 0.85rem;
+    display: block;
 }
 
 .media-selection-preview {
@@ -842,6 +845,64 @@ button:hover {
 
 .document-page-card {
     margin-top: 0;
+}
+
+.document-collapse-card {
+    box-shadow: none;
+}
+
+.document-collapse-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.document-collapse-summary::-webkit-details-marker {
+    display: none;
+}
+
+.document-collapse-summary::after {
+    content: "+";
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.document-collapse-card[open] > .document-collapse-summary::after {
+    content: "-";
+}
+
+.document-summary-main {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.document-summary-title {
+    overflow: hidden;
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.document-summary-meta {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.document-media-summary {
+    padding: 0.1rem 0;
 }
 
 .lotg-landing-list {

@@ -131,7 +131,24 @@
             </div>
 
             @foreach ($pageRows as $index => $pageRow)
-                <div class="card stack-form document-page-card" data-document-page-item @if (!empty($pageRow['id'])) data-document-page-id="{{ $pageRow['id'] }}" @endif>
+                @php
+                    $pageTitle = trim((string) (($pageRow['title_id'] ?? '') ?: ($pageRow['title_en'] ?? '')));
+                    $visibleMediaCount = collect($pageRow['media'] ?? [])
+                        ->reject(fn ($mediaRow) => (bool) ($mediaRow['remove'] ?? false))
+                        ->count();
+                @endphp
+                <details class="card document-page-card document-collapse-card" data-document-page-item @if (!empty($pageRow['id'])) data-document-page-id="{{ $pageRow['id'] }}" @endif>
+                    <summary class="document-collapse-summary">
+                        <span class="document-summary-main">
+                            <span class="document-summary-title">Page <span data-document-page-number>{{ $index + 1 }}</span>: <span data-document-page-summary-title>{{ $pageTitle ?: 'Untitled page' }}</span></span>
+                            <span class="document-summary-meta">
+                                Slug: <span data-document-page-summary-slug>{{ $pageRow['slug'] ?? '-' }}</span>
+                                - <span data-document-page-summary-media-count>{{ $visibleMediaCount }}</span> image<span data-document-page-summary-media-suffix>{{ $visibleMediaCount === 1 ? '' : 's' }}</span>
+                                - <span data-document-page-summary-status>{{ ucfirst($pageRow['status'] ?? $document->status) }}</span>
+                            </span>
+                        </span>
+                    </summary>
+                    <div class="collapse-body stack-form">
                     <div class="video-item-header">
                         <h2>Page <span data-document-page-number>{{ $index + 1 }}</span></h2>
                         <button type="button" class="button-danger" data-document-page-remove data-confirm-message="Remove this page? Unsaved changes in this page will be lost.">Remove page</button>
@@ -164,7 +181,7 @@
                     </label>
                     <label>
                         <div class="law-meta">Page status</div>
-                        <select name="pages[{{ $index }}][status]">
+                        <select name="pages[{{ $index }}][status]" data-document-page-status-select>
                             <option value="draft" @selected(($pageRow['status'] ?? $document->status) === 'draft')>Draft</option>
                             <option value="published" @selected(($pageRow['status'] ?? $document->status) === 'published')>Published</option>
                         </select>
@@ -189,8 +206,20 @@
                                     $selectedMediaId = $mediaRow['existing_media_asset_id'] ?? '';
                                     $mediaKey = $mediaRow['media_key'] ?? '';
                                     $isRemoved = (bool) ($mediaRow['remove'] ?? false);
+                                    $selectedMedia = $selectedMediaId ? $availableImageAssets->firstWhere('id', (int) $selectedMediaId) : null;
+                                    $mediaTitle = $mediaKey ?: ($mediaRow['caption'] ?? '') ?: ($selectedMedia?->adminLabel() ?? 'Untitled image');
                                 @endphp
-                                <div class="card document-media-card" data-document-media-item @if (! empty($mediaRow['pivot_id'])) data-document-media-pivot-id="{{ $mediaRow['pivot_id'] }}" @endif @if($isRemoved) hidden @endif>
+                                <details class="card document-media-card document-collapse-card" data-document-media-item @if (! empty($mediaRow['pivot_id'])) data-document-media-pivot-id="{{ $mediaRow['pivot_id'] }}" @endif @if($isRemoved) hidden @endif>
+                                    <summary class="document-collapse-summary document-media-summary">
+                                        <span class="document-summary-main">
+                                            <span class="document-summary-title">Image <span data-document-media-number>{{ $mediaIndex + 1 }}</span>: <span data-document-media-summary-title>{{ $mediaTitle }}</span></span>
+                                            <span class="document-summary-meta">
+                                                Key: <span data-document-media-summary-key>{{ $mediaKey ?: '-' }}</span>
+                                                - <span data-document-media-summary-caption>{{ ($mediaRow['caption'] ?? '') ?: ($selectedMedia?->caption ?: 'No caption') }}</span>
+                                            </span>
+                                        </span>
+                                    </summary>
+                                    <div class="collapse-body stack-form">
                                     <div class="video-item-header">
                                         <h4>Image <span data-document-media-number>{{ $mediaIndex + 1 }}</span></h4>
                                         <button type="button" class="button-danger" data-document-media-remove data-confirm-message="Remove this inline image from the page?">Remove image</button>
@@ -217,7 +246,7 @@
                                                     $usedCount = (int) ($availableImageAsset->content_nodes_count ?? 0) + (int) ($availableImageAsset->document_pages_count ?? 0);
                                                 @endphp
                                                 <option value="{{ $availableImageAsset->id }}" @selected((string) $selectedMediaId === (string) $availableImageAsset->id)>
-                                                    #{{ $availableImageAsset->id }} · {{ $availableImageAsset->adminLabel() }} · used {{ $usedCount }}x
+                                                    #{{ $availableImageAsset->id }} - {{ $availableImageAsset->adminLabel() }} - used {{ $usedCount }}x
                                                 </option>
                                             @endforeach
                                         </select>
@@ -229,7 +258,7 @@
                                     </label>
                                     <label>
                                         <div class="law-meta">Caption</div>
-                                        <input type="text" name="pages[{{ $index }}][media][{{ $mediaIndex }}][caption]" value="{{ $mediaRow['caption'] ?? '' }}" data-document-media-new-field>
+                                        <input type="text" name="pages[{{ $index }}][media][{{ $mediaIndex }}][caption]" value="{{ $mediaRow['caption'] ?? '' }}" data-document-media-new-field data-document-media-caption-input>
                                     </label>
                                     <label>
                                         <div class="law-meta">Credit / attribution</div>
@@ -239,11 +268,22 @@
                                         <div class="law-meta">Sort order</div>
                                         <input type="number" min="1" name="pages[{{ $index }}][media][{{ $mediaIndex }}][sort_order]" value="{{ $mediaRow['sort_order'] ?? ($mediaIndex + 1) }}">
                                     </label>
-                                </div>
+                                    </div>
+                                </details>
                             @endforeach
                         </div>
 
                         <template data-document-media-template>
+                            <summary class="document-collapse-summary document-media-summary">
+                                <span class="document-summary-main">
+                                    <span class="document-summary-title">Image <span data-document-media-number>__NUMBER__</span>: <span data-document-media-summary-title>Untitled image</span></span>
+                                    <span class="document-summary-meta">
+                                        Key: <span data-document-media-summary-key>-</span>
+                                        - <span data-document-media-summary-caption>No caption</span>
+                                    </span>
+                                </span>
+                            </summary>
+                            <div class="collapse-body stack-form">
                             <div class="video-item-header">
                                 <h4>Image <span data-document-media-number>__NUMBER__</span></h4>
                                 <button type="button" class="button-danger" data-document-media-remove data-confirm-message="Remove this inline image from the page?">Remove image</button>
@@ -263,7 +303,7 @@
                                         @php
                                             $usedCount = (int) ($availableImageAsset->content_nodes_count ?? 0) + (int) ($availableImageAsset->document_pages_count ?? 0);
                                         @endphp
-                                        <option value="{{ $availableImageAsset->id }}">#{{ $availableImageAsset->id }} · {{ $availableImageAsset->adminLabel() }} · used {{ $usedCount }}x</option>
+                                        <option value="{{ $availableImageAsset->id }}">#{{ $availableImageAsset->id }} - {{ $availableImageAsset->adminLabel() }} - used {{ $usedCount }}x</option>
                                     @endforeach
                                 </select>
                             </label>
@@ -274,7 +314,7 @@
                             </label>
                             <label>
                                 <div class="law-meta">Caption</div>
-                                <input type="text" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][caption]" value="" data-document-media-new-field>
+                                <input type="text" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][caption]" value="" data-document-media-new-field data-document-media-caption-input>
                             </label>
                             <label>
                                 <div class="law-meta">Credit / attribution</div>
@@ -284,9 +324,11 @@
                                 <div class="law-meta">Sort order</div>
                                 <input type="number" min="1" name="pages[__PAGE_INDEX__][media][__MEDIA_INDEX__][sort_order]" value="__NUMBER__">
                             </label>
+                            </div>
                         </template>
                     </div>
-                </div>
+                    </div>
+                </details>
             @endforeach
         </div>
 
