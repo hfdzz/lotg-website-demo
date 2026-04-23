@@ -12,6 +12,8 @@ use App\Models\DocumentTranslation;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
+use App\Models\LawQaOption;
+use App\Models\LawQaOptionTranslation;
 use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
 use App\Models\MediaAsset;
@@ -55,6 +57,7 @@ class EditionJsonImporter
                 'laws' => 0,
                 'nodes' => 0,
                 'qas' => 0,
+                'qa_options' => 0,
                 'documents' => 0,
                 'document_pages' => 0,
                 'changelog_entries' => 0,
@@ -327,6 +330,7 @@ class EditionJsonImporter
             $counts['qas'] += is_array($lawPayload['qas'] ?? null)
                 ? count($lawPayload['qas'])
                 : 0;
+            $counts['qa_options'] += $this->countQaOptions($lawPayload['qas'] ?? []);
             $counts['nodes'] += $this->countNodeBranch($lawPayload['nodes'] ?? []);
         }
 
@@ -343,10 +347,33 @@ class EditionJsonImporter
             'laws' => 0,
             'nodes' => 0,
             'qas' => 0,
+            'qa_options' => 0,
             'documents' => 0,
             'document_pages' => 0,
             'changelog_entries' => 0,
         ];
+    }
+
+    /**
+     * @param mixed $qas
+     */
+    protected function countQaOptions(mixed $qas): int
+    {
+        if (! is_array($qas)) {
+            return 0;
+        }
+
+        $count = 0;
+
+        foreach ($qas as $qaPayload) {
+            if (! is_array($qaPayload) || ! is_array($qaPayload['options'] ?? null)) {
+                continue;
+            }
+
+            $count += count($qaPayload['options']);
+        }
+
+        return $count;
     }
 
     /**
@@ -621,6 +648,51 @@ class EditionJsonImporter
                     continue;
                 }
 
+                $options = $qaPayload['options'] ?? [];
+                $qaType = $this->qaTypeFromPayload($qaPayload);
+
+                if (! in_array($qaType, [LawQa::TYPE_SIMPLE, LawQa::TYPE_MULTIPLE_CHOICE], true)) {
+                    $errors[] = $qaLabel.' has unsupported qa_type '.$qaType.'.';
+                }
+
+                if (! is_array($options)) {
+                    $errors[] = $qaLabel.' options must be an array when present.';
+                    $options = [];
+                }
+
+                if ($qaType === LawQa::TYPE_MULTIPLE_CHOICE) {
+                    $correctOptionCount = 0;
+
+                    if (count($options) < 2) {
+                        $errors[] = $qaLabel.' multiple_choice items need at least two options.';
+                    }
+
+                    foreach ($options as $optionIndex => $optionPayload) {
+                        $optionLabel = $qaLabel.' option #'.($optionIndex + 1);
+
+                        if (! is_array($optionPayload)) {
+                            $errors[] = $optionLabel.' must be an object.';
+                            continue;
+                        }
+
+                        if ((bool) ($optionPayload['is_correct'] ?? false)) {
+                            $correctOptionCount++;
+                        }
+
+                        $optionTranslations = $optionPayload['translations'] ?? [];
+
+                        if (! is_array($optionTranslations)) {
+                            $errors[] = $optionLabel.' translations must be an object keyed by language code.';
+                        } elseif (! $this->hasTranslationValue($optionTranslations, 'id', 'text')) {
+                            $warnings[] = $optionLabel.' is missing Indonesian option text.';
+                        }
+                    }
+
+                    if ($correctOptionCount < 1) {
+                        $errors[] = $qaLabel.' multiple_choice items need at least one correct option.';
+                    }
+                }
+
                 $qaTranslations = $qaPayload['translations'] ?? [];
 
                 if (! is_array($qaTranslations)) {
@@ -632,7 +704,10 @@ class EditionJsonImporter
                     $warnings[] = $qaLabel.' is missing Indonesian question translation.';
                 }
 
-                if (! $this->hasTranslationValue($qaTranslations, 'id', 'answer_html')) {
+                if (
+                    ($qaType !== LawQa::TYPE_MULTIPLE_CHOICE || $this->qaUsesCustomAnswer($qaPayload))
+                    && ! $this->hasTranslationValue($qaTranslations, 'id', 'answer_html')
+                ) {
                     $warnings[] = $qaLabel.' is missing Indonesian answer translation.';
                 }
             }
@@ -945,6 +1020,40 @@ class EditionJsonImporter
     }
 
     /**
+     * @param array<string, mixed> $qaPayload
+     */
+    protected function qaTypeFromPayload(array $qaPayload): string
+    {
+        $qaType = trim((string) ($qaPayload['qa_type'] ?? ''));
+
+        if ($qaType !== '') {
+            return $qaType;
+        }
+
+        return is_array($qaPayload['options'] ?? null) && count($qaPayload['options']) > 0
+            ? LawQa::TYPE_MULTIPLE_CHOICE
+            : LawQa::TYPE_SIMPLE;
+    }
+
+    /**
+     * @param array<string, mixed> $qaPayload
+     */
+    protected function qaUsesCustomAnswer(array $qaPayload): bool
+    {
+        if (array_key_exists('uses_custom_answer', $qaPayload)) {
+            return (bool) $qaPayload['uses_custom_answer'];
+        }
+
+        foreach (Arr::get($qaPayload, 'translations', []) as $translationPayload) {
+            if (is_array($translationPayload) && filled($translationPayload['answer_html'] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param array<string, mixed> $lawPayload
      * @param array<string, \App\Models\MediaAsset> $mediaKeyMap
      * @param array<string, int> $counts
@@ -991,10 +1100,21 @@ class EditionJsonImporter
         }
 
         foreach (Arr::get($lawPayload, 'qas', []) as $qaPayload) {
+            $qaType = $this->qaTypeFromPayload($qaPayload);
+
+            if (! in_array($qaType, [LawQa::TYPE_SIMPLE, LawQa::TYPE_MULTIPLE_CHOICE], true)) {
+                throw new InvalidArgumentException('Unsupported Q&A type in import payload: '.$qaType);
+            }
+
+            $usesCustomAnswer = $qaType === LawQa::TYPE_MULTIPLE_CHOICE
+                && $this->qaUsesCustomAnswer($qaPayload);
+
             $qa = LawQa::create([
                 'law_id' => $law->id,
+                'qa_type' => $qaType,
                 'sort_order' => (int) ($qaPayload['sort_order'] ?? ($counts['qas'] + 1)),
                 'is_published' => (bool) ($qaPayload['is_published'] ?? false),
+                'uses_custom_answer' => $usesCustomAnswer,
             ]);
 
             $counts['qas']++;
@@ -1004,9 +1124,33 @@ class EditionJsonImporter
                     'law_qa_id' => $qa->id,
                     'language_code' => (string) $languageCode,
                     'question' => (string) ($translationPayload['question'] ?? 'Question'),
-                    'answer_html' => Arr::get($translationPayload, 'answer_html'),
+                    'answer_html' => $usesCustomAnswer || $qaType === LawQa::TYPE_SIMPLE
+                        ? Arr::get($translationPayload, 'answer_html')
+                        : null,
                     'status' => (string) ($translationPayload['status'] ?? 'draft'),
                 ]);
+            }
+
+            foreach (Arr::get($qaPayload, 'options', []) as $optionPayload) {
+                if (! is_array($optionPayload)) {
+                    continue;
+                }
+
+                $option = LawQaOption::create([
+                    'law_qa_id' => $qa->id,
+                    'sort_order' => (int) ($optionPayload['sort_order'] ?? ($counts['qa_options'] + 1)),
+                    'is_correct' => (bool) ($optionPayload['is_correct'] ?? false),
+                ]);
+
+                $counts['qa_options']++;
+
+                foreach (Arr::get($optionPayload, 'translations', []) as $languageCode => $translationPayload) {
+                    LawQaOptionTranslation::create([
+                        'option_id' => $option->id,
+                        'language_code' => (string) $languageCode,
+                        'text' => (string) ($translationPayload['text'] ?? ''),
+                    ]);
+                }
             }
         }
     }

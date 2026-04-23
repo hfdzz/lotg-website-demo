@@ -37,6 +37,17 @@
             </p>
         </a>
 
+        <a class="result-card result-link-block" href="{{ route('admin.qas.home') }}">
+            <h2>Manage Q&amp;A</h2>
+            <p class="law-meta">
+                @if ($activeEdition)
+                    Create and edit law-specific simple or multiple-choice Q&amp;A for: {{ $activeEdition->name }}.
+                @else
+                    Create and edit law-specific simple or multiple-choice Q&amp;A for the selected working edition.
+                @endif
+            </p>
+        </a>
+
         @if ($canManageMedia)
             <a class="result-card result-link-block" href="{{ route('admin.media.index') }}">
                 <h2>Manage media</h2>

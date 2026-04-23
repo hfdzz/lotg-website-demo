@@ -9,6 +9,7 @@ use App\Models\DocumentPage;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
+use App\Models\LawQaOption;
 use App\Models\MediaAsset;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +34,7 @@ class EditionJsonExporter
                 'contentNodes.translations',
                 'contentNodes.mediaAssets',
                 'qas.translations',
+                'qas.options.translations',
             ])
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -124,13 +126,25 @@ class EditionJsonExporter
                     ['id', 'asc'],
                 ])
                 ->map(fn (LawQa $qa) => [
+                    'qa_type' => $qa->qa_type,
                     'sort_order' => $qa->sort_order,
                     'is_published' => $qa->is_published,
-                    'translations' => $this->exportTranslations($qa->translations, [
-                        'question',
-                        'answer_html',
-                        'status',
-                    ]),
+                    'uses_custom_answer' => $qa->uses_custom_answer,
+                    'translations' => $this->exportQaTranslations($qa),
+                    'options' => $qa->options
+                        ->sortBy([
+                            ['sort_order', 'asc'],
+                            ['id', 'asc'],
+                        ])
+                        ->map(fn (LawQaOption $option) => [
+                            'sort_order' => $option->sort_order,
+                            'is_correct' => $option->is_correct,
+                            'translations' => $this->exportTranslations($option->translations, [
+                                'text',
+                            ]),
+                        ])
+                        ->values()
+                        ->all(),
                 ])
                 ->values()
                 ->all(),
@@ -221,6 +235,21 @@ class EditionJsonExporter
                 }
 
                 return [$translation->language_code => $payload];
+            })
+            ->all();
+    }
+
+    protected function exportQaTranslations(LawQa $qa): array
+    {
+        return collect($qa->translations)
+            ->mapWithKeys(function ($translation) use ($qa) {
+                return [$translation->language_code => [
+                    'question' => $translation->question,
+                    'answer_html' => $qa->isMultipleChoice() && ! $qa->uses_custom_answer
+                        ? null
+                        : $translation->answer_html,
+                    'status' => $translation->status,
+                ]];
             })
             ->all();
     }

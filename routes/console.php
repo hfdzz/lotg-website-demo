@@ -128,6 +128,7 @@ Artisan::command('lotg:edition-import {path : Path to edition JSON file, or obje
     $this->line('Laws: '.$result['counts']['laws']);
     $this->line('Nodes: '.$result['counts']['nodes']);
     $this->line('Q&A: '.$result['counts']['qas']);
+    $this->line('Q&A options: '.($result['counts']['qa_options'] ?? 0));
     $this->line('Documents: '.$result['counts']['documents']);
     $this->line('Document pages: '.$result['counts']['document_pages']);
     $this->line('Changelog entries: '.$result['counts']['changelog_entries']);

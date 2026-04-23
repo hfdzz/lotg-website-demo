@@ -33,6 +33,7 @@
         <section class="card section-card">
             <p class="law-meta">Working edition: <strong>{{ $selectedEdition->name }}</strong> - <a class="result-link" href="{{ route('admin.editions.index', ['edition' => $selectedEdition->id]) }}">Manage editions</a></p>
             <p class="law-meta"><a class="result-link" href="{{ route('admin.changelog.index', ['edition' => $selectedEdition]) }}">Manage law changes for this edition</a></p>
+            <p class="law-meta"><a class="result-link" href="{{ route('admin.qas.index', ['edition' => $selectedEdition]) }}">Manage Q&amp;A for this edition</a></p>
         </section>
 
         <details class="card collapse-card" @if($errors->any()) open @endif>

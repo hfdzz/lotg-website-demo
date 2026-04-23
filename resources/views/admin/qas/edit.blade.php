@@ -3,7 +3,7 @@
 @section('title', 'Admin | Edit Q&A')
 
 @section('content')
-    <a class="back-link" href="{{ route('admin.laws.edit', ['edition' => $selectedEdition, 'law' => $law]) }}">Back to law</a>
+    <a class="back-link" href="{{ route('admin.qas.law', ['edition' => $selectedEdition, 'law' => $law]) }}">Back to law Q&amp;A</a>
 
     <section class="hero">
         <p class="eyebrow">Admin</p>
@@ -17,13 +17,21 @@
         </div>
     @endif
 
-    @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition])
+    @if ($errors->any())
+        <div class="flash-message-error">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
+    @include('admin.partials.edition-switcher', ['editions' => $editions, 'selectedEdition' => $selectedEdition, 'editionSwitcherTarget' => 'qas'])
 
     <section class="card">
         <h2>{{ __('site.laws.law_number', ['number' => $law->law_number]) }}: {{ $law->displayTitle() }}</h2>
         <p class="law-meta">{{ $qa->displayQuestion() }}</p>
 
-        <form action="{{ route('admin.qas.update', ['edition' => $selectedEdition, 'law' => $law, 'qa' => $qa]) }}" method="post" class="stack-form">
+        <form action="{{ route('admin.qas.update', ['edition' => $selectedEdition, 'law' => $law, 'qa' => $qa]) }}" method="post" class="stack-form" data-qa-editor>
             @csrf
             @method('patch')
             @include('admin.partials.qa-fields', ['qa' => $qa, 'translationsByLanguage' => $translationsByLanguage, 'languages' => $languages])

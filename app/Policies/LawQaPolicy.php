@@ -11,6 +11,11 @@ class LawQaPolicy
 {
     use ChecksPermissions;
 
+    public function viewAny(User $user): bool
+    {
+        return $this->allows($user, Permission::QAS_MANAGE);
+    }
+
     public function view(User $user, LawQa $qa): bool
     {
         return $this->allows($user, Permission::QAS_MANAGE);

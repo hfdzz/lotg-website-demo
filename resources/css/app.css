@@ -1382,6 +1382,27 @@ h5.node-title {
     padding: 0 0 1rem;
 }
 
+.law-qa-options {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0 0 1rem;
+    padding-left: 1.35rem;
+}
+
+.law-qa-options li {
+    color: var(--ink);
+    line-height: 1.6;
+}
+
+.law-qa-options li.is-correct {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.qa-option-card {
+    box-shadow: none;
+}
+
 .result-list {
     display: grid;
     gap: 1rem;

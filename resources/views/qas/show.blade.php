@@ -22,12 +22,24 @@
     @else
         <section class="law-qa-list">
             @foreach ($qas as $qa)
+                @php
+                    $qaOptions = $qa->optionsForDisplay($language);
+                @endphp
                 <details class="law-qa-item" id="law-qa-{{ $qa->id }}">
                     <summary class="law-qa-summary">
                         <span class="law-qa-question">{{ $qa->displayQuestion($language) }}</span>
                     </summary>
                     <div class="law-qa-answer node-body">
-                        {!! $qa->displayAnswer($language) !!}
+                        @if ($qa->isMultipleChoice() && $qaOptions->isNotEmpty())
+                            <ol class="law-qa-options">
+                                @foreach ($qaOptions as $option)
+                                    <li @class(['is-correct' => $option['is_correct']])>{{ $option['text'] }}</li>
+                                @endforeach
+                            </ol>
+                        @endif
+                        @if (! ($qa->isMultipleChoice() && ! $qa->uses_custom_answer && $qaOptions->isNotEmpty()))
+                            {!! $qa->displayAnswer($language) !!}
+                        @endif
                     </div>
                 </details>
             @endforeach

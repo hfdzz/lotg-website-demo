@@ -12,6 +12,8 @@ use App\Models\DocumentTranslation;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
+use App\Models\LawQaOption;
+use App\Models\LawQaOptionTranslation;
 use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
 use App\Models\MediaAsset;
@@ -187,6 +189,66 @@ class EditionJsonImportExportTest extends TestCase
             'status' => 'published',
         ]);
 
+        $multipleChoiceQa = LawQa::create([
+            'law_id' => $law->id,
+            'qa_type' => LawQa::TYPE_MULTIPLE_CHOICE,
+            'sort_order' => 2,
+            'is_published' => true,
+            'uses_custom_answer' => false,
+        ]);
+
+        LawQaTranslation::create([
+            'law_qa_id' => $multipleChoiceQa->id,
+            'language_code' => 'id',
+            'question' => 'Kapan bola keluar dari permainan?',
+            'answer_html' => null,
+            'status' => 'published',
+        ]);
+
+        LawQaTranslation::create([
+            'law_qa_id' => $multipleChoiceQa->id,
+            'language_code' => 'en',
+            'question' => 'When is the ball out of play?',
+            'answer_html' => null,
+            'status' => 'published',
+        ]);
+
+        $incorrectOption = LawQaOption::create([
+            'law_qa_id' => $multipleChoiceQa->id,
+            'sort_order' => 1,
+            'is_correct' => false,
+        ]);
+
+        LawQaOptionTranslation::create([
+            'option_id' => $incorrectOption->id,
+            'language_code' => 'id',
+            'text' => 'Saat bola menyentuh garis',
+        ]);
+
+        LawQaOptionTranslation::create([
+            'option_id' => $incorrectOption->id,
+            'language_code' => 'en',
+            'text' => 'When the ball touches a line',
+        ]);
+
+        $correctOption = LawQaOption::create([
+            'law_qa_id' => $multipleChoiceQa->id,
+            'sort_order' => 2,
+            'is_correct' => true,
+        ]);
+
+        LawQaOptionTranslation::create([
+            'option_id' => $correctOption->id,
+            'language_code' => 'id',
+            'text' => 'Saat seluruh bola melewati garis',
+        ]);
+
+        LawQaOptionTranslation::create([
+            'option_id' => $correctOption->id,
+            'language_code' => 'en',
+            'text' => 'When the whole ball crosses the line',
+        ]);
+
         $document = Document::create([
             'edition_id' => $sourceEdition->id,
             'slug' => 'var-protocol',
@@ -259,6 +321,9 @@ class EditionJsonImportExportTest extends TestCase
 
         $this->assertCount(1, $payload['laws']);
         $this->assertCount(1, $payload['documents']);
+        $this->assertCount(2, $payload['laws'][0]['qas']);
+        $this->assertSame(LawQa::TYPE_MULTIPLE_CHOICE, $payload['laws'][0]['qas'][1]['qa_type']);
+        $this->assertCount(2, $payload['laws'][0]['qas'][1]['options']);
         $this->assertCount(2, $payload['media_assets']);
         $this->assertCount(1, $payload['changelog_entries']);
         $this->assertCount(1, $payload['documents'][0]['pages'][0]['media']);
@@ -281,7 +346,7 @@ class EditionJsonImportExportTest extends TestCase
         $importedEdition = Edition::query()->where('code', 'imported-edition')->firstOrFail();
         $importedLaw = Law::query()
             ->where('edition_id', $importedEdition->id)
-            ->with(['translations', 'contentNodes.translations', 'contentNodes.mediaAssets', 'qas.translations'])
+            ->with(['translations', 'contentNodes.translations', 'contentNodes.mediaAssets', 'qas.translations', 'qas.options.translations'])
             ->firstOrFail();
         $importedDocument = Document::query()
             ->where('edition_id', $importedEdition->id)
@@ -295,7 +360,9 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertSame('1', $importedLaw->law_number);
         $this->assertCount(2, $importedLaw->translations);
         $this->assertCount(3, $importedLaw->contentNodes);
-        $this->assertCount(1, $importedLaw->qas);
+        $this->assertCount(2, $importedLaw->qas);
+        $this->assertCount(2, $importedLaw->qas->firstWhere('qa_type', LawQa::TYPE_MULTIPLE_CHOICE)?->options);
+        $this->assertStringContainsString('Saat seluruh bola melewati garis', $importedLaw->qas->firstWhere('qa_type', LawQa::TYPE_MULTIPLE_CHOICE)?->displayAnswer('id'));
         $this->assertSame('Lapangan Permainan', $importedLaw->translations->firstWhere('language_code', 'id')?->title);
 
         $importedImageNode = $importedLaw->contentNodes->firstWhere('node_type', 'image');

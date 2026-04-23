@@ -11,6 +11,8 @@ use App\Models\DocumentTranslation;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawQa;
+use App\Models\LawQaOption;
+use App\Models\LawQaOptionTranslation;
 use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
 use App\Support\UniqueSlugSuffixer;
@@ -73,6 +75,7 @@ class EditionContentCopier
                 'contentNodes.translations',
                 'contentNodes.mediaAssets',
                 'qas.translations',
+                'qas.options.translations',
             ])
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -145,8 +148,10 @@ class EditionContentCopier
             ]) as $sourceQa) {
                 $newQa = LawQa::create([
                     'law_id' => $newLaw->id,
+                    'qa_type' => $sourceQa->qa_type,
                     'sort_order' => $sourceQa->sort_order,
                     'is_published' => $sourceQa->is_published,
+                    'uses_custom_answer' => $sourceQa->uses_custom_answer,
                 ]);
 
                 foreach ($sourceQa->translations as $translation) {
@@ -157,6 +162,22 @@ class EditionContentCopier
                         'answer_html' => $translation->answer_html,
                         'status' => $translation->status,
                     ]);
+                }
+
+                foreach ($sourceQa->options as $sourceOption) {
+                    $newOption = LawQaOption::create([
+                        'law_qa_id' => $newQa->id,
+                        'sort_order' => $sourceOption->sort_order,
+                        'is_correct' => $sourceOption->is_correct,
+                    ]);
+
+                    foreach ($sourceOption->translations as $translation) {
+                        LawQaOptionTranslation::create([
+                            'option_id' => $newOption->id,
+                            'language_code' => $translation->language_code,
+                            'text' => $translation->text,
+                        ]);
+                    }
                 }
             }
         }

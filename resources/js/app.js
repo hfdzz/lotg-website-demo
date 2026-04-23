@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupMediaTypeSections();
     setupImageAssetPicker();
     setupVideoGroupEditor();
+    setupQaEditor();
     setupDocumentPageEditor();
 });
 
@@ -730,6 +731,146 @@ function setupVideoGroupEditor() {
         });
 
         ensureAtLeastOneItem();
+    });
+}
+
+function setupQaEditor() {
+    const editors = Array.from(document.querySelectorAll('[data-qa-editor]'));
+
+    editors.forEach((editor) => {
+        if (!(editor instanceof HTMLElement)) {
+            return;
+        }
+
+        const typeSelect = editor.querySelector('[data-qa-type-select]');
+        const optionsSection = editor.querySelector('[data-qa-options-section]');
+        const optionList = editor.querySelector('[data-qa-option-list]');
+        const addButton = editor.querySelector('[data-qa-option-add]');
+        const template = editor.querySelector('[data-qa-option-template]');
+        const customToggle = editor.querySelector('[data-qa-custom-answer-toggle]');
+        const customInput = editor.querySelector('[data-qa-custom-answer-input]');
+        const answerFields = Array.from(editor.querySelectorAll('[data-qa-answer-field]'));
+
+        if (!(typeSelect instanceof HTMLSelectElement) || !(optionList instanceof HTMLElement) || !(addButton instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const buildOption = (index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card qa-option-card';
+            wrapper.dataset.qaOptionItem = '';
+
+            const templateHtml = template instanceof HTMLTemplateElement
+                ? template.innerHTML
+                : '';
+
+            wrapper.innerHTML = templateHtml
+                .replace(/__INDEX__/g, `${index}`)
+                .replace(/__NUMBER__/g, `${index + 1}`);
+
+            return wrapper.firstElementChild instanceof HTMLElement ? wrapper.firstElementChild : wrapper;
+        };
+
+        const renumberOptions = () => {
+            const items = Array.from(optionList.querySelectorAll('[data-qa-option-item]'));
+
+            items.forEach((item, index) => {
+                if (!(item instanceof HTMLElement)) {
+                    return;
+                }
+
+                const number = item.querySelector('[data-qa-option-number]');
+                if (number) {
+                    number.textContent = `${index + 1}`;
+                }
+
+                Array.from(item.querySelectorAll('input')).forEach((input) => {
+                    if (!(input instanceof HTMLInputElement)) {
+                        return;
+                    }
+
+                    input.name = input.name.replace(/options\[\d+\]/, `options[${index}]`);
+                });
+            });
+        };
+
+        const ensureMinimumOptions = () => {
+            while (optionList.querySelectorAll('[data-qa-option-item]').length < 2) {
+                optionList.appendChild(buildOption(optionList.querySelectorAll('[data-qa-option-item]').length));
+            }
+
+            renumberOptions();
+        };
+
+        const updateVisibility = () => {
+            const isMultipleChoice = typeSelect.value === 'multiple_choice';
+            const hasCustomAnswer = customInput instanceof HTMLInputElement && customInput.checked;
+
+            if (optionsSection instanceof HTMLElement) {
+                optionsSection.hidden = !isMultipleChoice;
+                Array.from(optionsSection.querySelectorAll('input, select, textarea, button')).forEach((field) => {
+                    if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement)) {
+                        return;
+                    }
+
+                    field.disabled = !isMultipleChoice;
+                });
+            }
+
+            if (customToggle instanceof HTMLElement) {
+                customToggle.hidden = !isMultipleChoice;
+            }
+
+            answerFields.forEach((field) => {
+                if (field instanceof HTMLElement) {
+                    field.hidden = isMultipleChoice && !hasCustomAnswer;
+                }
+            });
+
+            if (isMultipleChoice) {
+                ensureMinimumOptions();
+            }
+        };
+
+        addButton.addEventListener('click', () => {
+            optionList.appendChild(buildOption(optionList.querySelectorAll('[data-qa-option-item]').length));
+            renumberOptions();
+        });
+
+        optionList.addEventListener('click', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const removeButton = target.closest('[data-qa-option-remove]');
+
+            if (!(removeButton instanceof HTMLElement)) {
+                return;
+            }
+
+            const confirmMessage = removeButton.dataset.confirmMessage;
+
+            if (confirmMessage && !window.confirm(confirmMessage)) {
+                return;
+            }
+
+            const item = removeButton.closest('[data-qa-option-item]');
+
+            if (item instanceof HTMLElement) {
+                item.remove();
+                ensureMinimumOptions();
+            }
+        });
+
+        typeSelect.addEventListener('change', updateVisibility);
+
+        if (customInput instanceof HTMLInputElement) {
+            customInput.addEventListener('change', updateVisibility);
+        }
+
+        updateVisibility();
     });
 }
 

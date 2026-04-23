@@ -40,6 +40,7 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
     Route::get('/editions', [EditionAdminController::class, 'index'])->name('editions.index');
     Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');
     Route::get('/documents', [DocumentAdminController::class, 'home'])->name('documents.home');
+    Route::get('/qas', [LawQaAdminController::class, 'home'])->name('qas.home');
     Route::get('/media', [MediaAdminController::class, 'index'])->name('media.index');
     Route::post('/media', [MediaAdminController::class, 'store'])->name('media.store');
     Route::get('/media/{media}/edit', [MediaAdminController::class, 'edit'])->name('media.edit');
@@ -71,6 +72,8 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
         Route::patch('/laws/{law}/nodes/{node}', [NodeAdminController::class, 'update'])->name('nodes.update');
         Route::delete('/laws/{law}/nodes/{node}', [NodeAdminController::class, 'destroy'])->name('nodes.destroy');
 
+        Route::get('/qas', [LawQaAdminController::class, 'index'])->name('qas.index');
+        Route::get('/laws/{law}/qas', [LawQaAdminController::class, 'law'])->name('qas.law');
         Route::post('/laws/{law}/qas', [LawQaAdminController::class, 'store'])->name('qas.store');
         Route::get('/laws/{law}/qas/{qa}/edit', [LawQaAdminController::class, 'edit'])->name('qas.edit');
         Route::patch('/laws/{law}/qas/{qa}', [LawQaAdminController::class, 'update'])->name('qas.update');

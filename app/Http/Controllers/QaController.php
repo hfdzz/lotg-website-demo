@@ -23,6 +23,7 @@ class QaController extends Controller
                 'translations',
                 'publishedQas' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'),
                 'publishedQas.translations',
+                'publishedQas.options.translations',
             ])
             ->whereHas('publishedQas')
             ->orderBy('sort_order')
@@ -54,7 +55,7 @@ class QaController extends Controller
         }
 
         $qas = $law->publishedQas()
-            ->with('translations')
+            ->with(['translations', 'options.translations'])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()

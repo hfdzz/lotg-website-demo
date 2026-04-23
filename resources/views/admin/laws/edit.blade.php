@@ -78,32 +78,11 @@
         </div>
     </section>
 
-    <details class="card collapse-card">
-        <summary class="collapse-summary">
-            <h2>Manage Q&amp;A</h2>
-        </summary>
-        <div class="collapse-body">
-            <p class="nav-meta">Q&amp;A lives outside the main content tree and renders below the law as a compact accordion list.</p>
-
-            <form action="{{ route('admin.qas.store', ['edition' => $selectedEdition, 'law' => $law]) }}" method="post" class="stack-form">
-                @csrf
-                @include('admin.partials.qa-fields', ['qa' => null, 'translationsByLanguage' => collect(), 'languages' => \App\Support\LotgLanguage::supported()])
-                <button type="submit">Create Q&amp;A</button>
-            </form>
-
-            <div class="stack-top qa-admin-list">
-                @forelse ($qas as $qa)
-                    <article class="result-card">
-                        <h3>{{ $qa->displayQuestion() }}</h3>
-                        <p class="law-meta">Sort {{ $qa->sort_order }} · {{ $qa->is_published ? 'Published' : 'Draft' }}</p>
-                        <p class="stack-top">
-                            <a class="result-link" href="{{ route('admin.qas.edit', ['edition' => $selectedEdition, 'law' => $law, 'qa' => $qa]) }}">Edit Q&amp;A</a>
-                        </p>
-                    </article>
-                @empty
-                    <p class="empty-state">No Q&amp;A items yet for this law.</p>
-                @endforelse
-            </div>
-        </div>
-    </details>
+    <section class="card">
+        <h2>Q&amp;A</h2>
+        <p class="nav-meta">Q&amp;A now has a separate admin page so law content editing stays focused on nodes.</p>
+        <p class="stack-top">
+            <a class="result-link" href="{{ route('admin.qas.law', ['edition' => $selectedEdition, 'law' => $law]) }}">Manage Q&amp;A for this law</a>
+        </p>
+    </section>
 @endsection

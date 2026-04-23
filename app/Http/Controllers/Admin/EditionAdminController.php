@@ -67,6 +67,7 @@ class EditionAdminController extends Controller
         return match ($target) {
             'documents' => redirect()->route('admin.documents.index', ['edition' => $edition]),
             'editions' => redirect()->route('admin.editions.index', ['edition' => $edition->id]),
+            'qas' => redirect()->route('admin.qas.index', ['edition' => $edition]),
             default => redirect()->route('admin.laws.index', ['edition' => $edition]),
         };
     }
