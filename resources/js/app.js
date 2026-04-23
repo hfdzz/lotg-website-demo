@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTableOfContentsTracking();
     setupEditionCodePlaceholders();
     setupLawSlugPreview();
+    setupDocumentSlugPreview();
     setupTranslationEditor();
     setupNodeTypeSections();
     setupMediaTypeSections();
@@ -298,6 +299,63 @@ function setupLawSlugPreview() {
         }
 
         updatePreview();
+    });
+}
+
+function setupDocumentSlugPreview() {
+    const documentForms = Array.from(document.querySelectorAll('form'));
+
+    const slugify = (value) =>
+        value
+            .toString()
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .replace(/-{2,}/g, '-');
+
+    const bindPreview = (slugInput, titleInput, preview) => {
+        if (!(slugInput instanceof HTMLInputElement) || !(preview instanceof HTMLElement)) {
+            return;
+        }
+
+        const updatePreview = () => {
+            const fallbackTitle = titleInput instanceof HTMLInputElement ? titleInput.value : '';
+            preview.textContent = slugify(slugInput.value || fallbackTitle) || '-';
+        };
+
+        slugInput.addEventListener('input', updatePreview);
+
+        if (titleInput instanceof HTMLInputElement) {
+            titleInput.addEventListener('input', updatePreview);
+        }
+
+        updatePreview();
+    };
+
+    documentForms.forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        bindPreview(
+            form.querySelector('[data-document-slug-input]'),
+            form.querySelector('[data-document-title-id-input]'),
+            form.querySelector('[data-document-slug-preview]'),
+        );
+
+        Array.from(form.querySelectorAll('[data-document-page-item]')).forEach((item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            bindPreview(
+                item.querySelector('[data-document-page-slug-input]'),
+                item.querySelector('[data-document-page-title-id-input]'),
+                item.querySelector('[data-document-page-slug-preview]'),
+            );
+        });
     });
 }
 
@@ -718,6 +776,23 @@ function setupDocumentPageEditor() {
             placeholder.textContent = `{{media:${mediaKey}}}`;
         };
 
+        const updateDocumentPageSlugPreview = (item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const slugInput = item.querySelector('[data-document-page-slug-input]');
+            const titleInput = item.querySelector('[data-document-page-title-id-input]');
+            const preview = item.querySelector('[data-document-page-slug-preview]');
+
+            if (!(slugInput instanceof HTMLInputElement) || !(preview instanceof HTMLElement)) {
+                return;
+            }
+
+            const fallbackTitle = titleInput instanceof HTMLInputElement ? titleInput.value : '';
+            preview.textContent = slugify(slugInput.value || fallbackTitle) || '-';
+        };
+
         const updateDocumentMediaRowMode = (item) => {
             if (!(item instanceof HTMLElement) || item.hidden) {
                 return;
@@ -799,6 +874,7 @@ function setupDocumentPageEditor() {
                 });
 
                 renumberMediaItems(item, index);
+                updateDocumentPageSlugPreview(item);
             });
         };
 
@@ -832,11 +908,12 @@ function setupDocumentPageEditor() {
                 <input type="hidden" name="pages[${nextIndex}][id]" value="">
                 <label>
                     <div class="law-meta">Page slug</div>
-                    <input type="text" name="pages[${nextIndex}][slug]" value="">
+                    <input type="text" name="pages[${nextIndex}][slug]" value="" placeholder="Leave blank to generate from page ID title" data-document-page-slug-input>
+                    <div class="nav-meta">Result: <span data-document-page-slug-preview>-</span></div>
                 </label>
                 <label>
                     <div class="law-meta">Page title (ID)</div>
-                    <input type="text" name="pages[${nextIndex}][title_id]" value="">
+                    <input type="text" name="pages[${nextIndex}][title_id]" value="" data-document-page-title-id-input>
                 </label>
                 <label>
                     <div class="law-meta">Page title (EN)</div>
@@ -978,6 +1055,10 @@ function setupDocumentPageEditor() {
 
             if (!(target instanceof HTMLElement)) {
                 return;
+            }
+
+            if (target.closest('[data-document-page-slug-input]') || target.closest('[data-document-page-title-id-input]')) {
+                updateDocumentPageSlugPreview(target.closest('[data-document-page-item]'));
             }
 
             const keyInput = target.closest('[data-document-media-key]');

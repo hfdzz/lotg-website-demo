@@ -36,7 +36,7 @@
                 @csrf
                 <label>
                     <div class="law-meta">Title (ID)</div>
-                    <input type="text" name="title_id" value="{{ old('title_id') }}">
+                    <input type="text" name="title_id" value="{{ old('title_id') }}" data-document-title-id-input>
                 </label>
                 <label>
                     <div class="law-meta">Title (EN)</div>
@@ -44,7 +44,8 @@
                 </label>
                 <label>
                     <div class="law-meta">Slug</div>
-                    <input type="text" name="slug" value="{{ old('slug') }}">
+                    <input type="text" name="slug" value="{{ old('slug') }}" placeholder="Leave blank to generate from ID title" data-document-slug-input>
+                    <div class="nav-meta">Result: <span data-document-slug-preview>-</span></div>
                 </label>
                 <label>
                     <div class="law-meta">Type</div>

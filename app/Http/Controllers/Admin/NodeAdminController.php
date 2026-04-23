@@ -460,6 +460,7 @@ class NodeAdminController extends Controller
 
     protected function normalizeSiblingSortOrders(Law $law, ?int $parentId, ?int $excludeNodeId = null): void
     {
+        // TODO: This is intentionally simple but can issue N update queries. Consider a driver-specific bulk renumber if sibling counts grow.
         $siblings = $this->siblingQuery($law, $parentId, $excludeNodeId)
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -476,6 +477,7 @@ class NodeAdminController extends Controller
 
     protected function shiftSiblingsForInsert(Law $law, ?int $parentId, int $sortOrder, ?int $excludeNodeId = null): void
     {
+        // TODO: This can be replaced with a bulk increment query if sort-order writes become a bottleneck.
         $siblings = $this->siblingQuery($law, $parentId, $excludeNodeId)
             ->where('sort_order', '>=', $sortOrder)
             ->orderByDesc('sort_order')

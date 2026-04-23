@@ -46,7 +46,7 @@
         <div class="card stack-form">
             <label>
                 <div class="law-meta">Title (ID)</div>
-                <input type="text" name="title_id" value="{{ old('title_id', $document->translationFor('id')?->title ?: $document->title) }}">
+                <input type="text" name="title_id" value="{{ old('title_id', $document->translationFor('id')?->title ?: $document->title) }}" data-document-title-id-input>
             </label>
             <label>
                 <div class="law-meta">Title (EN)</div>
@@ -54,7 +54,8 @@
             </label>
             <label>
                 <div class="law-meta">Slug</div>
-                <input type="text" name="slug" value="{{ old('slug', $document->slug) }}">
+                <input type="text" name="slug" value="{{ old('slug', $document->slug) }}" placeholder="Leave blank to generate from ID title" data-document-slug-input>
+                <div class="nav-meta">Result: <span data-document-slug-preview>{{ $document->slug }}</span></div>
             </label>
             <label>
                 <div class="law-meta">Type</div>
@@ -138,11 +139,12 @@
                     <input type="hidden" name="pages[{{ $index }}][id]" value="{{ $pageRow['id'] ?? '' }}">
                     <label>
                         <div class="law-meta">Page slug</div>
-                        <input type="text" name="pages[{{ $index }}][slug]" value="{{ $pageRow['slug'] ?? '' }}">
+                        <input type="text" name="pages[{{ $index }}][slug]" value="{{ $pageRow['slug'] ?? '' }}" placeholder="Leave blank to generate from page ID title" data-document-page-slug-input>
+                        <div class="nav-meta">Result: <span data-document-page-slug-preview>{{ $pageRow['slug'] ?? '-' }}</span></div>
                     </label>
                     <label>
                         <div class="law-meta">Page title (ID)</div>
-                        <input type="text" name="pages[{{ $index }}][title_id]" value="{{ $pageRow['title_id'] ?? '' }}">
+                        <input type="text" name="pages[{{ $index }}][title_id]" value="{{ $pageRow['title_id'] ?? '' }}" data-document-page-title-id-input>
                     </label>
                     <label>
                         <div class="law-meta">Page title (EN)</div>
