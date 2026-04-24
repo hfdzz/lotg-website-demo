@@ -18,8 +18,11 @@ use App\Policies\EditionPolicy;
 use App\Policies\LawPolicy;
 use App\Policies\LawQaPolicy;
 use App\Policies\MediaAssetPolicy;
+use App\Services\LotgFeatureVisibility;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as ViewContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(LotgFeatureVisibility::class);
     }
 
     /**
@@ -46,6 +49,16 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('access-admin', function (User $user): bool {
             return $user->hasPermissionTo(Permission::ADMIN_ACCESS);
+        });
+
+        View::composer('layouts.app', function (ViewContract $view): void {
+            $activeEdition = Edition::current();
+            $featureVisibility = $this->app->make(LotgFeatureVisibility::class);
+
+            $view->with('publicFeatureNav', [
+                LotgFeatureVisibility::FEATURE_QAS => $featureVisibility->enabled(LotgFeatureVisibility::FEATURE_QAS, $activeEdition),
+                LotgFeatureVisibility::FEATURE_LEGACY_UPDATES => $featureVisibility->availableForAnyPublishedEdition(LotgFeatureVisibility::FEATURE_LEGACY_UPDATES),
+            ]);
         });
     }
 }

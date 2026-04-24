@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Services\LawTreeBuilder;
+use App\Services\LotgFeatureVisibility;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,11 @@ use Illuminate\Http\Request;
 
 class LawController extends Controller
 {
+    public function __construct(
+        protected LotgFeatureVisibility $featureVisibility
+    ) {
+    }
+
     public function hub(Request $request): View
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
@@ -29,14 +35,7 @@ class LawController extends Controller
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
                 ->values(),
-            'hubDocuments' => $activeEdition
-                ? Document::query()
-                    ->published()
-                    ->forEdition($activeEdition->id)
-                    ->with(['translations', 'publishedPages.translations'])
-                    ->orderBy('sort_order')
-                    ->get()
-                : collect(),
+            'hubDocuments' => $this->hubDocuments($activeEdition),
             'language' => $language,
         ]);
     }
@@ -66,14 +65,7 @@ class LawController extends Controller
                 'hasActiveEdition' => (bool) $activeEdition,
                 'activeEdition' => $activeEdition,
                 'selectedEdition' => $selectedEdition,
-                'hubDocuments' => $selectedEdition
-                    ? Document::query()
-                        ->published()
-                        ->forEdition($selectedEdition->id)
-                        ->with(['translations', 'publishedPages.translations'])
-                        ->orderBy('sort_order')
-                        ->get()
-                    : collect(),
+                'hubDocuments' => $this->hubDocuments($selectedEdition),
                 'documentEditionQueryId' => $selectedEdition?->id,
                 'language' => $language,
             ]);
@@ -89,14 +81,7 @@ class LawController extends Controller
             'laws' => $laws,
             'hasActiveEdition' => (bool) $activeEdition,
             'activeEdition' => $activeEdition,
-            'hubDocuments' => $activeEdition
-                ? Document::query()
-                    ->published()
-                    ->forEdition($activeEdition->id)
-                    ->with(['translations', 'publishedPages.translations'])
-                    ->orderBy('sort_order')
-                    ->get()
-                : collect(),
+            'hubDocuments' => $this->hubDocuments($activeEdition),
             'documentEditionQueryId' => null,
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)
@@ -199,5 +184,19 @@ class LawController extends Controller
         }
 
         return null;
+    }
+
+    protected function hubDocuments(?Edition $edition)
+    {
+        if (! $edition || ! $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_DOCUMENTS, $edition)) {
+            return collect();
+        }
+
+        return Document::query()
+            ->published()
+            ->forEdition($edition->id)
+            ->with(['translations', 'publishedPages.translations'])
+            ->orderBy('sort_order')
+            ->get();
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ChangelogEntry;
 use App\Models\Edition;
 use App\Services\EditionContentCopier;
 use App\Services\EditionReadinessChecker;
+use App\Services\LotgFeatureVisibility;
 use App\Support\UniqueSlugSuffixer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +20,8 @@ class EditionAdminController extends Controller
 {
     public function __construct(
         protected EditionContentCopier $contentCopier,
-        protected EditionReadinessChecker $readinessChecker
+        protected EditionReadinessChecker $readinessChecker,
+        protected LotgFeatureVisibility $featureVisibility
     ) {
     }
 
@@ -51,6 +53,7 @@ class EditionAdminController extends Controller
         return view('admin.editions.index', [
             'editions' => $editions,
             'selectedEdition' => $selectedEdition,
+            'editionFeatureRows' => $selectedEdition ? $this->featureVisibility->adminRows($selectedEdition) : [],
             'readinessReports' => $editions->mapWithKeys(
                 fn (Edition $edition) => [$edition->id => $this->readinessChecker->check($edition)]
             ),
@@ -167,6 +170,23 @@ class EditionAdminController extends Controller
             ->with('status', 'Edition updated.');
     }
 
+    public function updateEditionFeatures(Request $request, Edition $edition): RedirectResponse
+    {
+        $this->authorize('update', $edition);
+
+        $validated = $request->validate($this->featureVisibilityRules([
+            'inherit',
+            'enabled',
+            'disabled',
+        ]));
+
+        $this->featureVisibility->storeEditionOverrideStates($edition, $validated['features'] ?? []);
+
+        return redirect()
+            ->route('admin.editions.index', ['edition' => $edition->id])
+            ->with('status', 'Edition feature overrides updated.');
+    }
+
     public function activate(Edition $edition): RedirectResponse
     {
         $this->authorize('activate', $edition);
@@ -261,5 +281,22 @@ class EditionAdminController extends Controller
     protected function readinessFailureMessage(array $report): string
     {
         return 'Edition is not ready to publish or activate yet. '.$report['summary'];
+    }
+
+    /**
+     * @param array<int, string> $values
+     * @return array<string, array<int, string>>
+     */
+    protected function featureVisibilityRules(array $values): array
+    {
+        $rules = [
+            'features' => ['required', 'array'],
+        ];
+
+        foreach ($this->featureVisibility->keys() as $featureKey) {
+            $rules['features.'.$featureKey] = ['nullable', 'in:'.implode(',', $values)];
+        }
+
+        return $rules;
     }
 }

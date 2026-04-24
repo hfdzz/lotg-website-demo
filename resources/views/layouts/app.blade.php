@@ -1,6 +1,9 @@
 @php
     $currentLanguage = \App\Support\LotgLanguage::normalize(request('lang'));
     $languageOptions = \App\Support\LotgLanguage::supported();
+    $publicFeatureNav = $publicFeatureNav ?? [];
+    $showUpdatesNav = (bool) ($publicFeatureNav['legacy_updates'] ?? true);
+    $showQasNav = (bool) ($publicFeatureNav['qas'] ?? true);
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -33,8 +36,12 @@
 
                         <div class="mobile-nav-links">
                             <a class="mobile-nav-link" href="{{ route('laws.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.laws') }}</a>
-                            <a class="mobile-nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
-                            <a class="mobile-nav-link" href="{{ route('qas.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.qas') }}</a>
+                            @if ($showUpdatesNav)
+                                <a class="mobile-nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
+                            @endif
+                            @if ($showQasNav)
+                                <a class="mobile-nav-link" href="{{ route('qas.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.qas') }}</a>
+                            @endif
                             <form class="mobile-lang-form" action="{{ url()->current() }}" method="get">
                                 @if (request()->filled('q'))
                                     <input type="hidden" name="q" value="{{ request('q') }}">
@@ -100,8 +107,12 @@
                         <div class="nav-main-wrapper">
                             <div class="nav-main">
                                 <a class="nav-link" href="{{ route('laws.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.laws') }}</a>
-                                <a class="nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
-                                <a class="nav-link" href="{{ route('qas.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.qas') }}</a>
+                                @if ($showUpdatesNav)
+                                    <a class="nav-link" href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
+                                @endif
+                                @if ($showQasNav)
+                                    <a class="nav-link" href="{{ route('qas.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.qas') }}</a>
+                                @endif
                             </div>
                         </div>
 

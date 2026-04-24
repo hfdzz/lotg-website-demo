@@ -7,6 +7,8 @@
         $defaultYearStart = (int) now()->format('Y');
         $defaultYearEnd = $defaultYearStart + 1;
         $copyEditionDefault = old('copy_from_edition_id', $editions->first()?->id);
+        $editionFeatureOverrides = collect($editionFeatureRows)->filter(fn (array $row) => $row['edition_state'] !== null)->count();
+        $editionFeaturesEnabled = collect($editionFeatureRows)->filter(fn (array $row) => $row['effective_state'])->count();
     @endphp
 
     <section class="hero">
@@ -220,6 +222,47 @@
                         <button type="submit" class="button-danger">Delete edition</button>
                     </form>
                 @endif
+
+                <div class="stack-top">
+                    <details class="card collapse-card">
+                        <summary class="collapse-summary">
+                            <h3>Edition feature overrides</h3>
+                            <p class="law-meta">{{ $editionFeatureOverrides }} override{{ $editionFeatureOverrides === 1 ? '' : 's' }} | {{ $editionFeaturesEnabled }} enabled effective</p>
+                        </summary>
+                        <div class="collapse-body">
+                            <p class="law-meta">Edition rules win over global rules. Choose inherit to use the global public setting for this edition.</p>
+                            <p class="law-meta"><a class="result-link" href="{{ route('admin.public-features.index', ['edition' => $selectedEdition->id]) }}">Manage global public feature visibility</a></p>
+
+                            <form action="{{ route('admin.editions.public-features.update-edition', $selectedEdition) }}" method="post" class="stack-form">
+                                @csrf
+                                @method('patch')
+
+                                @foreach ($editionFeatureRows as $featureRow)
+                                    @php
+                                        $globalStateLabel = $featureRow['global_state'] === null
+                                            ? 'Default ('.($featureRow['default_state'] ? 'enabled' : 'disabled').')'
+                                            : ($featureRow['global_state'] ? 'Enabled' : 'Disabled');
+                                    @endphp
+                                    <label class="card surface-note">
+                                        <div>
+                                            <strong>{{ $featureRow['label'] }}</strong>
+                                            <p class="law-meta">{{ $featureRow['description'] }}</p>
+                                            <p class="law-meta">Global state: {{ $globalStateLabel }}</p>
+                                            <p class="law-meta">Effective public state for this edition: {{ $featureRow['effective_state'] ? 'Enabled' : 'Disabled' }}</p>
+                                        </div>
+                                        <select name="features[{{ $featureRow['key'] }}]">
+                                            <option value="inherit" @selected($featureRow['edition_state'] === null)>Inherit global</option>
+                                            <option value="enabled" @selected($featureRow['edition_state'] === true)>Enabled</option>
+                                            <option value="disabled" @selected($featureRow['edition_state'] === false)>Disabled</option>
+                                        </select>
+                                    </label>
+                                @endforeach
+
+                                <button type="submit">Save edition feature overrides</button>
+                            </form>
+                        </div>
+                    </details>
+                </div>
             @else
                 <p class="empty-state">No edition selected yet.</p>
             @endif

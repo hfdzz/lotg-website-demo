@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\ChangelogAdminController;
 use App\Http\Controllers\Admin\DocumentAdminController;
 use App\Http\Controllers\Admin\EditionAdminController;
+use App\Http\Controllers\Admin\FeatureVisibilityAdminController;
 use App\Http\Controllers\Admin\LawAdminController;
 use App\Http\Controllers\Admin\LawQaAdminController;
 use App\Http\Controllers\Admin\MediaAdminController;
@@ -38,6 +39,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminHomeController::class, 'index'])->name('home');
     Route::get('/editions', [EditionAdminController::class, 'index'])->name('editions.index');
+    Route::get('/public-features', [FeatureVisibilityAdminController::class, 'index'])->name('public-features.index');
     Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');
     Route::get('/documents', [DocumentAdminController::class, 'home'])->name('documents.home');
     Route::get('/qas', [LawQaAdminController::class, 'home'])->name('qas.home');
@@ -49,8 +51,10 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
 
     Route::get('/switch-edition', [EditionAdminController::class, 'go'])->name('editions.go');
     Route::post('/editions', [EditionAdminController::class, 'store'])->name('editions.store');
+    Route::patch('/public-features', [FeatureVisibilityAdminController::class, 'update'])->name('public-features.update');
     Route::post('/editions/{edition}/activate', [EditionAdminController::class, 'activate'])->name('editions.activate');
     Route::post('/editions/{edition}/force-activate', [EditionAdminController::class, 'forceActivate'])->name('editions.force-activate');
+    Route::patch('/editions/{edition}/public-features', [EditionAdminController::class, 'updateEditionFeatures'])->name('editions.public-features.update-edition');
     Route::patch('/editions/{edition}', [EditionAdminController::class, 'update'])->name('editions.update');
     Route::delete('/editions/{edition}', [EditionAdminController::class, 'destroy'])->name('editions.destroy');
 

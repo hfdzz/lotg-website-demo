@@ -15,6 +15,11 @@
             <p class="law-meta">Create, activate, and prepare LotG editions before editing their law content.</p>
         </a>
 
+        <a class="result-card result-link-block" href="{{ route('admin.public-features.index') }}">
+            <h2>Public feature visibility</h2>
+            <p class="law-meta">Control site-wide public visibility defaults for modules like Q&amp;A, law changes, and supporting documents.</p>
+        </a>
+
         <a class="result-card result-link-block" href="{{ route('admin.laws.home') }}">
             <h2>Manage laws</h2>
             <p class="law-meta">

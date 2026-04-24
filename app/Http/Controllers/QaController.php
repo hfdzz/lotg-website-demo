@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Edition;
 use App\Models\Law;
+use App\Services\LotgFeatureVisibility;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -11,10 +12,19 @@ use Illuminate\Http\Request;
 
 class QaController extends Controller
 {
-    public function index(Request $request): View
+    public function __construct(
+        protected LotgFeatureVisibility $featureVisibility
+    ) {
+    }
+
+    public function index(Request $request): View|RedirectResponse
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $activeEdition = Edition::current();
+
+        if (! $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_QAS, $activeEdition)) {
+            return redirect()->route('laws.index', ['lang' => $language]);
+        }
 
         $laws = Law::query()
             ->published()
@@ -41,6 +51,10 @@ class QaController extends Controller
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $activeEdition = Edition::current();
+
+        if (! $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_QAS, $activeEdition)) {
+            return redirect()->route('laws.index', ['lang' => $language]);
+        }
 
         $law->loadMissing(['edition', 'translations']);
 

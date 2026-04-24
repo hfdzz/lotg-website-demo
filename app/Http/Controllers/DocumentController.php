@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Document;
 use App\Models\Edition;
+use App\Services\LotgFeatureVisibility;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -11,13 +12,23 @@ use Illuminate\Http\Request;
 
 class DocumentController extends Controller
 {
+    public function __construct(
+        protected LotgFeatureVisibility $featureVisibility
+    ) {
+    }
+
     public function show(Request $request, Document $document): View|RedirectResponse
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $document->load(['translations', 'publishedPages.translations', 'publishedPages.mediaAssets', 'edition']);
 
-        if (! $document->edition || $document->status !== 'published' || $document->edition->status !== 'published') {
-            return redirect()->route('laws.index', ['lang' => $language]);
+        if (
+            ! $document->edition
+            || ! $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_DOCUMENTS, $document->edition)
+            || $document->status !== 'published'
+            || $document->edition->status !== 'published'
+        ) {
+            return $this->redirectToLawListing($language, $document->edition);
         }
 
         $activeEditionId = Edition::current()?->id;
@@ -57,8 +68,13 @@ class DocumentController extends Controller
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $document->load(['translations', 'publishedPages.translations', 'publishedPages.mediaAssets', 'edition']);
 
-        if (! $document->edition || $document->status !== 'published' || $document->edition->status !== 'published') {
-            return redirect()->route('laws.index', ['lang' => $language]);
+        if (
+            ! $document->edition
+            || ! $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_DOCUMENTS, $document->edition)
+            || $document->status !== 'published'
+            || $document->edition->status !== 'published'
+        ) {
+            return $this->redirectToLawListing($language, $document->edition);
         }
 
         $activeEditionId = Edition::current()?->id;
@@ -97,12 +113,28 @@ class DocumentController extends Controller
     protected function hubData(Edition $edition): array
     {
         return [
-            'hubDocuments' => Document::query()
-                ->published()
-                ->forEdition($edition->id)
-                ->with(['translations', 'publishedPages.translations'])
-                ->orderBy('sort_order')
-                ->get(),
+            'hubDocuments' => $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_DOCUMENTS, $edition)
+                ? Document::query()
+                    ->published()
+                    ->forEdition($edition->id)
+                    ->with(['translations', 'publishedPages.translations'])
+                    ->orderBy('sort_order')
+                    ->get()
+                : collect(),
         ];
+    }
+
+    protected function redirectToLawListing(string $language, ?Edition $edition): RedirectResponse
+    {
+        $activeEditionId = Edition::current()?->id;
+
+        if ($edition && (! $activeEditionId || (int) $edition->id !== (int) $activeEditionId)) {
+            return redirect()->route('laws.list', [
+                'lang' => $language,
+                'edition' => $edition->id,
+            ]);
+        }
+
+        return redirect()->route('laws.index', ['lang' => $language]);
     }
 }

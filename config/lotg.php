@@ -5,6 +5,23 @@ return [
     'random_token_max_attempts' => 3,
     'expected_law_count' => (int) env('LOTG_EXPECTED_LAW_COUNT', 17),
     'export_default_dir' => (string) env('LOTG_EXPORT_DEFAULT_DIR', 'storage/app/lotg-exports'),
+    'public_features' => [
+        'documents' => [
+            'label' => 'Documents',
+            'description' => 'Show supporting LotG documents inside the public hub and allow their public detail pages.',
+            'default' => true,
+        ],
+        'qas' => [
+            'label' => 'Q&A',
+            'description' => 'Show the public Q&A area for the current active edition.',
+            'default' => true,
+        ],
+        'legacy_updates' => [
+            'label' => 'Law changes',
+            'description' => 'Show the legacy law-changes / updates page in the public site navigation.',
+            'default' => true,
+        ],
+    ],
     'required_document_slugs' => array_values(array_filter(array_map(
         static fn (string $slug) => trim($slug),
         explode(',', (string) env('LOTG_REQUIRED_DOCUMENT_SLUGS', ''))
