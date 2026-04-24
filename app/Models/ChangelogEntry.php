@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
+// Legacy lightweight update/feed model. Official edition Law Changes content should live in documents.
 class ChangelogEntry extends Model
 {
     protected $fillable = [

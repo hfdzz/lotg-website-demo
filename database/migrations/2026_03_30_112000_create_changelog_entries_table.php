@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Legacy lightweight update/feed table. Official edition Law Changes content should live in documents.
         Schema::create('changelog_entries', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('edition_id')->nullable();

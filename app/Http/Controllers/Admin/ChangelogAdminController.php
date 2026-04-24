@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+// Kept for simple update/feed entries; not intended for official edition Law Changes content.
 class ChangelogAdminController extends Controller
 {
     public function index(Edition $edition): View
