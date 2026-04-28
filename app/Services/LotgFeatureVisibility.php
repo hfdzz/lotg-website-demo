@@ -26,7 +26,9 @@ class LotgFeatureVisibility
      */
     protected array $editionStates = [];
 
-    public function __construct()
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    )
     {
         /** @var array<string, array{label: string, description: string, default: bool}> $definitions */
         $definitions = config('lotg.public_features', []);
@@ -70,11 +72,7 @@ class LotgFeatureVisibility
 
     public function availableForAnyPublishedEdition(string $featureKey): bool
     {
-        $publishedEditionIds = Edition::query()
-            ->published()
-            ->orderByDesc('year_start')
-            ->orderByDesc('year_end')
-            ->pluck('id');
+        $publishedEditionIds = collect($this->publicCache->publishedEditionIds());
 
         if ($publishedEditionIds->isEmpty()) {
             return $this->enabled($featureKey, null);
@@ -175,6 +173,7 @@ class LotgFeatureVisibility
         }
 
         $this->flushCache();
+        $this->publicCache->touchGlobal();
     }
 
     /**
@@ -201,6 +200,7 @@ class LotgFeatureVisibility
         }
 
         $this->flushCache();
+        $this->publicCache->touchEdition($edition->id);
     }
 
     protected function defaultValue(string $featureKey): bool
@@ -231,11 +231,13 @@ class LotgFeatureVisibility
             return $this->globalStates;
         }
 
-        $this->globalStates = FeatureVisibility::query()
-            ->where('scope_type', FeatureVisibility::SCOPE_GLOBAL)
-            ->pluck('is_enabled', 'feature_key')
-            ->map(fn ($value) => (bool) $value)
-            ->all();
+        $this->globalStates = $this->publicCache->rememberFeatureGlobalStates(
+            fn () => FeatureVisibility::query()
+                ->where('scope_type', FeatureVisibility::SCOPE_GLOBAL)
+                ->pluck('is_enabled', 'feature_key')
+                ->map(fn ($value) => (bool) $value)
+                ->all()
+        );
 
         return $this->globalStates;
     }
@@ -249,12 +251,15 @@ class LotgFeatureVisibility
             return $this->editionStates[$editionId];
         }
 
-        $this->editionStates[$editionId] = FeatureVisibility::query()
-            ->where('scope_type', FeatureVisibility::SCOPE_EDITION)
-            ->where('edition_id', $editionId)
-            ->pluck('is_enabled', 'feature_key')
-            ->map(fn ($value) => (bool) $value)
-            ->all();
+        $this->editionStates[$editionId] = $this->publicCache->rememberFeatureEditionStates(
+            $editionId,
+            fn () => FeatureVisibility::query()
+                ->where('scope_type', FeatureVisibility::SCOPE_EDITION)
+                ->where('edition_id', $editionId)
+                ->pluck('is_enabled', 'feature_key')
+                ->map(fn ($value) => (bool) $value)
+                ->all()
+        );
 
         return $this->editionStates[$editionId];
     }

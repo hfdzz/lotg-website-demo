@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
+use App\Services\LotgPublicCache;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,11 @@ use Illuminate\Support\Facades\Validator;
 
 class MediaAdminController extends Controller
 {
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
+
     public function index(): View
     {
         $this->authorize('viewAny', MediaAsset::class);
@@ -70,6 +76,7 @@ class MediaAdminController extends Controller
 
         $validated = $this->validateMedia($request, $media);
         $oldFilePath = $media->file_path;
+        $relatedLawIds = $media->contentNodes()->pluck('content_nodes.law_id')->map(fn ($id) => (int) $id)->unique()->all();
 
         $media->update($this->payloadFromRequest($request, $validated, $media));
 
@@ -80,6 +87,8 @@ class MediaAdminController extends Controller
         ) {
             $this->deleteStoredFileIfNeeded($oldFilePath);
         }
+
+        $this->publicCache->touchLaws($relatedLawIds);
 
         return redirect()
             ->route('admin.media.edit', ['media' => $media])

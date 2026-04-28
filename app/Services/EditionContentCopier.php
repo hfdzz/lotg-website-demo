@@ -15,11 +15,17 @@ use App\Models\LawQaOption;
 use App\Models\LawQaOptionTranslation;
 use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
+use App\Services\LotgPublicCache;
 use App\Support\UniqueSlugSuffixer;
 use Illuminate\Support\Str;
 
 class EditionContentCopier
 {
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
+
     public function copy(Edition $sourceEdition, Edition $targetEdition): void
     {
         $documents = Document::query()
@@ -181,6 +187,8 @@ class EditionContentCopier
                 }
             }
         }
+
+        $this->publicCache->touchEdition($targetEdition->id);
     }
 
     protected function makeCopiedLawSlug(string $sourceSlug, Edition $targetEdition): string

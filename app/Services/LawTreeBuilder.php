@@ -7,19 +7,26 @@ use Illuminate\Support\Collection;
 
 class LawTreeBuilder
 {
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
+
     public function build(Law $law, string $languageCode = 'id'): array
     {
-        $nodes = $law->publishedContentNodes()
-            ->with([
-                'translations' => fn ($query) => $query->orderByRaw("CASE WHEN language_code = ? THEN 0 ELSE 1 END", [$languageCode]),
-                'mediaAssets',
-            ])
-            ->orderBy('sort_order')
-            ->get();
+        return $this->publicCache->rememberLawTree($law->id, $languageCode, function () use ($law, $languageCode) {
+            $nodes = $law->publishedContentNodes()
+                ->with([
+                    'translations' => fn ($query) => $query->orderByRaw("CASE WHEN language_code = ? THEN 0 ELSE 1 END", [$languageCode]),
+                    'mediaAssets',
+                ])
+                ->orderBy('sort_order')
+                ->get();
 
-        $childrenByParent = $nodes->groupBy('parent_id');
+            $childrenByParent = $nodes->groupBy('parent_id');
 
-        return $this->buildBranch($childrenByParent, null, 0, $languageCode, [(string) $law->law_number]);
+            return $this->buildBranch($childrenByParent, null, 0, $languageCode, [(string) $law->law_number]);
+        });
     }
 
     /**

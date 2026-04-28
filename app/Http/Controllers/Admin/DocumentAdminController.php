@@ -7,6 +7,7 @@ use App\Models\Document;
 use App\Models\DocumentPage;
 use App\Models\Edition;
 use App\Models\MediaAsset;
+use App\Services\LotgPublicCache;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,11 @@ use Illuminate\Support\Str;
 
 class DocumentAdminController extends Controller
 {
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
+
     public function home(): View|RedirectResponse
     {
         $this->authorize('viewAny', Document::class);
@@ -103,6 +109,7 @@ class DocumentAdminController extends Controller
 
             return $document;
         });
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()->route('admin.documents.edit', ['edition' => $edition, 'document' => $document])->with('status', 'Document created.');
     }
@@ -230,6 +237,7 @@ class DocumentAdminController extends Controller
 
             $this->normalizePageSortOrders($document);
         });
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()->route('admin.documents.edit', ['edition' => $edition, 'document' => $document])->with('status', 'Document updated.');
     }
@@ -240,6 +248,7 @@ class DocumentAdminController extends Controller
         abort_unless((int) $document->edition_id === (int) $edition->id, 404);
 
         $document->delete();
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()
             ->route('admin.documents.index', ['edition' => $edition])

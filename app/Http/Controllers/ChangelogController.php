@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ChangelogEntry;
 use App\Models\Edition;
 use App\Services\LotgFeatureVisibility;
+use App\Services\LotgPublicCache;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -13,7 +13,8 @@ use Illuminate\Http\Request;
 class ChangelogController extends Controller
 {
     public function __construct(
-        protected LotgFeatureVisibility $featureVisibility
+        protected LotgFeatureVisibility $featureVisibility,
+        protected LotgPublicCache $publicCache
     ) {
     }
 
@@ -21,11 +22,7 @@ class ChangelogController extends Controller
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $activeEdition = Edition::current();
-        $publishedEditions = Edition::query()
-            ->published()
-            ->orderByDesc('year_start')
-            ->orderByDesc('year_end')
-            ->get();
+        $publishedEditions = $this->publicCache->publishedEditions();
         $availableEditions = $publishedEditions
             ->filter(fn (Edition $edition) => $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_LEGACY_UPDATES, $edition))
             ->values();
@@ -47,12 +44,7 @@ class ChangelogController extends Controller
             return $this->redirectToLawListing($language, $activeEdition);
         }
 
-        $entries = ChangelogEntry::published()
-            ->where('edition_id', $selectedEdition?->id)
-            ->where('language_code', $language)
-            ->orderByDesc('published_at')
-            ->orderBy('sort_order')
-            ->get();
+        $entries = $this->publicCache->publishedChangelogEntries($selectedEdition?->id, $language);
 
         return view('updates.index', [
             'entries' => $entries,

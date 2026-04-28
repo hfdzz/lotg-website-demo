@@ -19,6 +19,7 @@ use App\Policies\LawPolicy;
 use App\Policies\LawQaPolicy;
 use App\Policies\MediaAssetPolicy;
 use App\Services\LotgFeatureVisibility;
+use App\Services\LotgPublicCache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(LotgPublicCache::class);
         $this->app->singleton(LotgFeatureVisibility::class);
     }
 

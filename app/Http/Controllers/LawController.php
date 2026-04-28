@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Document;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Services\LawTreeBuilder;
 use App\Services\LotgFeatureVisibility;
+use App\Services\LotgPublicCache;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +15,8 @@ use Illuminate\Http\Request;
 class LawController extends Controller
 {
     public function __construct(
-        protected LotgFeatureVisibility $featureVisibility
+        protected LotgFeatureVisibility $featureVisibility,
+        protected LotgPublicCache $publicCache
     ) {
     }
 
@@ -23,11 +24,7 @@ class LawController extends Controller
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $activeEdition = Edition::current();
-        $publishedEditions = Edition::query()
-            ->published()
-            ->orderByDesc('year_start')
-            ->orderByDesc('year_end')
-            ->get();
+        $publishedEditions = $this->publicCache->publishedEditions();
 
         return view('laws.index', [
             'hasActiveEdition' => (bool) $activeEdition,
@@ -44,11 +41,7 @@ class LawController extends Controller
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $activeEdition = Edition::current();
-        $publishedEditions = Edition::query()
-            ->published()
-            ->orderByDesc('year_start')
-            ->orderByDesc('year_end')
-            ->get();
+        $publishedEditions = $this->publicCache->publishedEditions();
         $requestedEditionId = $request->integer('edition');
         $selectedEdition = $requestedEditionId
             ? $publishedEditions->firstWhere('id', $requestedEditionId)
@@ -57,11 +50,7 @@ class LawController extends Controller
 
         if ($isArchiveEdition) {
             return view('laws.archive', [
-                'laws' => Law::published()
-                    ->forEdition($selectedEdition?->id)
-                    ->with('translations')
-                    ->orderBy('sort_order')
-                    ->get(),
+                'laws' => $this->publicCache->orderedPublishedLaws($selectedEdition?->id, ['translations']),
                 'hasActiveEdition' => (bool) $activeEdition,
                 'activeEdition' => $activeEdition,
                 'selectedEdition' => $selectedEdition,
@@ -71,11 +60,7 @@ class LawController extends Controller
             ]);
         }
 
-        $laws = Law::published()
-            ->forEdition($activeEdition?->id)
-            ->with('translations')
-            ->orderBy('sort_order')
-            ->get();
+        $laws = $this->publicCache->orderedPublishedLaws($activeEdition?->id, ['translations']);
 
         return view('laws.list', [
             'laws' => $laws,
@@ -94,11 +79,7 @@ class LawController extends Controller
     {
         $language = LotgLanguage::normalize((string) $request->query('lang', LotgLanguage::default()));
         $activeEdition = Edition::current();
-        $publishedEditions = Edition::query()
-            ->published()
-            ->orderByDesc('year_start')
-            ->orderByDesc('year_end')
-            ->get();
+        $publishedEditions = $this->publicCache->publishedEditions();
 
         return view('laws.editions', [
             'language' => $language,
@@ -117,12 +98,7 @@ class LawController extends Controller
         }
 
         $tree = $treeBuilder->build($law, $language);
-        $orderedLaws = Law::published()
-            ->forEdition($law->edition_id)
-            ->with('translations')
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get(['id', 'law_number', 'slug', 'sort_order', 'status']);
+        $orderedLaws = $this->publicCache->orderedPublishedLaws((int) $law->edition_id, ['translations']);
         $currentIndex = $orderedLaws->search(fn (Law $item) => $item->id === $law->id);
         $editionQueryId = $this->publicEditionQueryIdForLaw($law);
 
@@ -192,11 +168,6 @@ class LawController extends Controller
             return collect();
         }
 
-        return Document::query()
-            ->published()
-            ->forEdition($edition->id)
-            ->with(['translations', 'publishedPages.translations'])
-            ->orderBy('sort_order')
-            ->get();
+        return $this->publicCache->orderedPublishedDocuments($edition->id, ['translations', 'publishedPages.translations']);
     }
 }

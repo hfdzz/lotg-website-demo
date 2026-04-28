@@ -8,6 +8,7 @@ use App\Models\ContentNodeTranslation;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\MediaAsset;
+use App\Services\LotgPublicCache;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +18,11 @@ use Illuminate\Support\Collection;
 
 class NodeAdminController extends Controller
 {
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
+
     public function edit(Edition $edition, Law $law, ContentNode $node): View
     {
         $this->authorize('update', $node);
@@ -62,6 +68,8 @@ class NodeAdminController extends Controller
 
             return $node;
         });
+        $this->publicCache->touchEdition($edition->id);
+        $this->publicCache->touchLaw($law->id);
 
         $redirectNodeId = $request->integer('return_to_node_id');
 
@@ -114,6 +122,8 @@ class NodeAdminController extends Controller
             $this->syncTranslation($node, $validated);
             $this->syncMedia($request, $node);
         });
+        $this->publicCache->touchEdition($edition->id);
+        $this->publicCache->touchLaw($law->id);
 
         return redirect()
             ->route('admin.nodes.edit', ['edition' => $edition, 'law' => $law, 'node' => $node])
@@ -131,6 +141,8 @@ class NodeAdminController extends Controller
             $this->deleteNodeRecursively($node);
             $this->normalizeSiblingSortOrders($law, $parentId);
         });
+        $this->publicCache->touchEdition($edition->id);
+        $this->publicCache->touchLaw($law->id);
 
         return redirect()
             ->route('admin.laws.edit', ['edition' => $edition, 'law' => $law])

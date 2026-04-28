@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\LotgPublicCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -64,10 +65,6 @@ class Edition extends Model
 
     public static function current(): ?self
     {
-        return static::query()
-            ->active()
-            ->published()
-            ->orderByDesc('year_start')
-            ->first();
+        return app(LotgPublicCache::class)->activeEdition();
     }
 }

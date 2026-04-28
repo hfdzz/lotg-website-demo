@@ -8,6 +8,7 @@ use App\Models\Edition;
 use App\Services\EditionContentCopier;
 use App\Services\EditionReadinessChecker;
 use App\Services\LotgFeatureVisibility;
+use App\Services\LotgPublicCache;
 use App\Support\UniqueSlugSuffixer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,8 @@ class EditionAdminController extends Controller
     public function __construct(
         protected EditionContentCopier $contentCopier,
         protected EditionReadinessChecker $readinessChecker,
-        protected LotgFeatureVisibility $featureVisibility
+        protected LotgFeatureVisibility $featureVisibility,
+        protected LotgPublicCache $publicCache
     ) {
     }
 
@@ -119,6 +121,9 @@ class EditionAdminController extends Controller
             return $edition;
         });
 
+        $this->publicCache->touchGlobal();
+        $this->publicCache->touchEdition($edition->id);
+
         return redirect()
             ->route('admin.editions.index')
             ->with('status', 'Edition created.');
@@ -165,6 +170,9 @@ class EditionAdminController extends Controller
             'is_active' => $shouldBeActive,
         ]);
 
+        $this->publicCache->touchGlobal();
+        $this->publicCache->touchEdition($edition->id);
+
         return redirect()
             ->route('admin.editions.index')
             ->with('status', 'Edition updated.');
@@ -205,6 +213,8 @@ class EditionAdminController extends Controller
 
         Edition::query()->update(['is_active' => false]);
         $edition->update(['is_active' => true]);
+        $this->publicCache->touchGlobal();
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()
             ->route('admin.editions.index')
@@ -221,6 +231,8 @@ class EditionAdminController extends Controller
 
         Edition::query()->update(['is_active' => false]);
         $edition->update(['is_active' => true]);
+        $this->publicCache->touchGlobal();
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()
             ->route('admin.editions.index')
@@ -243,6 +255,8 @@ class EditionAdminController extends Controller
             return back()->withErrors(['edition' => 'Only an empty edition can be deleted. Remove its laws, documents, and law changes first.']);
         }
 
+        $this->publicCache->touchGlobal();
+        $this->publicCache->touchEdition($edition->id);
         $edition->delete();
 
         return redirect()

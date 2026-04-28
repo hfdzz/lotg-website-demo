@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ChangelogEntry;
 use App\Models\Edition;
+use App\Services\LotgPublicCache;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,11 @@ use Illuminate\Http\Request;
 // Kept for simple update/feed entries; not intended for official edition Law Changes content.
 class ChangelogAdminController extends Controller
 {
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
+
     public function index(Edition $edition): View
     {
         $this->authorize('viewAny', ChangelogEntry::class);
@@ -41,6 +47,7 @@ class ChangelogAdminController extends Controller
             'sort_order' => $validated['sort_order'],
             'published_at' => $request->boolean('is_published') ? now() : null,
         ]);
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()
             ->route('admin.changelog.index', ['edition' => $edition])
@@ -61,6 +68,7 @@ class ChangelogAdminController extends Controller
             'sort_order' => $validated['sort_order'],
             'published_at' => $request->boolean('is_published') ? ($entry->published_at ?? now()) : null,
         ]);
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()
             ->route('admin.changelog.index', ['edition' => $edition])

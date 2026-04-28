@@ -17,6 +17,7 @@ use App\Models\LawQaOptionTranslation;
 use App\Models\LawQaTranslation;
 use App\Models\LawTranslation;
 use App\Models\MediaAsset;
+use App\Services\LotgPublicCache;
 use App\Support\UniqueSlugSuffixer;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,11 @@ use InvalidArgumentException;
 class EditionJsonImporter
 {
     protected const SUPPORTED_NODE_TYPES = ['section', 'rich_text', 'image', 'video_group', 'resource_list'];
+
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
 
     /**
      * @param array<string, mixed> $payload
@@ -85,6 +91,9 @@ class EditionJsonImporter
             foreach (Arr::get($payload, 'laws', []) as $lawPayload) {
                 $this->importLaw($edition, $lawPayload, $mediaKeyMap, $counts);
             }
+
+            $this->publicCache->touchGlobal();
+            $this->publicCache->touchEdition($edition->id);
 
             return [
                 'edition' => $edition->fresh(),

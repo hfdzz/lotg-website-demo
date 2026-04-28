@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Models\Edition;
 use App\Services\LotgFeatureVisibility;
+use App\Services\LotgPublicCache;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -13,7 +14,8 @@ use Illuminate\Http\Request;
 class DocumentController extends Controller
 {
     public function __construct(
-        protected LotgFeatureVisibility $featureVisibility
+        protected LotgFeatureVisibility $featureVisibility,
+        protected LotgPublicCache $publicCache
     ) {
     }
 
@@ -114,12 +116,7 @@ class DocumentController extends Controller
     {
         return [
             'hubDocuments' => $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_DOCUMENTS, $edition)
-                ? Document::query()
-                    ->published()
-                    ->forEdition($edition->id)
-                    ->with(['translations', 'publishedPages.translations'])
-                    ->orderBy('sort_order')
-                    ->get()
+                ? $this->publicCache->orderedPublishedDocuments($edition->id, ['translations', 'publishedPages.translations'])
                 : collect(),
         ];
     }

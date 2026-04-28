@@ -7,6 +7,7 @@ use App\Models\Edition;
 use App\Models\Law;
 use App\Models\LawTranslation;
 use App\Models\MediaAsset;
+use App\Services\LotgPublicCache;
 use App\Support\LotgLanguage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +16,11 @@ use Illuminate\Support\Str;
 
 class LawAdminController extends Controller
 {
+    public function __construct(
+        protected LotgPublicCache $publicCache
+    ) {
+    }
+
     public function home(): View|RedirectResponse
     {
         $this->authorize('access-admin');
@@ -86,6 +92,7 @@ class LawAdminController extends Controller
         ]);
 
         $this->syncTranslations($law, $validated);
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()
             ->route('admin.laws.index', ['edition' => $edition])
@@ -155,6 +162,7 @@ class LawAdminController extends Controller
             'status' => $validated['status'],
         ]);
         $this->syncTranslations($law, $validated);
+        $this->publicCache->touchEdition($edition->id);
 
         return redirect()
             ->route('admin.laws.edit', ['edition' => $edition, 'law' => $law])
@@ -168,6 +176,8 @@ class LawAdminController extends Controller
 
         $lawLabel = 'Law '.$law->law_number;
         $law->delete();
+        $this->publicCache->touchEdition($edition->id);
+        $this->publicCache->touchLaw($law->id);
 
         return redirect()
             ->route('admin.laws.index', ['edition' => $edition])
