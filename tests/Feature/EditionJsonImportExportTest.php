@@ -421,6 +421,10 @@ class EditionJsonImportExportTest extends TestCase
     public function test_it_round_trips_uploaded_video_media_assets_with_storage_disk(): void
     {
         Storage::fake('s3');
+        config([
+            'lotg.media_upload_disks' => ['s3'],
+            'lotg.media_default_upload_disk' => 's3',
+        ]);
 
         $sourceEdition = Edition::create([
             'name' => 'Hosted Video Source',
@@ -497,6 +501,99 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertSame('s3', $importedAsset->storage_disk);
         $this->assertSame('lotg-media/videos/hosted-source.mp4', $importedAsset->file_path);
         $this->assertTrue(Storage::disk('s3')->exists('lotg-media/videos/hosted-source.mp4'));
+    }
+
+    public function test_it_falls_back_to_the_allowed_default_upload_disk_during_import(): void
+    {
+        Storage::fake('public');
+        Storage::fake('s3');
+
+        config([
+            'lotg.media_upload_disks' => ['s3'],
+            'lotg.media_default_upload_disk' => 's3',
+        ]);
+
+        $sourceEdition = Edition::create([
+            'name' => 'Public Export Source',
+            'code' => 'public-export-source',
+            'year_start' => 2025,
+            'year_end' => 2026,
+            'status' => 'published',
+            'is_active' => false,
+        ]);
+
+        $law = Law::create([
+            'edition_id' => $sourceEdition->id,
+            'law_number' => '3',
+            'slug' => 'the-players',
+            'sort_order' => 1,
+            'status' => 'published',
+        ]);
+
+        LawTranslation::create([
+            'law_id' => $law->id,
+            'language_code' => 'id',
+            'title' => 'Pemain',
+        ]);
+
+        $videoNode = ContentNode::create([
+            'law_id' => $law->id,
+            'parent_id' => null,
+            'node_type' => 'video_group',
+            'sort_order' => 1,
+            'is_published' => true,
+        ]);
+
+        ContentNodeTranslation::create([
+            'content_node_id' => $videoNode->id,
+            'language_code' => 'id',
+            'title' => 'Video Lokal',
+            'status' => 'published',
+        ]);
+
+        Storage::disk('public')->put('lotg-media/videos/local-public-source.mp4', 'fake-public-video-content');
+
+        $videoAsset = MediaAsset::create([
+            'asset_type' => 'video',
+            'storage_type' => 'upload',
+            'storage_disk' => 'public',
+            'is_library_item' => true,
+            'file_path' => 'lotg-media/videos/local-public-source.mp4',
+            'caption' => 'Local export video',
+            'credit' => 'PSSI',
+        ]);
+
+        $videoNode->mediaAssets()->sync([
+            $videoAsset->id => ['sort_order' => 1],
+        ]);
+
+        $payload = app(EditionJsonExporter::class)->export($sourceEdition);
+
+        $this->assertSame('public', $payload['media_assets'][0]['storage_disk']);
+        $this->assertNotEmpty($payload['media_assets'][0]['file']['contents_base64'] ?? null);
+
+        $payload['edition']['code'] = 'fallback-to-s3-edition';
+        $payload['edition']['name'] = 'Fallback To S3 Edition';
+        $payload['edition']['is_active'] = false;
+
+        $dryRun = app(\App\Services\EditionJsonImporter::class)->dryRun($payload);
+
+        $this->assertTrue($dryRun['can_import']);
+        $this->assertTrue(collect($dryRun['warnings'])->contains(
+            fn (string $warning) => str_contains($warning, 'targets disallowed or unknown disk public')
+                && str_contains($warning, 'would fall back to the default upload disk during import')
+        ));
+
+        app(\App\Services\EditionJsonImporter::class)->import($payload);
+
+        $importedEdition = Edition::query()->where('code', 'fallback-to-s3-edition')->firstOrFail();
+        $importedAsset = MediaAsset::query()
+            ->whereHas('contentNodes.law', fn ($query) => $query->where('edition_id', $importedEdition->id))
+            ->firstOrFail();
+
+        $this->assertSame('upload', $importedAsset->storage_type);
+        $this->assertSame('s3', $importedAsset->storage_disk);
+        $this->assertTrue(Storage::disk('s3')->exists('lotg-media/videos/local-public-source.mp4'));
     }
 
     public function test_it_uses_the_configured_default_export_directory_when_path_is_omitted(): void

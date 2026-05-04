@@ -452,8 +452,8 @@ class EditionJsonImporter
                 $errors[] = $label.' ('.$key.') uses upload storage but has no file path.';
             }
 
-            if ($storageType === 'upload' && $storageDisk !== '' && ! config('filesystems.disks.'.$storageDisk)) {
-                $warnings[] = $label.' ('.$key.') targets unknown disk '.$storageDisk.' and would fall back to the default upload disk during import.';
+            if ($storageType === 'upload' && $storageDisk !== '' && ! $this->isAllowedUploadDisk($storageDisk)) {
+                $warnings[] = $label.' ('.$key.') targets disallowed or unknown disk '.$storageDisk.' and would fall back to the default upload disk during import.';
             }
 
             if ($storageType !== 'upload' && $filePath === '' && $externalUrl === '') {
@@ -1274,21 +1274,37 @@ class EditionJsonImporter
     {
         $candidate = trim((string) $disk);
 
-        if ($candidate !== '' && config('filesystems.disks.'.$candidate)) {
+        if ($candidate !== '' && $this->isAllowedUploadDisk($candidate)) {
             return $candidate;
         }
 
         return $this->defaultUploadDisk();
     }
 
-    protected function defaultUploadDisk(): string
+    /**
+     * @return array<int, string>
+     */
+    protected function availableUploadDisks(): array
     {
-        $configuredDefault = trim((string) config('lotg.media_default_upload_disk', 'public'));
-        $configuredDisks = collect(config('lotg.media_upload_disks', ['public', 's3']))
+        $configured = collect(config('lotg.media_upload_disks', ['public', 's3']))
             ->map(fn ($disk) => trim((string) $disk))
             ->filter(fn (string $disk) => $disk !== '' && config('filesystems.disks.'.$disk))
             ->unique()
-            ->values();
+            ->values()
+            ->all();
+
+        return $configured !== [] ? $configured : ['public'];
+    }
+
+    protected function isAllowedUploadDisk(string $disk): bool
+    {
+        return in_array($disk, $this->availableUploadDisks(), true);
+    }
+
+    protected function defaultUploadDisk(): string
+    {
+        $configuredDefault = trim((string) config('lotg.media_default_upload_disk', 'public'));
+        $configuredDisks = collect($this->availableUploadDisks());
 
         if ($configuredDefault !== '' && $configuredDisks->contains($configuredDefault)) {
             return $configuredDefault;
