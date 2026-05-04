@@ -5,6 +5,12 @@ return [
     'random_token_max_attempts' => 3,
     'expected_law_count' => (int) env('LOTG_EXPECTED_LAW_COUNT', 17),
     'export_default_dir' => (string) env('LOTG_EXPORT_DEFAULT_DIR', 'storage/app/lotg-exports'),
+    'media_upload_disks' => array_values(array_filter(array_map(
+        static fn (string $disk) => trim($disk),
+        explode(',', (string) env('LOTG_MEDIA_UPLOAD_DISKS', 'public,s3'))
+    ))),
+    'media_default_upload_disk' => (string) env('LOTG_MEDIA_DEFAULT_UPLOAD_DISK', 'public'),
+    'video_upload_max_kb' => (int) env('LOTG_VIDEO_UPLOAD_MAX_KB', 51200),
     'public_features' => [
         'documents' => [
             'label' => 'Documents',

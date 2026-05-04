@@ -388,6 +388,7 @@ class DocumentAdminController extends Controller
                 $asset = MediaAsset::create([
                     'asset_type' => 'image',
                     'storage_type' => 'upload',
+                    'storage_disk' => 'public',
                     'is_library_item' => true,
                     'file_path' => $path,
                     'caption' => trim((string) ($row['caption'] ?? '')) ?: $uploadedFile->getClientOriginalName(),

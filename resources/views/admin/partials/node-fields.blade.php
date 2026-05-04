@@ -10,7 +10,8 @@
     $imagePreviewMap = $availableImageAssets
         ->mapWithKeys(fn ($asset) => [
             (string) $asset->id => [
-                'url' => $asset->thumbnailUrl(),
+                'type' => $asset->previewType(),
+                'url' => $asset->previewUrl(),
                 'label' => $asset->adminLabel(),
             ],
         ])
@@ -21,7 +22,8 @@
     $videoPreviewMap = $availableVideoAssets
         ->mapWithKeys(fn ($asset) => [
             (string) $asset->id => [
-                'url' => $asset->thumbnailUrl(),
+                'type' => $asset->previewType(),
+                'url' => $asset->previewUrl(),
                 'label' => $asset->adminLabel(),
             ],
         ])
@@ -203,7 +205,7 @@
 
 <div class="card" data-node-type-section="video_group">
     <h3>Video fields</h3>
-    <p class="nav-meta">Used only when the node type is `video_group`. Each row can pick a reusable library video or create a new YouTube asset.</p>
+    <p class="nav-meta">Used only when the node type is `video_group`. Each row can pick a reusable library video or create a new YouTube asset. Uploaded hosted videos are managed from the <a class="result-link" href="{{ route('admin.media.index') }}">media library</a>.</p>
     <div class="stack-form" data-video-group-editor data-video-preview-map='@json($videoPreviewMap)'>
         <div class="nav-meta">Add one row per video. If an existing library video is selected for a row, the URL, caption, and credit inputs for that row are ignored.</div>
         <div class="stack-form" data-video-group-list>
@@ -226,7 +228,7 @@
                     </label>
                     <div class="media-selection-preview" data-video-selection-preview hidden></div>
                     <label>
-                        <div class="law-meta">Source URL</div>
+                        <div class="law-meta">YouTube URL</div>
                         <input type="url" name="video_items[{{ $index }}][url]" value="{{ $videoRow['url'] ?? '' }}" placeholder="https://www.youtube.com/watch?v=..." data-video-new-field>
                     </label>
                     <label>
@@ -256,7 +258,7 @@
             </label>
             <div class="media-selection-preview" data-video-selection-preview hidden></div>
             <label>
-                <div class="law-meta">Source URL</div>
+                <div class="law-meta">YouTube URL</div>
                 <input type="url" name="video_items[__INDEX__][url]" value="" placeholder="https://www.youtube.com/watch?v=..." data-video-new-field>
             </label>
             <label>

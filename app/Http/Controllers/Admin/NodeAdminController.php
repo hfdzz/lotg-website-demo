@@ -316,6 +316,7 @@ class NodeAdminController extends Controller
             $currentImage->update([
                 'asset_type' => 'image',
                 'storage_type' => 'upload',
+                'storage_disk' => 'public',
                 'is_library_item' => true,
                 'file_path' => $path,
                 'caption' => $request->input('image_caption'),
@@ -327,6 +328,7 @@ class NodeAdminController extends Controller
             $asset = MediaAsset::create([
                 'asset_type' => 'image',
                 'storage_type' => 'upload',
+                'storage_disk' => 'public',
                 'is_library_item' => true,
                 'file_path' => $path,
                 'caption' => $request->input('image_caption'),
@@ -422,6 +424,7 @@ class NodeAdminController extends Controller
             $assetsForSync->push(MediaAsset::create([
                 'asset_type' => $this->uploadedFileAssetType($uploadedFile->getClientOriginalName()),
                 'storage_type' => 'upload',
+                'storage_disk' => 'public',
                 'file_path' => $path,
                 'caption' => $uploadedFile->getClientOriginalName(),
             ]));

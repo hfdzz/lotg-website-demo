@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class MediaAdminController extends Controller
 {
@@ -76,16 +77,23 @@ class MediaAdminController extends Controller
 
         $validated = $this->validateMedia($request, $media);
         $oldFilePath = $media->file_path;
+        $oldStorageType = $media->storage_type;
+        $oldStorageDisk = $media->storage_disk;
+        $oldThumbnailPath = $media->thumbnail_path;
         $relatedLawIds = $media->contentNodes()->pluck('content_nodes.law_id')->map(fn ($id) => (int) $id)->unique()->all();
 
         $media->update($this->payloadFromRequest($request, $validated, $media));
 
-        if (
-            $media->asset_type === 'image'
-            && $oldFilePath
-            && $oldFilePath !== $media->file_path
-        ) {
-            $this->deleteStoredFileIfNeeded($oldFilePath);
+        if ($oldStorageType === 'upload' && $oldFilePath && (
+            $media->storage_type !== 'upload'
+            || $oldFilePath !== $media->file_path
+            || ($oldStorageDisk ?: 'public') !== ($media->storage_disk ?: 'public')
+        )) {
+            $this->deleteStoredFileIfNeeded($oldFilePath, $oldStorageDisk);
+        }
+
+        if ($oldThumbnailPath && $oldThumbnailPath !== $media->thumbnail_path) {
+            $this->deleteStoredFileIfNeeded($oldThumbnailPath, $oldStorageDisk);
         }
 
         $this->publicCache->touchLaws($relatedLawIds);
@@ -106,7 +114,8 @@ class MediaAdminController extends Controller
             ]);
         }
 
-        $this->deleteStoredFileIfNeeded($media->file_path);
+        $this->deleteStoredFileIfNeeded($media->file_path, $media->storage_disk);
+        $this->deleteStoredFileIfNeeded($media->thumbnail_path, $media->storage_disk);
         $media->delete();
 
         return redirect()
@@ -117,31 +126,48 @@ class MediaAdminController extends Controller
     protected function validateMedia(Request $request, ?MediaAsset $media = null): array
     {
         $assetType = $media?->asset_type ?: (string) $request->input('asset_type');
+        $videoSource = (string) $request->input('video_source', $media?->storage_type === 'upload' ? 'upload' : 'youtube');
+        $uploadDiskOptions = $this->availableUploadDisks();
 
         $validator = Validator::make($request->all(), [
             'asset_type' => [$media ? 'nullable' : 'required', 'in:image,video'],
-            'media_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,avif,svg', 'max:5120'],
+            'image_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,webp,avif,svg', 'max:5120'],
+            'video_file' => ['nullable', 'file', 'mimes:mp4', 'max:'.$this->videoUploadMaxKb()],
+            'video_source' => ['nullable', 'in:upload,youtube'],
+            'upload_disk' => ['nullable', Rule::in($uploadDiskOptions)],
             'external_url' => ['nullable', 'url'],
             'caption' => ['nullable', 'string'],
             'credit' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $validator->after(function ($validator) use ($request, $assetType, $media): void {
-            if ($assetType === 'image' && ! $request->hasFile('media_file') && ! $media?->file_path) {
-                $validator->errors()->add('media_file', 'An image file is required for image media.');
+        $validator->after(function ($validator) use ($request, $assetType, $media, $videoSource): void {
+            if ($assetType === 'image' && ! $request->hasFile('image_file') && ! $media?->file_path) {
+                $validator->errors()->add('image_file', 'An image file is required for image media.');
             }
 
             if ($assetType === 'video') {
+                if ($videoSource === 'upload') {
+                    $hasExistingUpload = $media?->asset_type === 'video'
+                        && $media?->storage_type === 'upload'
+                        && filled($media?->file_path);
+
+                    if (! $request->hasFile('video_file') && ! $hasExistingUpload) {
+                        $validator->errors()->add('video_file', 'An MP4 video file is required for uploaded video media.');
+                    }
+
+                    return;
+                }
+
                 $url = trim((string) $request->input('external_url'));
 
                 if ($url === '') {
-                    $validator->errors()->add('external_url', 'A YouTube URL is required for video media.');
+                    $validator->errors()->add('external_url', 'A YouTube URL is required for YouTube video media.');
 
                     return;
                 }
 
                 if (! MediaAsset::parseYouTubeId($url)) {
-                    $validator->errors()->add('external_url', 'Video media currently supports YouTube URLs only.');
+                    $validator->errors()->add('external_url', 'YouTube video media currently supports YouTube URLs only.');
                 }
             }
         });
@@ -160,23 +186,41 @@ class MediaAdminController extends Controller
         ];
 
         if ($assetType === 'image') {
+            $imageDisk = $media?->storage_disk ?: 'public';
             $payload['storage_type'] = 'upload';
+            $payload['storage_disk'] = $imageDisk;
             $payload['external_url'] = null;
-            $payload['file_path'] = $request->hasFile('media_file')
-                ? $request->file('media_file')->store('lotg-media/images', 'public')
+            $payload['file_path'] = $request->hasFile('image_file')
+                ? $request->file('image_file')->store('lotg-media/images', $imageDisk)
                 : $media?->file_path;
         }
 
         if ($assetType === 'video') {
-            $payload['storage_type'] = 'youtube';
-            $payload['file_path'] = null;
-            $payload['external_url'] = trim((string) ($validated['external_url'] ?? ''));
+            $videoSource = (string) ($validated['video_source'] ?? 'youtube');
+
+            if ($videoSource === 'upload') {
+                $selectedDisk = $request->hasFile('video_file')
+                    ? $this->selectedUploadDisk($validated)
+                    : ($media?->storage_disk ?: $this->defaultUploadDisk());
+
+                $payload['storage_type'] = 'upload';
+                $payload['storage_disk'] = $selectedDisk;
+                $payload['file_path'] = $request->hasFile('video_file')
+                    ? $request->file('video_file')->store('lotg-media/videos', $selectedDisk)
+                    : $media?->file_path;
+                $payload['external_url'] = null;
+            } else {
+                $payload['storage_type'] = 'youtube';
+                $payload['storage_disk'] = null;
+                $payload['file_path'] = null;
+                $payload['external_url'] = trim((string) ($validated['external_url'] ?? ''));
+            }
         }
 
         return $payload;
     }
 
-    protected function deleteStoredFileIfNeeded(?string $filePath): void
+    protected function deleteStoredFileIfNeeded(?string $filePath, ?string $storageDisk = null): void
     {
         if (! $filePath || str_starts_with($filePath, 'demo/')) {
             return;
@@ -186,8 +230,10 @@ class MediaAdminController extends Controller
             return;
         }
 
-        if (Storage::disk('public')->exists($filePath)) {
-            Storage::disk('public')->delete($filePath);
+        $disk = $storageDisk ?: $this->defaultUploadDisk();
+
+        if (Storage::disk($disk)->exists($filePath)) {
+            Storage::disk($disk)->delete($filePath);
         }
     }
 
@@ -201,5 +247,45 @@ class MediaAdminController extends Controller
     protected function assertLibraryMedia(MediaAsset $media): void
     {
         abort_unless($media->is_library_item && in_array($media->asset_type, ['image', 'video'], true), 404);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function availableUploadDisks(): array
+    {
+        $configured = collect(config('lotg.media_upload_disks', ['public', 's3']))
+            ->map(fn ($disk) => trim((string) $disk))
+            ->filter(fn (string $disk) => $disk !== '' && config('filesystems.disks.'.$disk))
+            ->unique()
+            ->values()
+            ->all();
+
+        return $configured !== [] ? $configured : ['public'];
+    }
+
+    protected function defaultUploadDisk(): string
+    {
+        $configuredDefault = trim((string) config('lotg.media_default_upload_disk', 'public'));
+
+        return in_array($configuredDefault, $this->availableUploadDisks(), true)
+            ? $configuredDefault
+            : $this->availableUploadDisks()[0];
+    }
+
+    protected function selectedUploadDisk(array $validated): string
+    {
+        $selectedDisk = trim((string) ($validated['upload_disk'] ?? ''));
+
+        if ($selectedDisk !== '' && in_array($selectedDisk, $this->availableUploadDisks(), true)) {
+            return $selectedDisk;
+        }
+
+        return $this->defaultUploadDisk();
+    }
+
+    protected function videoUploadMaxKb(): int
+    {
+        return max((int) config('lotg.video_upload_max_kb', 51200), 1);
     }
 }

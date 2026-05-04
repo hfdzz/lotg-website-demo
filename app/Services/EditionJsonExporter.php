@@ -260,18 +260,19 @@ class EditionJsonExporter
             'key' => $this->mediaKey($mediaAsset),
             'asset_type' => $mediaAsset->asset_type,
             'storage_type' => $mediaAsset->storage_type,
+            'storage_disk' => $mediaAsset->storage_disk,
             'is_library_item' => $mediaAsset->is_library_item,
             'file_path' => $mediaAsset->file_path,
             'external_url' => $mediaAsset->external_url,
             'thumbnail_path' => $mediaAsset->thumbnail_path,
             'caption' => $mediaAsset->caption,
             'credit' => $mediaAsset->credit,
-            'file' => $this->exportStoredFile($mediaAsset->file_path, $mediaAsset->storage_type === 'upload'),
-            'thumbnail_file' => $this->exportStoredFile($mediaAsset->thumbnail_path, filled($mediaAsset->thumbnail_path)),
+            'file' => $this->exportStoredFile($mediaAsset->file_path, $mediaAsset->storage_type === 'upload', $mediaAsset->storageDiskName()),
+            'thumbnail_file' => $this->exportStoredFile($mediaAsset->thumbnail_path, filled($mediaAsset->thumbnail_path), $mediaAsset->storageDiskName()),
         ];
     }
 
-    protected function exportStoredFile(?string $path, bool $shouldEmbed): ?array
+    protected function exportStoredFile(?string $path, bool $shouldEmbed, string $disk): ?array
     {
         if (! $path) {
             return null;
@@ -287,11 +288,11 @@ class EditionJsonExporter
             return $payload;
         }
 
-        if (! Storage::disk('public')->exists($path)) {
+        if (! Storage::disk($disk)->exists($path)) {
             return $payload;
         }
 
-        $payload['contents_base64'] = base64_encode(Storage::disk('public')->get($path));
+        $payload['contents_base64'] = base64_encode(Storage::disk($disk)->get($path));
 
         return $payload;
     }

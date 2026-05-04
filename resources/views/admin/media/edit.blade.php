@@ -27,14 +27,25 @@
 
     <section class="card media-summary-card">
         <h2>{{ ucfirst($media->asset_type) }} summary</h2>
-        @if ($media->thumbnailUrl())
+        @if ($media->previewUrl() && $media->previewType())
             <div class="media-preview-frame media-preview-frame-large">
-                <img
-                    src="{{ $media->thumbnailUrl() }}"
-                    alt="{{ $media->adminLabel() }}"
-                    class="media-preview-thumb"
-                    loading="lazy"
-                >
+                @if ($media->previewType() === 'video')
+                    <video
+                        src="{{ $media->previewUrl() }}"
+                        class="media-preview-thumb media-preview-video"
+                        preload="metadata"
+                        controls
+                        muted
+                        playsinline
+                    ></video>
+                @else
+                    <img
+                        src="{{ $media->previewUrl() }}"
+                        alt="{{ $media->adminLabel() }}"
+                        class="media-preview-thumb"
+                        loading="lazy"
+                    >
+                @endif
             </div>
         @endif
         @php

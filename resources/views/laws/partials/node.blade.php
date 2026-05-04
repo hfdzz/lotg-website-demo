@@ -40,13 +40,24 @@
         <div class="video-stack">
             @foreach ($videoItems as $mediaItem)
                 <figure class="media-frame video-frame">
-                    <iframe
-                        data-src="{{ $mediaItem['src'] }}"
-                        data-deferred-src
-                        title="{{ $mediaItem['caption'] ?? 'YouTube video' }}"
-                        loading="lazy"
-                        allowfullscreen
-                    ></iframe>
+                    @if (($mediaItem['player'] ?? 'youtube') === 'file')
+                        <video
+                            controls
+                            playsinline
+                            preload="metadata"
+                            @if (!empty($mediaItem['preview_src'])) poster="{{ $mediaItem['preview_src'] }}" @endif
+                        >
+                            <source src="{{ $mediaItem['src'] }}" type="video/mp4">
+                        </video>
+                    @else
+                        <iframe
+                            data-src="{{ $mediaItem['src'] }}"
+                            data-deferred-src
+                            title="{{ $mediaItem['caption'] ?? 'YouTube video' }}"
+                            loading="lazy"
+                            allowfullscreen
+                        ></iframe>
+                    @endif
                     @if ($mediaItem['caption'] || $mediaItem['credit'])
                         <figcaption class="media-caption">
                             {{ $mediaItem['caption'] }}

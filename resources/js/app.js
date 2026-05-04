@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTranslationEditor();
     setupNodeTypeSections();
     setupMediaTypeSections();
+    setupVideoSourceSections();
     setupImageAssetPicker();
     setupVideoGroupEditor();
     setupQaEditor();
@@ -479,6 +480,37 @@ function setupMediaTypeSections() {
     });
 }
 
+function setupVideoSourceSections() {
+    const selects = Array.from(document.querySelectorAll('[data-video-source-select]'));
+
+    selects.forEach((select) => {
+        if (!(select instanceof HTMLSelectElement)) {
+            return;
+        }
+
+        const form = select.closest('form');
+
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const sections = Array.from(form.querySelectorAll('[data-video-source-section]'));
+
+        const updateSections = () => {
+            sections.forEach((section) => {
+                if (!(section instanceof HTMLElement)) {
+                    return;
+                }
+
+                section.hidden = section.dataset.videoSourceSection !== select.value;
+            });
+        };
+
+        select.addEventListener('change', updateSections);
+        updateSections();
+    });
+}
+
 function parsePreviewMap(rawValue) {
     if (!rawValue) {
         return {};
@@ -505,12 +537,23 @@ function updateMediaSelectionPreview(container, previewItem) {
     const frame = document.createElement('div');
     frame.className = 'media-preview-frame media-preview-frame-selection';
 
-    const image = document.createElement('img');
-    image.className = 'media-preview-thumb';
-    image.loading = 'lazy';
-    image.src = previewItem.url;
-    image.alt = previewItem.label || 'Selected media preview';
-    frame.appendChild(image);
+    if (previewItem.type === 'video') {
+        const video = document.createElement('video');
+        video.className = 'media-preview-thumb media-preview-video';
+        video.src = previewItem.url;
+        video.preload = 'metadata';
+        video.controls = true;
+        video.muted = true;
+        video.playsInline = true;
+        frame.appendChild(video);
+    } else {
+        const image = document.createElement('img');
+        image.className = 'media-preview-thumb';
+        image.loading = 'lazy';
+        image.src = previewItem.url;
+        image.alt = previewItem.label || 'Selected media preview';
+        frame.appendChild(image);
+    }
 
     container.replaceChildren(frame);
     container.hidden = false;

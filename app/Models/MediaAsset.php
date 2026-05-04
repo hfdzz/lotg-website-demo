@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 
 class MediaAsset extends Model
 {
     protected $fillable = [
         'asset_type',
         'storage_type',
+        'storage_disk',
         'is_library_item',
         'file_path',
         'external_url',
@@ -67,13 +69,21 @@ class MediaAsset extends Model
 
     public function adminSource(): ?string
     {
-        return $this->storage_type === 'upload' ? $this->file_path : $this->external_url;
+        if ($this->storage_type === 'upload') {
+            if (! $this->file_path) {
+                return null;
+            }
+
+            return $this->storageDiskName().': '.$this->file_path;
+        }
+
+        return $this->external_url;
     }
 
     public function thumbnailUrl(): ?string
     {
         if ($this->thumbnail_path) {
-            return $this->resolveAssetUrl($this->thumbnail_path);
+            return $this->resolveAssetUrl($this->thumbnail_path, $this->storageDiskName());
         }
 
         if ($this->asset_type === 'image') {
@@ -89,13 +99,43 @@ class MediaAsset extends Model
         return null;
     }
 
+    public function previewType(): ?string
+    {
+        if ($this->asset_type === 'image' && $this->publicUrl()) {
+            return 'image';
+        }
+
+        if ($this->asset_type !== 'video') {
+            return null;
+        }
+
+        if ($this->thumbnail_path && $this->thumbnailUrl()) {
+            return 'image';
+        }
+
+        if ($this->storage_type === 'upload' && $this->videoPlaybackUrl()) {
+            return 'video';
+        }
+
+        return $this->thumbnailUrl() ? 'image' : null;
+    }
+
+    public function previewUrl(): ?string
+    {
+        return match ($this->previewType()) {
+            'video' => $this->videoPlaybackUrl(),
+            'image' => $this->thumbnailUrl(),
+            default => null,
+        };
+    }
+
     public function publicUrl(): ?string
     {
         if (! $this->file_path) {
             return null;
         }
 
-        return $this->resolveAssetUrl($this->file_path);
+        return $this->resolveAssetUrl($this->file_path, $this->storageDiskName());
     }
 
     public function youtubeId(): ?string
@@ -108,6 +148,11 @@ class MediaAsset extends Model
         $youtubeId = $this->youtubeId();
 
         return $youtubeId ? 'https://www.youtube.com/embed/'.$youtubeId : null;
+    }
+
+    public function videoPlaybackUrl(): ?string
+    {
+        return $this->storage_type === 'upload' ? $this->publicUrl() : null;
     }
 
     public function resourceUrl(): ?string
@@ -168,7 +213,14 @@ class MediaAsset extends Model
         return null;
     }
 
-    protected function resolveAssetUrl(string $path): string
+    public function storageDiskName(): string
+    {
+        $disk = $this->storage_disk ?: config('lotg.media_default_upload_disk', 'public');
+
+        return is_string($disk) && $disk !== '' ? $disk : 'public';
+    }
+
+    protected function resolveAssetUrl(string $path, string $disk): string
     {
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return $path;
@@ -178,6 +230,6 @@ class MediaAsset extends Model
             return asset($path);
         }
 
-        return asset('storage/'.$path);
+        return Storage::disk($disk)->url($path);
     }
 }

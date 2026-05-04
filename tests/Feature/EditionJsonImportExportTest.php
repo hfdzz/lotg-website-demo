@@ -119,6 +119,7 @@ class EditionJsonImportExportTest extends TestCase
         $imageAsset = MediaAsset::create([
             'asset_type' => 'image',
             'storage_type' => 'upload',
+            'storage_disk' => 'public',
             'is_library_item' => true,
             'file_path' => 'lotg-images/source-field.png',
             'caption' => 'Field diagram',
@@ -415,6 +416,87 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertSame('Lapangan Versi Impor Ulang', $reimportedLaw->translations->firstWhere('language_code', 'id')?->title);
         $this->assertSame('Protokol VAR Ulang', $reimportedDocument->translations->firstWhere('language_code', 'id')?->title);
         $this->assertSame('Perubahan Penting Ulang', ChangelogEntry::query()->where('edition_id', $importedEdition->id)->first()?->title);
+    }
+
+    public function test_it_round_trips_uploaded_video_media_assets_with_storage_disk(): void
+    {
+        Storage::fake('s3');
+
+        $sourceEdition = Edition::create([
+            'name' => 'Hosted Video Source',
+            'code' => 'hosted-video-source',
+            'year_start' => 2025,
+            'year_end' => 2026,
+            'status' => 'published',
+            'is_active' => false,
+        ]);
+
+        $law = Law::create([
+            'edition_id' => $sourceEdition->id,
+            'law_number' => '2',
+            'slug' => 'the-ball',
+            'sort_order' => 1,
+            'status' => 'published',
+        ]);
+
+        LawTranslation::create([
+            'law_id' => $law->id,
+            'language_code' => 'id',
+            'title' => 'Bola',
+        ]);
+
+        $videoNode = ContentNode::create([
+            'law_id' => $law->id,
+            'parent_id' => null,
+            'node_type' => 'video_group',
+            'sort_order' => 1,
+            'is_published' => true,
+        ]);
+
+        ContentNodeTranslation::create([
+            'content_node_id' => $videoNode->id,
+            'language_code' => 'id',
+            'title' => 'Video Contoh',
+            'status' => 'published',
+        ]);
+
+        Storage::disk('s3')->put('lotg-media/videos/hosted-source.mp4', 'fake-video-content');
+
+        $videoAsset = MediaAsset::create([
+            'asset_type' => 'video',
+            'storage_type' => 'upload',
+            'storage_disk' => 's3',
+            'is_library_item' => true,
+            'file_path' => 'lotg-media/videos/hosted-source.mp4',
+            'caption' => 'Hosted explainer',
+            'credit' => 'PSSI',
+        ]);
+
+        $videoNode->mediaAssets()->sync([
+            $videoAsset->id => ['sort_order' => 1],
+        ]);
+
+        $payload = app(EditionJsonExporter::class)->export($sourceEdition);
+
+        $this->assertSame('upload', $payload['media_assets'][0]['storage_type']);
+        $this->assertSame('s3', $payload['media_assets'][0]['storage_disk']);
+        $this->assertNotEmpty($payload['media_assets'][0]['file']['contents_base64'] ?? null);
+
+        $payload['edition']['code'] = 'hosted-video-imported';
+        $payload['edition']['name'] = 'Hosted Video Imported';
+        $payload['edition']['is_active'] = false;
+
+        app(\App\Services\EditionJsonImporter::class)->import($payload);
+
+        $importedEdition = Edition::query()->where('code', 'hosted-video-imported')->firstOrFail();
+        $importedAsset = MediaAsset::query()
+            ->whereHas('contentNodes.law', fn ($query) => $query->where('edition_id', $importedEdition->id))
+            ->firstOrFail();
+
+        $this->assertSame('upload', $importedAsset->storage_type);
+        $this->assertSame('s3', $importedAsset->storage_disk);
+        $this->assertSame('lotg-media/videos/hosted-source.mp4', $importedAsset->file_path);
+        $this->assertTrue(Storage::disk('s3')->exists('lotg-media/videos/hosted-source.mp4'));
     }
 
     public function test_it_uses_the_configured_default_export_directory_when_path_is_omitted(): void

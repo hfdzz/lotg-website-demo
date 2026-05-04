@@ -230,8 +230,8 @@ class EditionJsonImporter
 
         foreach ($mediaAssets as $mediaAsset) {
             if (! $mediaAsset->contentNodes()->exists() && ! $mediaAsset->documentPages()->exists()) {
-                $this->deleteStoredFileIfNeeded($mediaAsset->file_path);
-                $this->deleteStoredFileIfNeeded($mediaAsset->thumbnail_path);
+                $this->deleteStoredFileIfNeeded($mediaAsset->file_path, $mediaAsset->storage_disk);
+                $this->deleteStoredFileIfNeeded($mediaAsset->thumbnail_path, $mediaAsset->storage_disk);
                 $mediaAsset->delete();
             }
         }
@@ -444,11 +444,16 @@ class EditionJsonImporter
             $knownMediaKeys[$key] = (string) ($mediaPayload['asset_type'] ?? 'file');
 
             $storageType = (string) ($mediaPayload['storage_type'] ?? 'external');
+            $storageDisk = trim((string) ($mediaPayload['storage_disk'] ?? ''));
             $filePath = (string) (($mediaPayload['file']['path'] ?? null) ?? ($mediaPayload['file_path'] ?? ''));
             $externalUrl = trim((string) ($mediaPayload['external_url'] ?? ''));
 
             if ($storageType === 'upload' && $filePath === '') {
                 $errors[] = $label.' ('.$key.') uses upload storage but has no file path.';
+            }
+
+            if ($storageType === 'upload' && $storageDisk !== '' && ! config('filesystems.disks.'.$storageDisk)) {
+                $warnings[] = $label.' ('.$key.') targets unknown disk '.$storageDisk.' and would fall back to the default upload disk during import.';
             }
 
             if ($storageType !== 'upload' && $filePath === '' && $externalUrl === '') {
@@ -914,12 +919,17 @@ class EditionJsonImporter
                 throw new InvalidArgumentException('Duplicate media key detected in import payload: '.$key);
             }
 
-            $filePath = $this->restoreStoredFile($mediaPayload['file'] ?? null, $mediaPayload['file_path'] ?? null);
-            $thumbnailPath = $this->restoreStoredFile($mediaPayload['thumbnail_file'] ?? null, $mediaPayload['thumbnail_path'] ?? null);
+            $storageType = (string) ($mediaPayload['storage_type'] ?? 'external');
+            $storageDisk = $storageType === 'upload'
+                ? $this->normalizeUploadDisk($mediaPayload['storage_disk'] ?? null)
+                : null;
+            $filePath = $this->restoreStoredFile($mediaPayload['file'] ?? null, $mediaPayload['file_path'] ?? null, $storageDisk);
+            $thumbnailPath = $this->restoreStoredFile($mediaPayload['thumbnail_file'] ?? null, $mediaPayload['thumbnail_path'] ?? null, $storageDisk);
 
             $mediaKeyMap[$key] = MediaAsset::create([
                 'asset_type' => (string) ($mediaPayload['asset_type'] ?? 'file'),
-                'storage_type' => (string) ($mediaPayload['storage_type'] ?? 'external'),
+                'storage_type' => $storageType,
+                'storage_disk' => $storageDisk,
                 'is_library_item' => (bool) ($mediaPayload['is_library_item'] ?? false),
                 'file_path' => $filePath,
                 'external_url' => Arr::get($mediaPayload, 'external_url'),
@@ -1226,7 +1236,7 @@ class EditionJsonImporter
     /**
      * @param array<string, mixed>|null $filePayload
      */
-    protected function restoreStoredFile(?array $filePayload, ?string $fallbackPath): ?string
+    protected function restoreStoredFile(?array $filePayload, ?string $fallbackPath, ?string $disk): ?string
     {
         $path = (string) ($filePayload['path'] ?? $fallbackPath ?? '');
 
@@ -1237,13 +1247,13 @@ class EditionJsonImporter
         $contents = $filePayload['contents_base64'] ?? null;
 
         if ($contents && ! str_starts_with($path, 'http://') && ! str_starts_with($path, 'https://') && ! str_starts_with($path, 'demo/')) {
-            Storage::disk('public')->put($path, base64_decode((string) $contents));
+            Storage::disk($disk ?: $this->defaultUploadDisk())->put($path, base64_decode((string) $contents));
         }
 
         return $path;
     }
 
-    protected function deleteStoredFileIfNeeded(?string $path): void
+    protected function deleteStoredFileIfNeeded(?string $path, ?string $disk = null): void
     {
         if (! $path || str_starts_with($path, 'demo/')) {
             return;
@@ -1253,9 +1263,38 @@ class EditionJsonImporter
             return;
         }
 
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        $resolvedDisk = $disk ?: $this->defaultUploadDisk();
+
+        if (Storage::disk($resolvedDisk)->exists($path)) {
+            Storage::disk($resolvedDisk)->delete($path);
         }
+    }
+
+    protected function normalizeUploadDisk(mixed $disk): string
+    {
+        $candidate = trim((string) $disk);
+
+        if ($candidate !== '' && config('filesystems.disks.'.$candidate)) {
+            return $candidate;
+        }
+
+        return $this->defaultUploadDisk();
+    }
+
+    protected function defaultUploadDisk(): string
+    {
+        $configuredDefault = trim((string) config('lotg.media_default_upload_disk', 'public'));
+        $configuredDisks = collect(config('lotg.media_upload_disks', ['public', 's3']))
+            ->map(fn ($disk) => trim((string) $disk))
+            ->filter(fn (string $disk) => $disk !== '' && config('filesystems.disks.'.$disk))
+            ->unique()
+            ->values();
+
+        if ($configuredDefault !== '' && $configuredDisks->contains($configuredDefault)) {
+            return $configuredDefault;
+        }
+
+        return $configuredDisks->first() ?: 'public';
     }
 
     /**

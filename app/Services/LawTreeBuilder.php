@@ -133,7 +133,22 @@ class LawTreeBuilder
                 if ($mediaAsset->asset_type === 'video' && $mediaAsset->youtubeEmbedUrl()) {
                     return [
                         'kind' => 'video',
+                        'player' => 'youtube',
                         'src' => $mediaAsset->youtubeEmbedUrl(),
+                        'defer_src' => true,
+                        'preview_src' => $mediaAsset->thumbnailUrl(),
+                        'caption' => $mediaAsset->caption,
+                        'credit' => $mediaAsset->credit,
+                    ];
+                }
+
+                if ($mediaAsset->asset_type === 'video' && $mediaAsset->videoPlaybackUrl()) {
+                    return [
+                        'kind' => 'video',
+                        'player' => 'file',
+                        'src' => $mediaAsset->videoPlaybackUrl(),
+                        'defer_src' => false,
+                        'preview_src' => $mediaAsset->previewUrl(),
                         'caption' => $mediaAsset->caption,
                         'credit' => $mediaAsset->credit,
                     ];

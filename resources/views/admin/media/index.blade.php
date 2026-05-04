@@ -43,14 +43,25 @@
         <div class="result-list stack-top">
             @forelse ($mediaAssets as $media)
                 <article class="result-card media-library-card">
-                    @if ($media->thumbnailUrl())
+                    @if ($media->previewUrl() && $media->previewType())
                         <div class="media-preview-frame">
-                            <img
-                                src="{{ $media->thumbnailUrl() }}"
-                                alt="{{ $media->adminLabel() }}"
-                                class="media-preview-thumb"
-                                loading="lazy"
-                            >
+                            @if ($media->previewType() === 'video')
+                                <video
+                                    src="{{ $media->previewUrl() }}"
+                                    class="media-preview-thumb media-preview-video"
+                                    preload="metadata"
+                                    controls
+                                    muted
+                                    playsinline
+                                ></video>
+                            @else
+                                <img
+                                    src="{{ $media->previewUrl() }}"
+                                    alt="{{ $media->adminLabel() }}"
+                                    class="media-preview-thumb"
+                                    loading="lazy"
+                                >
+                            @endif
                         </div>
                     @endif
                     <div class="media-library-copy">

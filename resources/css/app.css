@@ -706,6 +706,10 @@ button:hover {
     display: block;
 }
 
+.media-preview-video {
+    background: #000000;
+}
+
 .document-inline-media {
     margin: 1.75rem 0;
 }
@@ -1369,7 +1373,8 @@ h5.node-title {
 }
 
 .media-frame img,
-.media-frame iframe {
+.media-frame iframe,
+.media-frame video {
     display: block;
     width: 100%;
     border: 0;
@@ -1382,6 +1387,11 @@ h5.node-title {
 
 .media-frame iframe {
     aspect-ratio: 16 / 9;
+}
+
+.media-frame video {
+    aspect-ratio: 16 / 9;
+    background: #000000;
 }
 
 .video-frame {
