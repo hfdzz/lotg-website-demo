@@ -292,9 +292,40 @@ class EditionJsonExporter
             return $payload;
         }
 
-        $payload['contents_base64'] = base64_encode(Storage::disk($disk)->get($path));
+        $payload['contents_base64'] = $this->base64EncodeStoredFile($disk, $path);
 
         return $payload;
+    }
+
+    protected function base64EncodeStoredFile(string $disk, string $path): string
+    {
+        $stream = Storage::disk($disk)->readStream($path);
+
+        if (! is_resource($stream)) {
+            return base64_encode(Storage::disk($disk)->get($path));
+        }
+
+        $encodedStream = fopen('php://temp', 'w+b');
+
+        if (! is_resource($encodedStream)) {
+            fclose($stream);
+
+            return base64_encode(Storage::disk($disk)->get($path));
+        }
+
+        stream_filter_append($encodedStream, 'convert.base64-encode', STREAM_FILTER_WRITE, [
+            'line-length' => 0,
+            'line-break-chars' => '',
+        ]);
+        stream_copy_to_stream($stream, $encodedStream);
+        rewind($encodedStream);
+
+        $contents = stream_get_contents($encodedStream);
+
+        fclose($stream);
+        fclose($encodedStream);
+
+        return $contents !== false ? $contents : '';
     }
 
     protected function mediaKey(MediaAsset $mediaAsset): string
