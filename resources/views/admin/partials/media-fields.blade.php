@@ -2,7 +2,7 @@
     $isEditing = isset($media) && $media;
     $assetType = old('asset_type', $media?->asset_type ?? 'image');
     $videoSource = old('video_source', $media?->asset_type === 'video' && $media?->storage_type === 'upload' ? 'upload' : 'youtube');
-    $videoUploadDisks = collect(config('lotg.media_upload_disks', ['public', 's3']))
+    $uploadDisks = collect(config('lotg.media_upload_disks', ['public', 's3']))
         ->map(fn ($disk) => trim((string) $disk))
         ->filter(fn ($disk) => $disk !== '' && config('filesystems.disks.'.$disk))
         ->unique()
@@ -37,10 +37,26 @@
         <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/webp,image/avif,image/svg+xml">
     </label>
 
+    <label>
+        <div class="law-meta">Upload disk</div>
+        <select name="upload_disk">
+            @foreach ($uploadDisks as $uploadDisk)
+                <option value="{{ $uploadDisk }}" @selected($selectedUploadDisk === $uploadDisk)>{{ strtoupper($uploadDisk) }}</option>
+            @endforeach
+        </select>
+    </label>
+
+    <div class="nav-meta">Used when uploading or replacing the image file.</div>
+
     @if ($isEditing && $media->asset_type === 'image')
         <label>
             <div class="law-meta">Current file</div>
             <input type="text" value="{{ $media->file_path }}" disabled>
+        </label>
+
+        <label>
+            <div class="law-meta">Current disk</div>
+            <input type="text" value="{{ strtoupper($media->storage_disk ?: config('lotg.media_default_upload_disk', 'public')) }}" disabled>
         </label>
     @endif
 </div>
@@ -63,7 +79,7 @@
         <label>
             <div class="law-meta">Upload disk</div>
             <select name="upload_disk">
-                @foreach ($videoUploadDisks as $uploadDisk)
+                @foreach ($uploadDisks as $uploadDisk)
                     <option value="{{ $uploadDisk }}" @selected($selectedUploadDisk === $uploadDisk)>{{ strtoupper($uploadDisk) }}</option>
                 @endforeach
             </select>

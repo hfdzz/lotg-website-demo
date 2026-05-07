@@ -186,7 +186,9 @@ class MediaAdminController extends Controller
         ];
 
         if ($assetType === 'image') {
-            $imageDisk = $media?->storage_disk ?: 'public';
+            $imageDisk = $request->hasFile('image_file')
+                ? $this->selectedUploadDisk($validated)
+                : ($media?->storage_disk ?: $this->defaultUploadDisk());
             $payload['storage_type'] = 'upload';
             $payload['storage_disk'] = $imageDisk;
             $payload['external_url'] = null;
