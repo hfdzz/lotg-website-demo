@@ -254,6 +254,7 @@ DB_CONNECTION=sqlsrv
 LOTG_MEDIA_UPLOAD_DISKS=public,s3
 LOTG_MEDIA_DEFAULT_UPLOAD_DISK=public
 LOTG_VIDEO_UPLOAD_MAX_KB=51200
+LOTG_EXPORT_INLINE_MEDIA_MAX_KB=8192
 ```
 
 Optional super admin seeding:
@@ -314,6 +315,8 @@ Defined in:
 php artisan lotg:edition-export 2025-26
 php artisan lotg:edition-export 2 storage/app/lotg-exports/custom-file.json
 ```
+
+`LOTG_EXPORT_INLINE_MEDIA_MAX_KB` limits how large an uploaded media file can be before the JSON exporter skips embedding its `contents_base64`. The export still includes the media metadata and path, and the command will print a warning for each skipped file.
 
 Default export directory:
 

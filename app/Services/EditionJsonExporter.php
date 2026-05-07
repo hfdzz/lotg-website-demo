@@ -18,8 +18,15 @@ class EditionJsonExporter
 {
     public const SCHEMA_VERSION = 1;
 
+    /**
+     * @var array<int, string>
+     */
+    protected array $warnings = [];
+
     public function export(Edition $edition): array
     {
+        $this->warnings = [];
+
         $documents = Document::query()
             ->forEdition($edition->id)
             ->with(['translations', 'pages.translations', 'pages.mediaAssets'])
@@ -224,6 +231,14 @@ class EditionJsonExporter
             ->all();
     }
 
+    /**
+     * @return array<int, string>
+     */
+    public function exportWarnings(): array
+    {
+        return $this->warnings;
+    }
+
     protected function exportTranslations(iterable $translations, array $fields): array
     {
         return collect($translations)
@@ -256,8 +271,10 @@ class EditionJsonExporter
 
     protected function exportMediaAsset(MediaAsset $mediaAsset): array
     {
+        $mediaKey = $this->mediaKey($mediaAsset);
+
         return [
-            'key' => $this->mediaKey($mediaAsset),
+            'key' => $mediaKey,
             'asset_type' => $mediaAsset->asset_type,
             'storage_type' => $mediaAsset->storage_type,
             'storage_disk' => $mediaAsset->storage_disk,
@@ -267,12 +284,22 @@ class EditionJsonExporter
             'thumbnail_path' => $mediaAsset->thumbnail_path,
             'caption' => $mediaAsset->caption,
             'credit' => $mediaAsset->credit,
-            'file' => $this->exportStoredFile($mediaAsset->file_path, $mediaAsset->storage_type === 'upload', $mediaAsset->storageDiskName()),
-            'thumbnail_file' => $this->exportStoredFile($mediaAsset->thumbnail_path, filled($mediaAsset->thumbnail_path), $mediaAsset->storageDiskName()),
+            'file' => $this->exportStoredFile(
+                $mediaAsset->file_path,
+                $mediaAsset->storage_type === 'upload',
+                $mediaAsset->storageDiskName(),
+                'media asset '.$mediaKey.' file'
+            ),
+            'thumbnail_file' => $this->exportStoredFile(
+                $mediaAsset->thumbnail_path,
+                filled($mediaAsset->thumbnail_path),
+                $mediaAsset->storageDiskName(),
+                'media asset '.$mediaKey.' thumbnail'
+            ),
         ];
     }
 
-    protected function exportStoredFile(?string $path, bool $shouldEmbed, string $disk): ?array
+    protected function exportStoredFile(?string $path, bool $shouldEmbed, string $disk, string $label): ?array
     {
         if (! $path) {
             return null;
@@ -290,6 +317,24 @@ class EditionJsonExporter
 
         if (! Storage::disk($disk)->exists($path)) {
             return $payload;
+        }
+
+        $maxInlineBytes = $this->maxInlineMediaBytes();
+
+        if ($maxInlineBytes !== null) {
+            try {
+                $size = Storage::disk($disk)->size($path);
+            } catch (\Throwable $exception) {
+                $this->warnings[] = 'Skipped embedding '.$label.' at '.$path.' because its size could not be determined: '.$exception->getMessage();
+
+                return $payload;
+            }
+
+            if ($size > $maxInlineBytes) {
+                $this->warnings[] = 'Skipped embedding '.$label.' at '.$path.' because it is '.$this->formatBytes($size).' and exceeds the inline export limit of '.$this->formatBytes($maxInlineBytes).'.';
+
+                return $payload;
+            }
         }
 
         $payload['contents_base64'] = $this->base64EncodeStoredFile($disk, $path);
@@ -331,5 +376,25 @@ class EditionJsonExporter
     protected function mediaKey(MediaAsset $mediaAsset): string
     {
         return 'media_'.$mediaAsset->id;
+    }
+
+    protected function maxInlineMediaBytes(): ?int
+    {
+        $maxKb = (int) config('lotg.export_inline_media_max_kb', 8192);
+
+        return $maxKb > 0 ? $maxKb * 1024 : null;
+    }
+
+    protected function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1024 * 1024) {
+            return number_format($bytes / 1024 / 1024, 1).' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return number_format($bytes / 1024, 1).' KB';
+        }
+
+        return $bytes.' B';
     }
 }

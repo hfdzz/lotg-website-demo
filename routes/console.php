@@ -40,6 +40,7 @@ Artisan::command('lotg:edition-export {edition : Edition id or code} {path? : Ou
     File::ensureDirectoryExists(dirname($exportPath));
 
     $payload = $exporter->export($editionModel);
+    $warnings = $exporter->exportWarnings();
 
     try {
         File::put(
@@ -57,6 +58,10 @@ Artisan::command('lotg:edition-export {edition : Edition id or code} {path? : Ou
     $this->line('Documents: '.count($payload['documents']));
     $this->line('Changelog entries: '.count($payload['changelog_entries'] ?? []));
     $this->line('Media assets: '.count($payload['media_assets']));
+
+    foreach ($warnings as $warning) {
+        $this->warn($warning);
+    }
 
     return Command::SUCCESS;
 })->purpose('Export one LotG edition to JSON');

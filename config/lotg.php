@@ -11,6 +11,7 @@ return [
     ))),
     'media_default_upload_disk' => (string) env('LOTG_MEDIA_DEFAULT_UPLOAD_DISK', 'public'),
     'video_upload_max_kb' => (int) env('LOTG_VIDEO_UPLOAD_MAX_KB', 51200),
+    'export_inline_media_max_kb' => (int) env('LOTG_EXPORT_INLINE_MEDIA_MAX_KB', 8192),
     'public_features' => [
         'documents' => [
             'label' => 'Documents',

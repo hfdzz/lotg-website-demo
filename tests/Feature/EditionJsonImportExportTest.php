@@ -596,6 +596,77 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertTrue(Storage::disk('s3')->exists('lotg-media/videos/local-public-source.mp4'));
     }
 
+    public function test_it_skips_embedding_oversized_uploaded_media_in_export(): void
+    {
+        Storage::fake('public');
+        config([
+            'lotg.export_inline_media_max_kb' => 1,
+        ]);
+
+        $edition = Edition::create([
+            'name' => 'Large Media Export',
+            'code' => 'large-media-export',
+            'year_start' => 2025,
+            'year_end' => 2026,
+            'status' => 'published',
+            'is_active' => false,
+        ]);
+
+        $law = Law::create([
+            'edition_id' => $edition->id,
+            'law_number' => '4',
+            'slug' => 'players-equipment',
+            'sort_order' => 1,
+            'status' => 'published',
+        ]);
+
+        LawTranslation::create([
+            'law_id' => $law->id,
+            'language_code' => 'id',
+            'title' => 'Perlengkapan Pemain',
+        ]);
+
+        $imageNode = ContentNode::create([
+            'law_id' => $law->id,
+            'parent_id' => null,
+            'node_type' => 'image',
+            'sort_order' => 1,
+            'is_published' => true,
+        ]);
+
+        ContentNodeTranslation::create([
+            'content_node_id' => $imageNode->id,
+            'language_code' => 'id',
+            'title' => 'Gambar Besar',
+            'status' => 'published',
+        ]);
+
+        Storage::disk('public')->put('lotg-media/images/oversized-image.png', str_repeat('A', 2048));
+
+        $imageAsset = MediaAsset::create([
+            'asset_type' => 'image',
+            'storage_type' => 'upload',
+            'storage_disk' => 'public',
+            'is_library_item' => true,
+            'file_path' => 'lotg-media/images/oversized-image.png',
+            'caption' => 'Large image',
+            'credit' => 'PSSI',
+        ]);
+
+        $imageNode->mediaAssets()->sync([
+            $imageAsset->id => ['sort_order' => 1],
+        ]);
+
+        $exporter = app(EditionJsonExporter::class);
+        $payload = $exporter->export($edition);
+
+        $this->assertArrayNotHasKey('contents_base64', $payload['media_assets'][0]['file']);
+        $this->assertTrue(collect($exporter->exportWarnings())->contains(
+            fn (string $warning) => str_contains($warning, 'Skipped embedding media asset media_'.$imageAsset->id.' file')
+                && str_contains($warning, 'exceeds the inline export limit')
+        ));
+    }
+
     public function test_it_uses_the_configured_default_export_directory_when_path_is_omitted(): void
     {
         $exportDirectory = 'storage/app/testing-default-exports/'.Str::random(8);
