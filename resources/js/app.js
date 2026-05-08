@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDocumentSlugPreview();
     setupTranslationEditor();
     setupNodeTypeSections();
+    setupNodeSettingControls();
     setupMediaTypeSections();
     setupVideoSourceSections();
     setupImageAssetPicker();
@@ -440,12 +441,56 @@ function setupNodeTypeSections() {
                     return;
                 }
 
-                section.hidden = section.dataset.nodeTypeSection !== select.value;
+                const supportedTypes = (section.dataset.nodeTypeSection || '')
+                    .split(/\s+/)
+                    .map((value) => value.trim())
+                    .filter(Boolean);
+
+                section.hidden = !supportedTypes.includes(select.value);
             });
         };
 
         select.addEventListener('change', updateSections);
         updateSections();
+    });
+}
+
+function setupNodeSettingControls() {
+    const forms = Array.from(document.querySelectorAll('form'));
+
+    forms.forEach((form) => {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const collapsibleToggle = form.querySelector('[data-node-collapsible-toggle]');
+        const collapsibleOptions = form.querySelector('[data-node-collapsible-options]');
+        const collapsibleOptionFields = Array.from(form.querySelectorAll('[data-node-collapsible-option]'));
+
+        if (!(collapsibleToggle instanceof HTMLInputElement) || !(collapsibleOptions instanceof HTMLElement)) {
+            return;
+        }
+
+        const updateCollapsibleOptions = () => {
+            const enabled = collapsibleToggle.checked;
+
+            collapsibleOptions.hidden = !enabled;
+
+            collapsibleOptionFields.forEach((field) => {
+                if (!(field instanceof HTMLInputElement)) {
+                    return;
+                }
+
+                field.disabled = !enabled;
+
+                if (!enabled && field.type === 'checkbox') {
+                    field.checked = false;
+                }
+            });
+        };
+
+        collapsibleToggle.addEventListener('change', updateCollapsibleOptions);
+        updateCollapsibleOptions();
     });
 }
 

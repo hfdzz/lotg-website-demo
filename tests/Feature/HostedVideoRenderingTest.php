@@ -84,4 +84,75 @@ class HostedVideoRenderingTest extends TestCase
         $this->assertFalse($tree[0]['media_items'][0]['defer_src']);
         $this->assertStringContainsString('/storage/lotg-media/videos/players.mp4', $tree[0]['media_items'][0]['src']);
     }
+
+    public function test_collapsible_video_group_settings_are_exposed_in_the_law_tree(): void
+    {
+        Storage::fake('public');
+
+        $edition = Edition::create([
+            'name' => 'Collapsible Edition',
+            'code' => 'collapsible-edition',
+            'year_start' => 2025,
+            'year_end' => 2026,
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+
+        $law = Law::create([
+            'edition_id' => $edition->id,
+            'law_number' => '4',
+            'slug' => 'players-equipment',
+            'sort_order' => 1,
+            'status' => 'published',
+        ]);
+
+        LawTranslation::create([
+            'law_id' => $law->id,
+            'language_code' => 'id',
+            'title' => 'Perlengkapan Pemain',
+        ]);
+
+        $videoNode = ContentNode::create([
+            'law_id' => $law->id,
+            'parent_id' => null,
+            'node_type' => 'video_group',
+            'sort_order' => 1,
+            'is_published' => true,
+            'settings_json' => [
+                'layout' => 'stacked',
+                'display' => [
+                    'collapsible' => true,
+                    'start_collapsed' => true,
+                ],
+            ],
+        ]);
+
+        ContentNodeTranslation::create([
+            'content_node_id' => $videoNode->id,
+            'language_code' => 'id',
+            'title' => 'Video Tambahan',
+            'status' => 'published',
+        ]);
+
+        Storage::disk('public')->put('lotg-media/videos/collapsible.mp4', 'fake-video-content');
+
+        $videoAsset = MediaAsset::create([
+            'asset_type' => 'video',
+            'storage_type' => 'upload',
+            'storage_disk' => 'public',
+            'is_library_item' => true,
+            'file_path' => 'lotg-media/videos/collapsible.mp4',
+            'caption' => 'Collapsible video',
+        ]);
+
+        $videoNode->mediaAssets()->sync([
+            $videoAsset->id => ['sort_order' => 1],
+        ]);
+
+        $tree = app(LawTreeBuilder::class)->build($law, 'id');
+
+        $this->assertTrue($tree[0]['collapse']['enabled']);
+        $this->assertTrue($tree[0]['collapse']['starts_collapsed']);
+        $this->assertSame('Video Tambahan', $tree[0]['collapse']['label']);
+    }
 }

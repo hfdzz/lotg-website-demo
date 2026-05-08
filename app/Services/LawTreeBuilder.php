@@ -51,6 +51,12 @@ class LawTreeBuilder
                     $sectionNumber = implode('.', $currentSectionPath);
                 }
 
+                $collapse = $this->buildCollapseSettings(
+                    $node->node_type,
+                    is_array($node->settings_json) ? $node->settings_json : [],
+                    $translation?->title
+                );
+
                 return [
                     'id' => $node->id,
                     'node_type' => $node->node_type,
@@ -60,6 +66,7 @@ class LawTreeBuilder
                     'heading_tag' => $this->headingTagFor($node->node_type, $depth),
                     'anchor_id' => $this->anchorIdFor($node->id, $translation?->title, $node->node_type),
                     'settings' => $node->settings_json ?? [],
+                    'collapse' => $collapse,
                     'translation' => $translation,
                     'title' => $translation?->title,
                     'body_html' => $translation?->body_html,
@@ -69,6 +76,23 @@ class LawTreeBuilder
                 ];
             })
             ->all();
+    }
+
+    /**
+     * @param array<string, mixed> $settings
+     * @return array{enabled: bool, starts_collapsed: bool, label: string}
+     */
+    protected function buildCollapseSettings(string $nodeType, array $settings, ?string $title): array
+    {
+        $supportsCollapse = in_array($nodeType, ['image', 'video_group', 'resource_list'], true);
+        $displaySettings = is_array($settings['display'] ?? null) ? $settings['display'] : [];
+        $enabled = $supportsCollapse && (bool) ($displaySettings['collapsible'] ?? false);
+
+        return [
+            'enabled' => $enabled,
+            'starts_collapsed' => $enabled && (bool) ($displaySettings['start_collapsed'] ?? false),
+            'label' => $title ?: $this->defaultCollapseLabel($nodeType),
+        ];
     }
 
     /**
@@ -196,5 +220,15 @@ class LawTreeBuilder
             ->slug();
 
         return trim($base !== '' ? $base.'-'.$nodeId : 'node-'.$nodeId, '-');
+    }
+
+    protected function defaultCollapseLabel(string $nodeType): string
+    {
+        return match ($nodeType) {
+            'image' => 'Image',
+            'video_group' => 'Videos',
+            'resource_list' => 'Resources',
+            default => ucfirst(str_replace('_', ' ', $nodeType)),
+        };
     }
 }

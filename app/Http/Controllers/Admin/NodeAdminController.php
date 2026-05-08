@@ -18,6 +18,8 @@ use Illuminate\Support\Collection;
 
 class NodeAdminController extends Controller
 {
+    protected const COLLAPSIBLE_NODE_TYPES = ['image', 'video_group', 'resource_list'];
+
     public function __construct(
         protected LotgPublicCache $publicCache
     ) {
@@ -223,6 +225,8 @@ class NodeAdminController extends Controller
             'resource_files.*' => ['nullable', 'file', 'max:10240'],
             'remove_resource_asset_ids' => ['nullable', 'array'],
             'remove_resource_asset_ids.*' => ['integer'],
+            'setting_display_collapsible' => ['nullable', 'boolean'],
+            'setting_display_start_collapsed' => ['nullable', 'boolean'],
             'image_caption' => ['nullable', 'string'],
             'image_credit' => ['nullable', 'string', 'max:255'],
             'image_file' => [
@@ -441,19 +445,30 @@ class NodeAdminController extends Controller
 
     protected function settingsFromRequest(Request $request): ?array
     {
-        if ($request->input('node_type') === 'video_group') {
-            return [
-                'layout' => 'stacked',
-            ];
+        $nodeType = (string) $request->input('node_type');
+        $settings = [];
+
+        if ($nodeType === 'video_group') {
+            $settings['layout'] = 'stacked';
         }
 
-        if ($request->input('node_type') === 'resource_list') {
-            return [
-                'layout' => 'list',
-            ];
+        if ($nodeType === 'resource_list') {
+            $settings['layout'] = 'list';
         }
 
-        return null;
+        if (in_array($nodeType, self::COLLAPSIBLE_NODE_TYPES, true)) {
+            $isCollapsible = $request->boolean('setting_display_collapsible');
+            $startsCollapsed = $isCollapsible && $request->boolean('setting_display_start_collapsed');
+
+            if ($isCollapsible || $startsCollapsed) {
+                $settings['display'] = [
+                    'collapsible' => $isCollapsible,
+                    'start_collapsed' => $startsCollapsed,
+                ];
+            }
+        }
+
+        return $settings !== [] ? $settings : null;
     }
 
     protected function deleteNodeRecursively(ContentNode $node): void

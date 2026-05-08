@@ -1332,6 +1332,60 @@ h5.node-title {
     margin: 1.5rem 0 1.8rem;
 }
 
+.node-collapse {
+    margin: 1.35rem 0 1.6rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.node-collapse-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 0;
+    cursor: pointer;
+    list-style: none;
+}
+
+.node-collapse-summary::-webkit-details-marker {
+    display: none;
+}
+
+.node-collapse-summary::after {
+    content: "+";
+    flex: 0 0 auto;
+    color: var(--accent);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.node-collapse[open] > .node-collapse-summary::after {
+    content: "-";
+}
+
+.node-collapse-summary .node-title {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.node-collapse-summary h2.node-title {
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    border: 0;
+}
+
+.node-collapse-label {
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.node-collapse-content {
+    padding-bottom: 0.2rem;
+}
+
 .resource-list-block {
     margin: 1.35rem 0 1.6rem;
 }

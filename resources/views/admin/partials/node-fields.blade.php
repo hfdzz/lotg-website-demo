@@ -6,6 +6,10 @@
     $imageAsset = $mediaAssets->firstWhere('asset_type', 'image');
     $translationsByLanguage = $translationsByLanguage ?? collect();
     $languages = $languages ?? \App\Support\LotgLanguage::supported();
+    $nodeSettings = $node?->settings_json ?? [];
+    $displaySettings = is_array($nodeSettings['display'] ?? null) ? $nodeSettings['display'] : [];
+    $isCollapsible = old('setting_display_collapsible', (bool) ($displaySettings['collapsible'] ?? false));
+    $startsCollapsed = old('setting_display_start_collapsed', (bool) ($displaySettings['start_collapsed'] ?? false));
     $selectedImageAssetId = old('existing_image_asset_id', $imageAsset?->id);
     $imagePreviewMap = $availableImageAssets
         ->mapWithKeys(fn ($asset) => [
@@ -101,6 +105,24 @@
 </label>
 
 <div class="nav-meta">If unpublished, the node stays in admin but does not appear on the public law page.</div>
+
+<div class="card" data-node-type-section="image video_group resource_list">
+    <h3>Node display options</h3>
+    <p class="nav-meta">Useful for media or resource blocks that should be hidden behind a click-to-expand summary on the public law page.</p>
+
+    <label>
+        <input type="checkbox" name="setting_display_collapsible" value="1" @checked($isCollapsible) data-node-collapsible-toggle>
+        Make this node collapsible on the public page
+    </label>
+
+    <div class="stack-top" data-node-collapsible-options @if (! $isCollapsible) hidden @endif>
+        <label>
+            <input type="checkbox" name="setting_display_start_collapsed" value="1" @checked($startsCollapsed) data-node-collapsible-option>
+            Start collapsed by default
+        </label>
+        <div class="nav-meta">If unchecked, the node starts open but can still be collapsed by the reader.</div>
+    </div>
+</div>
 
 <div class="card admin-translation-card" data-translation-editor>
     <div class="translation-toolbar">
