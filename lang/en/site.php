@@ -108,6 +108,8 @@ return [
         'empty_title' => 'No Q&A published yet',
         'empty_body' => 'There are no published Q&A items for the current active edition yet.',
         'empty_law_body' => 'This law does not have any published Q&A items yet.',
+        'show_answer' => 'Show answer',
+        'hide_answer' => 'Hide answer',
         'unavailable_title' => 'Q&A will be back soon',
         'unavailable_body' => 'There is currently no active edition available for public viewing. Please check back again soon.',
     ],

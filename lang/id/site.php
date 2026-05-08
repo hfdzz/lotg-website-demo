@@ -108,6 +108,8 @@ return [
         'empty_title' => 'Belum ada tanya jawab yang dipublikasikan',
         'empty_body' => 'Saat ini belum ada tanya jawab yang dipublikasikan untuk edisi aktif.',
         'empty_law_body' => 'Aturan ini belum memiliki item tanya jawab yang dipublikasikan.',
+        'show_answer' => 'Lihat jawaban',
+        'hide_answer' => 'Sembunyikan jawaban',
         'unavailable_title' => 'Tanya jawab akan segera kembali',
         'unavailable_body' => 'Saat ini belum ada edisi aktif untuk ditampilkan ke publik. Silakan cek kembali dalam waktu dekat.',
     ],

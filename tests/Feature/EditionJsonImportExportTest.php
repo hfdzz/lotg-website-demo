@@ -363,7 +363,7 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertCount(3, $importedLaw->contentNodes);
         $this->assertCount(2, $importedLaw->qas);
         $this->assertCount(2, $importedLaw->qas->firstWhere('qa_type', LawQa::TYPE_MULTIPLE_CHOICE)?->options);
-        $this->assertStringContainsString('Saat seluruh bola melewati garis', $importedLaw->qas->firstWhere('qa_type', LawQa::TYPE_MULTIPLE_CHOICE)?->displayAnswer('id'));
+        $this->assertStringContainsString('B. Saat seluruh bola melewati garis', $importedLaw->qas->firstWhere('qa_type', LawQa::TYPE_MULTIPLE_CHOICE)?->displayAnswer('id'));
         $this->assertSame('Lapangan Permainan', $importedLaw->translations->firstWhere('language_code', 'id')?->title);
 
         $importedImageNode = $importedLaw->contentNodes->firstWhere('node_type', 'image');

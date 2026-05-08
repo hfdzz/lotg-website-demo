@@ -105,7 +105,7 @@ class LawQa extends Model
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, array{text: string, is_correct: bool}>
+     * @return \Illuminate\Support\Collection<int, array{label: string, text: string, is_correct: bool}>
      */
     public function optionsForDisplay(?string $languageCode = null)
     {
@@ -114,7 +114,9 @@ class LawQa extends Model
             : $this->options()->with('translations')->get();
 
         return $options
-            ->map(fn (LawQaOption $option) => [
+            ->values()
+            ->map(fn (LawQaOption $option, int $index) => [
+                'label' => $this->optionLabel($index),
                 'text' => $option->displayText($languageCode),
                 'is_correct' => (bool) $option->is_correct,
             ])
@@ -124,22 +126,35 @@ class LawQa extends Model
 
     protected function correctOptionsAnswerHtml(?string $languageCode = null): ?string
     {
-        $texts = $this->optionsForDisplay($languageCode)
+        $choices = $this->optionsForDisplay($languageCode)
             ->filter(fn (array $option) => $option['is_correct'])
-            ->pluck('text')
-            ->filter(fn (string $text) => trim($text) !== '')
             ->values();
 
-        if ($texts->isEmpty()) {
+        if ($choices->isEmpty()) {
             return null;
         }
 
-        if ($texts->count() === 1) {
-            return '<p>'.e($texts->first()).'</p>';
+        if ($choices->count() === 1) {
+            $choice = $choices->first();
+
+            return '<p>'.e($choice['label'].'. '.$choice['text']).'</p>';
         }
 
-        return '<ul>'.$texts
-            ->map(fn (string $text) => '<li>'.e($text).'</li>')
+        return '<ul>'.$choices
+            ->map(fn (array $choice) => '<li>'.e($choice['label'].'. '.$choice['text']).'</li>')
             ->implode('').'</ul>';
+    }
+
+    protected function optionLabel(int $index): string
+    {
+        $label = '';
+        $value = $index;
+
+        do {
+            $label = chr(65 + ($value % 26)).$label;
+            $value = intdiv($value, 26) - 1;
+        } while ($value >= 0);
+
+        return $label;
     }
 }

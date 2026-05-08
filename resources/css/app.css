@@ -1468,50 +1468,67 @@ h5.node-title {
 
 .law-qa-item {
     border-bottom: 1px solid var(--line);
-}
-
-.law-qa-summary {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.9rem 0;
-    cursor: pointer;
-    list-style: none;
-}
-
-.law-qa-summary::-webkit-details-marker {
-    display: none;
-}
-
-.law-qa-summary::after {
-    content: "+";
-    flex: 0 0 auto;
-    color: var(--accent);
-    font-size: 1.15rem;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.law-qa-item[open] > .law-qa-summary::after {
-    content: "-";
+    padding-bottom: 1rem;
 }
 
 .law-qa-question {
+    margin: 0 0 0.9rem;
     color: var(--ink);
     font-weight: 700;
     line-height: 1.5;
 }
 
 .law-qa-answer {
-    padding: 0 0 1rem;
+    padding: 0.8rem 0 0;
+}
+
+.law-qa-answer-toggle {
+    margin-top: 0.85rem;
+}
+
+.law-qa-answer-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 600;
+    list-style: none;
+}
+
+.law-qa-answer-summary::-webkit-details-marker {
+    display: none;
+}
+
+.law-qa-answer-summary::after {
+    content: "+";
+    color: var(--accent);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.law-qa-answer-toggle[open] > .law-qa-answer-summary::after {
+    content: "-";
+}
+
+.law-qa-answer-summary-hide {
+    display: none;
+}
+
+.law-qa-answer-toggle[open] .law-qa-answer-summary-show {
+    display: none;
+}
+
+.law-qa-answer-toggle[open] .law-qa-answer-summary-hide {
+    display: inline;
 }
 
 .law-qa-options {
     display: grid;
     gap: 0.45rem;
     margin: 0 0 1rem;
-    padding-left: 1.35rem;
+    padding-left: 0;
+    list-style: none;
 }
 
 .law-qa-options li {
@@ -1519,8 +1536,7 @@ h5.node-title {
     line-height: 1.6;
 }
 
-.law-qa-options li.is-correct {
-    color: var(--accent);
+.law-qa-option-label {
     font-weight: 700;
 }
 

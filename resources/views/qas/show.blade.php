@@ -24,24 +24,31 @@
             @foreach ($qas as $qa)
                 @php
                     $qaOptions = $qa->optionsForDisplay($language);
+                    $answerHtml = $qa->displayAnswer($language);
                 @endphp
-                <details class="law-qa-item" id="law-qa-{{ $qa->id }}">
-                    <summary class="law-qa-summary">
-                        <span class="law-qa-question">{{ $qa->displayQuestion($language) }}</span>
-                    </summary>
-                    <div class="law-qa-answer node-body">
-                        @if ($qa->isMultipleChoice() && $qaOptions->isNotEmpty())
-                            <ol class="law-qa-options">
-                                @foreach ($qaOptions as $option)
-                                    <li @class(['is-correct' => $option['is_correct']])>{{ $option['text'] }}</li>
-                                @endforeach
-                            </ol>
-                        @endif
-                        @if (! ($qa->isMultipleChoice() && ! $qa->uses_custom_answer && $qaOptions->isNotEmpty()))
-                            {!! $qa->displayAnswer($language) !!}
-                        @endif
-                    </div>
-                </details>
+                <article class="law-qa-item" id="law-qa-{{ $qa->id }}">
+                    <h2 class="law-qa-question">{{ $qa->displayQuestion($language) }}</h2>
+
+                    @if ($qa->isMultipleChoice() && $qaOptions->isNotEmpty())
+                        <ul class="law-qa-options">
+                            @foreach ($qaOptions as $option)
+                                <li><span class="law-qa-option-label">{{ $option['label'] }}.</span> {{ $option['text'] }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    @if (filled($answerHtml))
+                        <details class="law-qa-answer-toggle">
+                            <summary class="law-qa-answer-summary">
+                                <span class="law-qa-answer-summary-show">{{ __('site.qas.show_answer') }}</span>
+                                <span class="law-qa-answer-summary-hide">{{ __('site.qas.hide_answer') }}</span>
+                            </summary>
+                            <div class="law-qa-answer node-body">
+                                {!! $answerHtml !!}
+                            </div>
+                        </details>
+                    @endif
+                </article>
             @endforeach
         </section>
     @endif
