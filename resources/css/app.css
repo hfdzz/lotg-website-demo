@@ -167,7 +167,7 @@ button:hover {
 }
 
 .hero h1 {
-    font-size: 2rem;
+    font-size: 3rem;
 }
 
 .hero-edition-years {
@@ -749,6 +749,13 @@ button:hover {
 
 .law-detail-shell {
     display: grid;
+}
+
+.law-detail-shell .hero h1 {
+    padding: 0.8rem;
+    display: inline-block;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #d5f1f5 0%, var(--accent-soft) 100%);
 }
 
 .lotg-hub-layout {
