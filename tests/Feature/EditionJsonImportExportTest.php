@@ -371,9 +371,11 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertCount(1, $importedImageNode->mediaAssets);
         $this->assertSame('Field diagram', $importedImageNode->mediaAssets->first()?->caption);
         $this->assertTrue(Storage::disk('public')->exists($importedImageNode->mediaAssets->first()?->file_path));
+        $originalImportedImageAssetId = $importedImageNode->mediaAssets->first()?->id;
 
         $importedVideoNode = $importedLaw->contentNodes->firstWhere('node_type', 'video_group');
         $this->assertNotNull($importedVideoNode);
+        $originalImportedVideoAssetId = $importedVideoNode->mediaAssets->first()?->id;
         $this->assertSame('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $importedVideoNode->mediaAssets->first()?->external_url);
 
         $this->assertSame('var-protocol', $importedDocument->slug);
@@ -413,6 +415,11 @@ class EditionJsonImportExportTest extends TestCase
             ->with('translations')
             ->firstOrFail();
 
+        $this->assertNotNull(MediaAsset::query()->find($originalImportedImageAssetId));
+        $this->assertNotNull(MediaAsset::query()->find($originalImportedVideoAssetId));
+        $this->assertSame(0, MediaAsset::query()->find($originalImportedImageAssetId)?->contentNodes()->count());
+        $this->assertSame(0, MediaAsset::query()->find($originalImportedImageAssetId)?->documentPages()->count());
+        $this->assertSame(6, MediaAsset::query()->count());
         $this->assertSame('Lapangan Versi Impor Ulang', $reimportedLaw->translations->firstWhere('language_code', 'id')?->title);
         $this->assertSame('Protokol VAR Ulang', $reimportedDocument->translations->firstWhere('language_code', 'id')?->title);
         $this->assertSame('Perubahan Penting Ulang', ChangelogEntry::query()->where('edition_id', $importedEdition->id)->first()?->title);

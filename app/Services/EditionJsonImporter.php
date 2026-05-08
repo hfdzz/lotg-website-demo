@@ -218,23 +218,9 @@ class EditionJsonImporter
 
     protected function clearEditionContent(Edition $edition): void
     {
-        $mediaAssets = MediaAsset::query()
-            ->whereHas('contentNodes.law', fn ($query) => $query->where('edition_id', $edition->id))
-            ->orWhereHas('documentPages.document', fn ($query) => $query->where('edition_id', $edition->id))
-            ->get()
-            ->unique('id');
-
         ChangelogEntry::query()->where('edition_id', $edition->id)->delete();
         Document::query()->forEdition($edition->id)->delete();
         Law::query()->forEdition($edition->id)->delete();
-
-        foreach ($mediaAssets as $mediaAsset) {
-            if (! $mediaAsset->contentNodes()->exists() && ! $mediaAsset->documentPages()->exists()) {
-                $this->deleteStoredFileIfNeeded($mediaAsset->file_path, $mediaAsset->storage_disk);
-                $this->deleteStoredFileIfNeeded($mediaAsset->thumbnail_path, $mediaAsset->storage_disk);
-                $mediaAsset->delete();
-            }
-        }
     }
 
     /**
@@ -1251,23 +1237,6 @@ class EditionJsonImporter
         }
 
         return $path;
-    }
-
-    protected function deleteStoredFileIfNeeded(?string $path, ?string $disk = null): void
-    {
-        if (! $path || str_starts_with($path, 'demo/')) {
-            return;
-        }
-
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return;
-        }
-
-        $resolvedDisk = $disk ?: $this->defaultUploadDisk();
-
-        if (Storage::disk($resolvedDisk)->exists($path)) {
-            Storage::disk($resolvedDisk)->delete($path);
-        }
     }
 
     protected function normalizeUploadDisk(mixed $disk): string

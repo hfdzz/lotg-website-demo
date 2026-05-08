@@ -331,6 +331,8 @@ php artisan lotg:edition-import storage/app/lotg-exports/file.json --edition=202
 php artisan lotg:edition-import storage/app/lotg-exports/file.json --edition=2025-26 --replace
 php artisan lotg:edition-import storage/app/lotg-exports/file.json --dry-run --edition=2025-26
 php artisan lotg:edition-import some/object-key.json --disk=s3 --edition=2025-26
+php artisan lotg:media-prune --dry-run
+php artisan lotg:media-prune
 ```
 
 Import supports:
@@ -349,8 +351,14 @@ Import supports:
 Important import behavior:
 
 - `--replace` deletes existing content inside the target edition before import
+- `--replace` does not delete media assets or stored files; use media prune for orphan cleanup
 - `--dry-run` validates and summarizes without saving
 - import does not automatically activate an edition
+
+Media prune behavior:
+
+- `--dry-run` reports orphaned media assets without deleting anything
+- normal execution deletes media assets with zero references and removes their stored files when applicable
 
 ## Architecture overview
 

@@ -3,6 +3,7 @@
 use App\Models\Edition;
 use App\Services\EditionJsonExporter;
 use App\Services\EditionJsonImporter;
+use App\Services\MediaPruner;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -161,6 +162,58 @@ Artisan::command('lotg:edition-import {path : Path to edition JSON file, or obje
 
     return Command::SUCCESS;
 })->purpose('Import a LotG edition JSON file into an edition');
+
+Artisan::command('lotg:media-prune {--dry-run : Show orphaned media without deleting it} {--only-non-library : Only prune orphaned non-library media assets} {--disk= : Limit pruning to a specific storage disk}', function (
+    MediaPruner $pruner
+) {
+    $disk = trim((string) $this->option('disk'));
+
+    if ($disk !== '' && ! config('filesystems.disks.'.$disk)) {
+        $this->error('Unknown filesystem disk: '.$disk);
+
+        return Command::FAILURE;
+    }
+
+    $onlyNonLibrary = (bool) $this->option('only-non-library');
+    $isDryRun = (bool) $this->option('dry-run');
+    $assets = $pruner->orphanedMediaAssets($onlyNonLibrary, $disk !== '' ? $disk : null);
+
+    $this->info($isDryRun ? 'Media prune dry run summary.' : 'Media prune summary.');
+    $this->line('Orphaned media assets: '.$assets->count());
+
+    if ($onlyNonLibrary) {
+        $this->line('Mode: non-library assets only');
+    }
+
+    if ($disk !== '') {
+        $this->line('Disk filter: '.$disk);
+    }
+
+    foreach ($assets as $asset) {
+        $location = $asset->storage_type === 'upload'
+            ? (($asset->storage_disk ?: '-') . ': ' . ($asset->file_path ?: '-'))
+            : ($asset->external_url ?: '-');
+
+        $this->line(sprintf(
+            '#%d [%s] %s',
+            $asset->id,
+            $asset->asset_type,
+            $location
+        ));
+    }
+
+    if ($isDryRun) {
+        $this->info('Dry run passed. No media was deleted.');
+
+        return Command::SUCCESS;
+    }
+
+    $result = $pruner->prune($onlyNonLibrary, $disk !== '' ? $disk : null);
+
+    $this->info('Deleted orphaned media assets: '.$result['count']);
+
+    return Command::SUCCESS;
+})->purpose('Delete orphaned LotG media assets and stored files');
 
 if (! function_exists('lotg_console_path')) {
     function lotg_console_path(string $path): string
