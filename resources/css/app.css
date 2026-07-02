@@ -1326,6 +1326,24 @@ h5.node-title {
     color: var(--accent);
 }
 
+.node-body .law-change,
+.document-article .law-change {
+    text-decoration-line: underline;
+    text-decoration-color: #edc822;
+    text-decoration-thickness: 0.18em;
+    text-underline-offset: 0.14em;
+    text-decoration-skip-ink: none;
+}
+
+.node-body .editorial-change,
+.document-article .editorial-change {
+    text-decoration-line: line-through;
+    text-decoration-color: #456F82;
+    text-decoration-thickness: 0.18em;
+    text-underline-offset: 0.14em;
+    text-decoration-skip-ink: none;
+}
+
 .media-grid {
     display: grid;
     gap: 1rem;
