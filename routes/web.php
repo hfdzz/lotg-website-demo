@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminHomeController;
 use App\Http\Controllers\Admin\ChangelogAdminController;
 use App\Http\Controllers\Admin\DocumentAdminController;
 use App\Http\Controllers\Admin\EditionAdminController;
+use App\Http\Controllers\Admin\EditionTransferAdminController;
 use App\Http\Controllers\Admin\FeatureVisibilityAdminController;
 use App\Http\Controllers\Admin\LawAdminController;
 use App\Http\Controllers\Admin\LawQaAdminController;
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminHomeController::class, 'index'])->name('home');
     Route::get('/editions', [EditionAdminController::class, 'index'])->name('editions.index');
+    Route::get('/editions/{edition}/export', [EditionTransferAdminController::class, 'export'])->name('editions.export');
+    Route::post('/editions/import', [EditionTransferAdminController::class, 'import'])->name('editions.import');
     Route::get('/public-features', [FeatureVisibilityAdminController::class, 'index'])->name('public-features.index');
     Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');
     Route::get('/documents', [DocumentAdminController::class, 'home'])->name('documents.home');

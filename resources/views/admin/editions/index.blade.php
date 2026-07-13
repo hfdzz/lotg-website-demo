@@ -9,6 +9,8 @@
         $copyEditionDefault = old('copy_from_edition_id', $editions->first()?->id);
         $editionFeatureOverrides = collect($editionFeatureRows)->filter(fn (array $row) => $row['edition_state'] !== null)->count();
         $editionFeaturesEnabled = collect($editionFeatureRows)->filter(fn (array $row) => $row['effective_state'])->count();
+        $transferReport = session('edition_transfer_report');
+        $importTargetDefault = old('target_edition_id', $selectedEdition?->id);
     @endphp
 
     <section class="hero">
@@ -30,6 +32,54 @@
                 <div>{{ $error }}</div>
             @endforeach
         </div>
+    @endif
+
+    @if ($transferReport)
+        <section class="card surface-note">
+            <h2>{{ $transferReport['title'] ?? 'Import summary' }}</h2>
+            @if (! empty($transferReport['edition_label']))
+                <p class="law-meta">Edition: {{ $transferReport['edition_label'] }}</p>
+            @endif
+            <p class="law-meta">
+                Laws: {{ $transferReport['counts']['laws'] ?? 0 }}
+                | Nodes: {{ $transferReport['counts']['nodes'] ?? 0 }}
+                | Q&amp;A: {{ $transferReport['counts']['qas'] ?? 0 }}
+                | Q&amp;A options: {{ $transferReport['counts']['qa_options'] ?? 0 }}
+                | Documents: {{ $transferReport['counts']['documents'] ?? 0 }}
+                | Pages: {{ $transferReport['counts']['document_pages'] ?? 0 }}
+                | Law changes: {{ $transferReport['counts']['changelog_entries'] ?? 0 }}
+                | Media: {{ $transferReport['counts']['media_assets'] ?? 0 }}
+            </p>
+            @if (($transferReport['mode'] ?? null) === 'dry-run')
+                <p class="law-meta">
+                    @if (($transferReport['can_import'] ?? true) && empty($transferReport['errors']))
+                        Dry run passed. No changes were saved.
+                    @else
+                        Dry run found blocking issues. No changes were saved.
+                    @endif
+                </p>
+            @endif
+            @if (! empty($transferReport['warnings']))
+                <div class="stack-top">
+                    <strong>Warnings</strong>
+                    <ul class="edition-readiness-details">
+                        @foreach ($transferReport['warnings'] as $warning)
+                            <li>{{ $warning }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+            @if (! empty($transferReport['errors']))
+                <div class="stack-top">
+                    <strong>Blocking issues</strong>
+                    <ul class="edition-readiness-details">
+                        @foreach ($transferReport['errors'] as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        </section>
     @endif
 
     <details class="card collapse-card" open>
@@ -155,6 +205,62 @@
                 </label>
                 <button type="submit">Create edition</button>
             </form>
+        </div>
+    </details>
+
+    <details class="card collapse-card" @if(old('import_mode') || $transferReport) open @endif>
+        <summary class="collapse-summary">
+            <h2>Import / export JSON</h2>
+        </summary>
+        <div class="collapse-body">
+            @if ($selectedEdition)
+                <div class="stack-top">
+                    <h3>Export selected edition</h3>
+                    <p class="law-meta">Current export target: {{ $selectedEdition->name }} ({{ $selectedEdition->code }})</p>
+                    <p class="law-meta">This downloads the same edition JSON structure used by the CLI exporter.</p>
+                    <p><a class="result-link" href="{{ route('admin.editions.export', $selectedEdition) }}">Download JSON export</a></p>
+                </div>
+            @else
+                <p class="empty-state">Create or select an edition first to export it.</p>
+            @endif
+
+            <div class="stack-top">
+                <h3>Import JSON</h3>
+                <p class="law-meta">Upload an edition export file, choose an optional target edition, and run a dry run before saving if needed.</p>
+                <p class="law-meta">Large JSON files with embedded media still depend on the server PHP upload and post size limits.</p>
+
+                <form action="{{ route('admin.editions.import') }}" method="post" enctype="multipart/form-data" class="stack-form">
+                    @csrf
+                    <input type="hidden" name="import_mode" value="upload">
+
+                    <label>
+                        <div class="law-meta">JSON file</div>
+                        <input type="file" name="import_file" accept=".json,application/json,text/json">
+                    </label>
+
+                    <label>
+                        <div class="law-meta">Target edition</div>
+                        <select name="target_edition_id">
+                            <option value="">Use or create from JSON edition code</option>
+                            @foreach ($editions as $edition)
+                                <option value="{{ $edition->id }}" @selected((string) $importTargetDefault === (string) $edition->id)>{{ $edition->name }} ({{ $edition->code }})</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label>
+                        <input type="checkbox" name="dry_run" value="1" @checked(old('dry_run'))>
+                        <span>Dry run only</span>
+                    </label>
+
+                    <label>
+                        <input type="checkbox" name="replace" value="1" @checked(old('replace'))>
+                        <span>Replace existing target edition content before import</span>
+                    </label>
+
+                    <button type="submit">Run import</button>
+                </form>
+            </div>
         </div>
     </details>
 
