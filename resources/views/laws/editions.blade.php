@@ -13,7 +13,7 @@
         @forelse ($editions as $edition)
             <article class="law-list-item">
                 <h2>
-                    <a class="result-link" href="{{ route('laws.index', ['edition' => $edition->id, 'lang' => $language]) }}">
+                    <a class="result-link" href="{{ route('laws.list', ['edition' => $edition->id, 'lang' => $language]) }}">
                         {{ $edition->name }}
                         @if ($activeEdition && $edition->id === $activeEdition->id)
                             ({{ __('site.editions.current') }})
