@@ -9,6 +9,8 @@ use App\Services\EditionJsonImporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EditionTransferAdminController extends Controller
@@ -24,17 +26,56 @@ class EditionTransferAdminController extends Controller
         $this->authorize('view', $edition);
 
         $payload = $this->exporter->export($edition);
-        $filename = 'lotg-edition-'.$edition->code.'-'.now()->format('Ymd_His').'.json';
-        $json = json_encode(
-            $payload,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
-        );
+        $filename = $this->exporter->defaultFilename($edition);
+        $json = $this->exporter->encodePayload($payload);
 
         return response()->streamDownload(function () use ($json): void {
             echo $json;
         }, $filename, [
             'Content-Type' => 'application/json; charset=UTF-8',
         ]);
+    }
+
+    public function storeExport(Request $request, Edition $edition): RedirectResponse
+    {
+        $this->authorize('view', $edition);
+
+        $validated = $request->validate([
+            'export_disk' => ['required', 'string', Rule::in($this->availableExportDisks())],
+            'export_path' => ['nullable', 'string', 'max:1024'],
+        ]);
+
+        try {
+            $payload = $this->exporter->export($edition);
+            $warnings = $this->exporter->exportWarnings();
+            $json = $this->exporter->encodePayload($payload);
+            $disk = (string) $validated['export_disk'];
+            $path = $this->normalizeDiskExportPath($validated['export_path'] ?? null, $edition);
+
+            $stored = Storage::disk($disk)->put($path, $json);
+
+            if (! $stored) {
+                throw new \RuntimeException('Failed to write export JSON to '.$disk.'://'.$path);
+            }
+
+            return redirect()
+                ->route('admin.editions.index', ['edition' => $edition->id])
+                ->with('status', 'Edition export saved to '.$disk.'://'.$path)
+                ->with('edition_transfer_report', [
+                    'title' => 'Export summary',
+                    'mode' => 'export-disk',
+                    'edition_label' => $this->editionLabel($edition),
+                    'destination' => $disk.'://'.$path,
+                    'counts' => $this->summarizeExportPayload($payload),
+                    'warnings' => $warnings,
+                    'errors' => [],
+                ]);
+        } catch (\Throwable $exception) {
+            return redirect()
+                ->route('admin.editions.index', ['edition' => $edition->id])
+                ->withErrors(['edition_export' => $exception->getMessage()])
+                ->withInput();
+        }
     }
 
     public function import(Request $request): RedirectResponse
@@ -136,5 +177,60 @@ class EditionTransferAdminController extends Controller
         return $code !== ''
             ? $edition->name.' ('.$code.')'
             : $edition->name;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function availableExportDisks(): array
+    {
+        return collect(config('lotg.export_disks', ['local', 's3']))
+            ->map(fn ($disk) => trim((string) $disk))
+            ->filter(fn (string $disk) => $disk !== '' && config('filesystems.disks.'.$disk))
+            ->values()
+            ->all();
+    }
+
+    protected function normalizeDiskExportPath(?string $path, Edition $edition): string
+    {
+        $normalized = ltrim(str_replace('\\', '/', trim((string) $path)), '/');
+
+        return $normalized !== ''
+            ? $normalized
+            : $this->exporter->defaultDiskPath($edition);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, int>
+     */
+    protected function summarizeExportPayload(array $payload): array
+    {
+        $laws = collect($payload['laws'] ?? []);
+        $documents = collect($payload['documents'] ?? []);
+
+        return [
+            'media_assets' => count($payload['media_assets'] ?? []),
+            'laws' => $laws->count(),
+            'nodes' => $laws->sum(fn (array $lawPayload) => $this->countNodePayloads($lawPayload['nodes'] ?? [])),
+            'qas' => $laws->sum(fn (array $lawPayload) => count($lawPayload['qas'] ?? [])),
+            'qa_options' => $laws->sum(
+                fn (array $lawPayload) => collect($lawPayload['qas'] ?? [])
+                    ->sum(fn (array $qaPayload) => count($qaPayload['options'] ?? []))
+            ),
+            'documents' => $documents->count(),
+            'document_pages' => $documents->sum(fn (array $documentPayload) => count($documentPayload['pages'] ?? [])),
+            'changelog_entries' => count($payload['changelog_entries'] ?? []),
+        ];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $nodes
+     */
+    protected function countNodePayloads(array $nodes): int
+    {
+        return collect($nodes)->sum(function (array $node): int {
+            return 1 + $this->countNodePayloads($node['children'] ?? []);
+        });
     }
 }

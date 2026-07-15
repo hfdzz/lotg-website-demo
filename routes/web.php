@@ -41,6 +41,7 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
     Route::get('/', [AdminHomeController::class, 'index'])->name('home');
     Route::get('/editions', [EditionAdminController::class, 'index'])->name('editions.index');
     Route::get('/editions/{edition}/export', [EditionTransferAdminController::class, 'export'])->name('editions.export');
+    Route::post('/editions/{edition}/export', [EditionTransferAdminController::class, 'storeExport'])->name('editions.export.store');
     Route::post('/editions/import', [EditionTransferAdminController::class, 'import'])->name('editions.import');
     Route::get('/public-features', [FeatureVisibilityAdminController::class, 'index'])->name('public-features.index');
     Route::get('/laws', [LawAdminController::class, 'home'])->name('laws.home');

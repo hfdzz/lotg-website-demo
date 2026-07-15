@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\RbacSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class EditionAdminTransferTest extends TestCase
@@ -145,6 +146,39 @@ class EditionAdminTransferTest extends TestCase
             'node_type' => 'section',
             'sort_order' => 1,
         ]);
+    }
+
+    public function test_admin_can_save_an_edition_export_to_a_storage_disk_from_the_ui(): void
+    {
+        Storage::fake('s3');
+
+        $this->actingAsSuperAdmin();
+
+        $edition = Edition::create([
+            'name' => 'Source Edition',
+            'code' => 'source-edition',
+            'year_start' => 2025,
+            'year_end' => 2026,
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+
+        $path = 'exports/ui-source-edition.json';
+
+        $this->from(route('admin.editions.index', ['edition' => $edition->id]))
+            ->post(route('admin.editions.export.store', $edition), [
+                'export_disk' => 's3',
+                'export_path' => $path,
+            ])
+            ->assertRedirect(route('admin.editions.index', ['edition' => $edition->id]))
+            ->assertSessionHas('edition_transfer_report');
+
+        Storage::disk('s3')->assertExists($path);
+
+        $payload = json_decode(Storage::disk('s3')->get($path), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('source-edition', $payload['edition']['code']);
+        $this->assertSame('Source Edition', $payload['edition']['name']);
     }
 
     protected function actingAsSuperAdmin(): User

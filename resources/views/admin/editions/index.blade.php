@@ -11,6 +11,15 @@
         $editionFeaturesEnabled = collect($editionFeatureRows)->filter(fn (array $row) => $row['effective_state'])->count();
         $transferReport = session('edition_transfer_report');
         $importTargetDefault = old('target_edition_id', $selectedEdition?->id);
+        $exportDiskOptions = collect(config('lotg.export_disks', ['local', 's3']))
+            ->map(fn ($disk) => trim((string) $disk))
+            ->filter(fn (string $disk) => $disk !== '' && config('filesystems.disks.'.$disk))
+            ->values();
+        $exportDiskDefault = old('export_disk', $exportDiskOptions->contains('s3') ? 's3' : $exportDiskOptions->first());
+        $exportPathPlaceholder = $selectedEdition
+            ? trim((string) config('lotg.export_default_disk_prefix', 'lotg-exports'), '/\\').'/'.
+                'lotg-edition-'.$selectedEdition->code.'-YYYYMMDD_HHMMSS.json'
+            : trim((string) config('lotg.export_default_disk_prefix', 'lotg-exports'), '/\\').'/lotg-edition-YYYYMMDD_HHMMSS.json';
     @endphp
 
     <section class="hero">
@@ -39,6 +48,9 @@
             <h2>{{ $transferReport['title'] ?? 'Import summary' }}</h2>
             @if (! empty($transferReport['edition_label']))
                 <p class="law-meta">Edition: {{ $transferReport['edition_label'] }}</p>
+            @endif
+            @if (! empty($transferReport['destination']))
+                <p class="law-meta">Destination: {{ $transferReport['destination'] }}</p>
             @endif
             <p class="law-meta">
                 Laws: {{ $transferReport['counts']['laws'] ?? 0 }}
@@ -208,7 +220,7 @@
         </div>
     </details>
 
-    <details class="card collapse-card" @if(old('import_mode') || $transferReport) open @endif>
+    <details class="card collapse-card" @if(old('import_mode') || old('export_disk') || $transferReport) open @endif>
         <summary class="collapse-summary">
             <h2>Import / export JSON</h2>
         </summary>
@@ -217,8 +229,30 @@
                 <div class="stack-top">
                     <h3>Export selected edition</h3>
                     <p class="law-meta">Current export target: {{ $selectedEdition->name }} ({{ $selectedEdition->code }})</p>
-                    <p class="law-meta">This downloads the same edition JSON structure used by the CLI exporter.</p>
+                    <p class="law-meta">This can either download the JSON in your browser or save it directly to a Laravel storage disk such as <code>s3</code>.</p>
                     <p><a class="result-link" href="{{ route('admin.editions.export', $selectedEdition) }}">Download JSON export</a></p>
+
+                    @if ($exportDiskOptions->isNotEmpty())
+                        <form action="{{ route('admin.editions.export.store', $selectedEdition) }}" method="post" class="stack-form stack-top">
+                            @csrf
+
+                            <label>
+                                <div class="law-meta">Export disk</div>
+                                <select name="export_disk">
+                                    @foreach ($exportDiskOptions as $exportDisk)
+                                        <option value="{{ $exportDisk }}" @selected((string) $exportDiskDefault === (string) $exportDisk)>{{ $exportDisk }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+
+                            <label>
+                                <div class="law-meta">Object key / path</div>
+                                <input type="text" name="export_path" value="{{ old('export_path') }}" placeholder="{{ $exportPathPlaceholder }}">
+                            </label>
+
+                            <button type="submit">Save export to disk</button>
+                        </form>
+                    @endif
                 </div>
             @else
                 <p class="empty-state">Create or select an edition first to export it.</p>

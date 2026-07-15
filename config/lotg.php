@@ -5,6 +5,11 @@ return [
     'random_token_max_attempts' => 3,
     'expected_law_count' => (int) env('LOTG_EXPECTED_LAW_COUNT', 17),
     'export_default_dir' => (string) env('LOTG_EXPORT_DEFAULT_DIR', 'storage/app/lotg-exports'),
+    'export_default_disk_prefix' => (string) env('LOTG_EXPORT_DEFAULT_DISK_PREFIX', 'lotg-exports'),
+    'export_disks' => array_values(array_filter(array_map(
+        static fn (string $disk) => trim($disk),
+        explode(',', (string) env('LOTG_EXPORT_DISKS', 'local,s3'))
+    ))),
     'media_upload_disks' => array_values(array_filter(array_map(
         static fn (string $disk) => trim($disk),
         explode(',', (string) env('LOTG_MEDIA_UPLOAD_DISKS', 'public,s3'))

@@ -107,6 +107,32 @@ class EditionJsonExporter
         ];
     }
 
+    public function defaultFilename(Edition $edition): string
+    {
+        return 'lotg-edition-'.$edition->code.'-'.now()->format('Ymd_His').'.json';
+    }
+
+    public function defaultDiskPath(Edition $edition): string
+    {
+        $prefix = trim((string) config('lotg.export_default_disk_prefix', 'lotg-exports'), "/\\ \t\n\r\0\x0B");
+        $filename = $this->defaultFilename($edition);
+
+        return $prefix !== ''
+            ? $prefix.'/'.$filename
+            : $filename;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function encodePayload(array $payload): string
+    {
+        return json_encode(
+            $payload,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        );
+    }
+
     protected function exportLaw(Law $law, array $mediaKeyById): array
     {
         $nodesByParent = $law->contentNodes

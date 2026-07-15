@@ -15,7 +15,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Artisan::command('lotg:edition-export {edition : Edition id or code} {path? : Output JSON path}', function (
+Artisan::command('lotg:edition-export {edition : Edition id or code} {path? : Output JSON path, or object key when --disk is used} {--disk= : Laravel filesystem disk to write the export JSON to, for example s3}', function (
     EditionJsonExporter $exporter,
     string $edition,
     ?string $path = null
@@ -34,27 +34,46 @@ Artisan::command('lotg:edition-export {edition : Edition id or code} {path? : Ou
         return Command::FAILURE;
     }
 
-    $exportPath = $path
-        ? lotg_console_path($path)
-        : lotg_console_default_export_path('lotg-edition-'.$editionModel->code.'-'.now()->format('Ymd_His').'.json');
+    $disk = trim((string) $this->option('disk'));
 
-    File::ensureDirectoryExists(dirname($exportPath));
+    if ($disk !== '' && ! config('filesystems.disks.'.$disk)) {
+        $this->error('Unknown filesystem disk: '.$disk);
+
+        return Command::FAILURE;
+    }
+
+    $defaultFilename = $exporter->defaultFilename($editionModel);
+    $exportPath = $path
+        ? ($disk !== '' ? lotg_console_disk_object_key($path) : lotg_console_path($path))
+        : ($disk !== '' ? $exporter->defaultDiskPath($editionModel) : lotg_console_default_export_path($defaultFilename));
+
+    if ($disk === '') {
+        File::ensureDirectoryExists(dirname($exportPath));
+    }
 
     $payload = $exporter->export($editionModel);
     $warnings = $exporter->exportWarnings();
+    $json = $exporter->encodePayload($payload);
 
     try {
-        File::put(
-            $exportPath,
-            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
-        );
+        if ($disk !== '') {
+            $stored = Storage::disk($disk)->put($exportPath, $json);
+
+            if (! $stored) {
+                $this->error('Failed to write export JSON to '.$disk.'://'.$exportPath);
+
+                return Command::FAILURE;
+            }
+        } else {
+            File::put($exportPath, $json);
+        }
     } catch (\Throwable $exception) {
         $this->error($exception->getMessage());
 
         return Command::FAILURE;
     }
 
-    $this->info('Edition exported to '.$exportPath);
+    $this->info('Edition exported to '.($disk !== '' ? $disk.'://'.$exportPath : $exportPath));
     $this->line('Laws: '.count($payload['laws']));
     $this->line('Documents: '.count($payload['documents']));
     $this->line('Changelog entries: '.count($payload['changelog_entries'] ?? []));
@@ -232,5 +251,12 @@ if (! function_exists('lotg_console_default_export_path')) {
         $directory = rtrim((string) config('lotg.export_default_dir', 'storage/app/exports'), '/\\');
 
         return lotg_console_path($directory.DIRECTORY_SEPARATOR.$filename);
+    }
+}
+
+if (! function_exists('lotg_console_disk_object_key')) {
+    function lotg_console_disk_object_key(string $path): string
+    {
+        return ltrim(str_replace('\\', '/', $path), '/');
     }
 }

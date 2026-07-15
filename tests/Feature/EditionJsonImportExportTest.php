@@ -749,6 +749,37 @@ class EditionJsonImportExportTest extends TestCase
         $this->assertSame(1, ChangelogEntry::query()->where('edition_id', $edition->id)->count());
     }
 
+    public function test_it_can_export_json_to_a_storage_disk(): void
+    {
+        Storage::fake('s3');
+
+        $edition = Edition::create([
+            'name' => 'Disk Export Edition',
+            'code' => 'disk-export-edition',
+            'year_start' => 2025,
+            'year_end' => 2026,
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+
+        $path = 'exports/disk-export-edition.json';
+
+        $this->artisan('lotg:edition-export', [
+            'edition' => $edition->code,
+            'path' => $path,
+            '--disk' => 's3',
+        ])
+            ->expectsOutputToContain('Edition exported to s3://'.$path)
+            ->assertExitCode(0);
+
+        Storage::disk('s3')->assertExists($path);
+
+        $payload = json_decode(Storage::disk('s3')->get($path), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('disk-export-edition', $payload['edition']['code']);
+        $this->assertSame('Disk Export Edition', $payload['edition']['name']);
+    }
+
     public function test_dry_run_reports_blocking_errors_without_saving_changes(): void
     {
         $payload = $this->makeDryRunPayload();
