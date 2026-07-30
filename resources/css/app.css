@@ -710,6 +710,45 @@ button:hover {
     background: #000000;
 }
 
+.media-admin-section-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.media-admin-scroll-panel {
+    max-height: min(70vh, 34rem);
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.media-filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.media-filter-form label {
+    min-width: min(100%, 14rem);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.status-badge-success {
+    color: #17653d;
+    background: #daf5e7;
+    border: 1px solid #9bd6b5;
+}
+
 .document-inline-media {
     margin: 1.75rem 0;
 }

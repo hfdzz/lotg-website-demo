@@ -19,17 +19,50 @@ class MediaAdminController extends Controller
     ) {
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('viewAny', MediaAsset::class);
 
+        $selectedMediaType = in_array((string) $request->query('media_type', 'all'), ['all', 'image', 'video'], true)
+            ? (string) $request->query('media_type', 'all')
+            : 'all';
+        $selectedUsageFilter = in_array((string) $request->query('usage_filter', 'all'), ['all', 'any', 'published', 'active', 'no'], true)
+            ? (string) $request->query('usage_filter', 'all')
+            : 'all';
+
+        $mediaQuery = $this->mediaLibraryQuery();
+
+        if ($selectedMediaType !== 'all') {
+            $mediaQuery->where('asset_type', $selectedMediaType);
+        }
+
+        match ($selectedUsageFilter) {
+            'any' => $mediaQuery->where(function ($query): void {
+                $query->whereHas('contentNodes')
+                    ->orWhereHas('documentPages');
+            }),
+            'published' => $mediaQuery->whereHas('contentNodes', fn ($query) => $query->where('content_nodes.is_published', true)),
+            'active' => $mediaQuery->whereHas('contentNodes.law.edition', fn ($query) => $query->active()),
+            'no' => $mediaQuery
+                ->whereDoesntHave('contentNodes')
+                ->whereDoesntHave('documentPages'),
+            default => null,
+        };
+
         return view('admin.media.index', [
-            'mediaAssets' => $this->mediaLibraryQuery()
-                ->withCount(['contentNodes', 'documentPages'])
+            'mediaAssets' => $mediaQuery
+                ->withCount([
+                    'contentNodes',
+                    'documentPages',
+                    'contentNodes as published_content_nodes_count' => fn ($query) => $query->where('content_nodes.is_published', true),
+                    'contentNodes as active_edition_content_nodes_count' => fn ($query) => $query->whereHas('law.edition', fn ($editionQuery) => $editionQuery->active()),
+                ])
                 ->orderByRaw("case when asset_type = 'image' then 1 else 2 end")
                 ->orderByDesc('updated_at')
                 ->orderByDesc('id')
                 ->get(),
+            'selectedMediaType' => $selectedMediaType,
+            'selectedUsageFilter' => $selectedUsageFilter,
         ]);
     }
 
@@ -51,7 +84,12 @@ class MediaAdminController extends Controller
         $this->authorize('update', $media);
         $this->assertLibraryMedia($media);
 
-        $media->loadCount(['contentNodes', 'documentPages']);
+        $media->loadCount([
+            'contentNodes',
+            'documentPages',
+            'contentNodes as published_content_nodes_count' => fn ($query) => $query->where('content_nodes.is_published', true),
+            'contentNodes as active_edition_content_nodes_count' => fn ($query) => $query->whereHas('law.edition', fn ($editionQuery) => $editionQuery->active()),
+        ]);
         $media->load([
             'contentNodes' => fn ($query) => $query
                 ->with(['law.edition', 'law.translations', 'translations'])

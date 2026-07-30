@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MediaAsset extends Model
 {
@@ -78,6 +79,76 @@ class MediaAsset extends Model
         }
 
         return $this->external_url;
+    }
+
+    public function contentNodeUsageCount(): int
+    {
+        $count = $this->getAttribute('content_nodes_count');
+
+        return $count !== null
+            ? (int) $count
+            : $this->contentNodes()->count();
+    }
+
+    public function publishedContentNodeUsageCount(): int
+    {
+        $count = $this->getAttribute('published_content_nodes_count');
+
+        return $count !== null
+            ? (int) $count
+            : $this->contentNodes()->where('content_nodes.is_published', true)->count();
+    }
+
+    public function activeEditionContentNodeUsageCount(): int
+    {
+        $count = $this->getAttribute('active_edition_content_nodes_count');
+
+        return $count !== null
+            ? (int) $count
+            : $this->contentNodes()->whereHas('law.edition', fn ($query) => $query->active())->count();
+    }
+
+    public function documentPageUsageCount(): int
+    {
+        $count = $this->getAttribute('document_pages_count');
+
+        return $count !== null
+            ? (int) $count
+            : $this->documentPages()->count();
+    }
+
+    public function adminNodeUsageSummary(): string
+    {
+        $nodeCount = $this->contentNodeUsageCount();
+        $publishedCount = $this->publishedContentNodeUsageCount();
+
+        return 'Used in '.$nodeCount.' '.Str::plural('node', $nodeCount).', '.$publishedCount.' published';
+    }
+
+    public function adminDocumentPageUsageSummary(): ?string
+    {
+        $pageCount = $this->documentPageUsageCount();
+
+        if ($pageCount < 1) {
+            return null;
+        }
+
+        return 'Also used in '.$pageCount.' '.Str::plural('document page', $pageCount);
+    }
+
+    public function adminTimestampSummary(): ?string
+    {
+        if (! $this->created_at) {
+            return null;
+        }
+
+        $summary = 'Added '.$this->adminTimestampLabel($this->created_at);
+
+        if ($this->updated_at && $this->updated_at->gt($this->created_at)) {
+            $summary .= ' (updated '.$this->adminTimestampLabel($this->updated_at).')';
+        }
+
+        return $summary;
     }
 
     public function thumbnailUrl(): ?string
@@ -231,5 +302,13 @@ class MediaAsset extends Model
         }
 
         return Storage::disk($disk)->url($path);
+    }
+
+    protected function adminTimestampLabel($timestamp): string
+    {
+        return $timestamp
+            ->copy()
+            ->timezone(config('app.timezone', 'UTC'))
+            ->format('d M Y H:i');
     }
 }

@@ -49,9 +49,20 @@
             </div>
         @endif
         @php
-            $usedCount = (int) $media->content_nodes_count + (int) $media->document_pages_count;
+            $usedCount = $media->contentNodeUsageCount() + $media->documentPageUsageCount();
         @endphp
-        <p class="law-meta">Usage: {{ $usedCount }} {{ \Illuminate\Support\Str::plural('place', $usedCount) }}</p>
+        <p class="law-meta">Usage: {{ \Illuminate\Support\Str::of($media->adminNodeUsageSummary())->after('Used in ') }}</p>
+        @if ($media->activeEditionContentNodeUsageCount() > 0)
+            <p class="stack-top">
+                <span class="status-badge status-badge-success">Used in active edition</span>
+            </p>
+        @endif
+        @if ($media->documentPageUsageCount() > 0)
+            <p class="law-meta">Document pages: {{ $media->documentPageUsageCount() }}</p>
+        @endif
+        @if ($media->adminTimestampSummary())
+            <p class="law-meta">{{ $media->adminTimestampSummary() }}</p>
+        @endif
         <p class="law-meta media-source">{{ $media->adminSource() ?: 'No source' }}</p>
     </section>
 
@@ -66,10 +77,10 @@
         <button type="submit">Save media</button>
     </form>
 
-    <section class="card stack-form stack-top">
+    <section class="card stack-form stack-top media-admin-section-card">
         <h2>Where this media is used</h2>
         @if ($media->contentNodes->isNotEmpty() || $media->documentPages->isNotEmpty())
-            <div class="stack-top">
+            <div class="stack-top media-admin-scroll-panel">
                 @foreach ($media->contentNodes as $node)
                     @php
                         $nodeTitle = $node->translationFor(\App\Support\LotgLanguage::default())?->title ?: ucfirst(str_replace('_', ' ', $node->node_type));
