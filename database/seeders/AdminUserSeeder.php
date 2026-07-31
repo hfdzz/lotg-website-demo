@@ -12,11 +12,13 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        $email = trim((string) config('lotg.seeders.admin_user.email', 'admin@example.com'));
+
         User::updateOrCreate(
-            ['email' => env('ADMIN_EMAIL', 'admin@example.com')],
+            ['email' => $email],
             [
-                'name' => env('ADMIN_NAME', 'LotG Admin'),
-                'password' => env('ADMIN_PASSWORD', 'password'),
+                'name' => (string) config('lotg.seeders.admin_user.name', 'LotG Admin'),
+                'password' => (string) config('lotg.seeders.admin_user.password', 'password'),
             ]
         );
     }

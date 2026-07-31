@@ -17,8 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RbacSeeder::class,
             SuperAdminSeeder::class,
-            EditionSeeder::class,
-            LotgSeeder::class,
+            // EditionSeeder::class,
+            // LotgSeeder::class,
         ]);
     }
 }

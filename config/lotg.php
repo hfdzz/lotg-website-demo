@@ -3,6 +3,18 @@
 return [
     'random_token_length' => (int) env('LOTG_RANDOM_TOKEN_LENGTH', 4),
     'random_token_max_attempts' => 3,
+    'seeders' => [
+        'super_admin' => [
+            'name' => (string) env('SUPER_ADMIN_NAME', ''),
+            'email' => (string) env('SUPER_ADMIN_EMAIL', ''),
+            'password' => (string) env('SUPER_ADMIN_PASSWORD', ''),
+        ],
+        'admin_user' => [
+            'name' => (string) env('ADMIN_NAME', 'LotG Admin'),
+            'email' => (string) env('ADMIN_EMAIL', 'admin@example.com'),
+            'password' => (string) env('ADMIN_PASSWORD', 'password'),
+        ],
+    ],
     'expected_law_count' => (int) env('LOTG_EXPECTED_LAW_COUNT', 17),
     'export_default_dir' => (string) env('LOTG_EXPORT_DEFAULT_DIR', 'storage/app/lotg-exports'),
     'export_default_disk_prefix' => (string) env('LOTG_EXPORT_DEFAULT_DISK_PREFIX', 'lotg-exports'),

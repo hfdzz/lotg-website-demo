@@ -15,9 +15,9 @@ class SuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $name = (string) env('SUPER_ADMIN_NAME', '');
-        $email = (string) env('SUPER_ADMIN_EMAIL', '');
-        $password = (string) env('SUPER_ADMIN_PASSWORD', '');
+        $name = trim((string) config('lotg.seeders.super_admin.name', ''));
+        $email = trim((string) config('lotg.seeders.super_admin.email', ''));
+        $password = (string) config('lotg.seeders.super_admin.password', '');
 
         if ($name === '' || $email === '' || $password === '') {
             $this->command?->warn('Skipping SuperAdminSeeder. Set SUPER_ADMIN_NAME, SUPER_ADMIN_EMAIL, and SUPER_ADMIN_PASSWORD to create the super admin user.');
