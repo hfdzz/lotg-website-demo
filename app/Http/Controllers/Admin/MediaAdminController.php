@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
+use App\Models\PendingMediaUpload;
 use App\Services\LotgPublicCache;
+use App\Services\PendingMediaUploadService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +21,8 @@ use Illuminate\Support\Str;
 class MediaAdminController extends Controller
 {
     public function __construct(
-        protected LotgPublicCache $publicCache
+        protected LotgPublicCache $publicCache,
+        protected PendingMediaUploadService $pendingUploads
     ) {
     }
 
@@ -114,6 +118,67 @@ class MediaAdminController extends Controller
         return redirect()
             ->route('admin.media.edit', ['media' => $mediaAsset])
             ->with('status', 'Media created.');
+    }
+
+    public function upload(Request $request): JsonResponse
+    {
+        $this->authorize('create', MediaAsset::class);
+
+        $validated = Validator::make($request->all(), [
+            'file' => ['required', 'file'],
+            'upload_disk' => ['nullable', Rule::in($this->availableUploadDisks())],
+        ])->validate();
+
+        $file = $request->file('file');
+
+        if (! $file) {
+            throw ValidationException::withMessages([
+                'file' => 'A file upload is required.',
+            ]);
+        }
+
+        $assetType = $this->pendingUploads->detectUploadedFileType($file);
+
+        if (! in_array($assetType, ['image', 'video'], true)) {
+            throw ValidationException::withMessages([
+                'file' => 'Only image files or MP4 videos are supported.',
+            ]);
+        }
+
+        Validator::make(
+            ['file' => $file],
+            [
+                'file' => $assetType === 'image'
+                    ? ['file', 'mimes:jpg,jpeg,png,gif,webp,avif,svg', 'max:5120']
+                    : ['file', 'mimes:mp4', 'max:'.$this->videoUploadMaxKb()],
+            ]
+        )->validate();
+
+        $upload = $this->pendingUploads->create(
+            $file,
+            (int) $request->user()->id,
+            $this->selectedUploadDisk($validated)
+        );
+
+        return response()->json([
+            'token' => $upload->uuid,
+            'asset_type' => $upload->asset_type,
+            'storage_disk' => $upload->storage_disk,
+            'original_name' => $upload->original_name,
+            'size_bytes' => $upload->size_bytes,
+        ]);
+    }
+
+    public function destroyUpload(Request $request, PendingMediaUpload $upload): JsonResponse
+    {
+        $this->authorize('create', MediaAsset::class);
+        abort_unless((int) $upload->user_id === (int) $request->user()->id, 404);
+
+        $this->pendingUploads->delete($upload);
+
+        return response()->json([
+            'deleted' => true,
+        ]);
     }
 
     public function edit(MediaAsset $media): View
@@ -213,13 +278,20 @@ class MediaAdminController extends Controller
             'video_file' => ['nullable', 'file', 'mimes:mp4', 'max:'.$this->videoUploadMaxKb()],
             'video_source' => ['nullable', 'in:upload,youtube'],
             'upload_disk' => ['nullable', Rule::in($uploadDiskOptions)],
+            'upload_token' => ['nullable', 'string'],
             'external_url' => ['nullable', 'url'],
             'caption' => ['nullable', 'string'],
             'credit' => ['nullable', 'string', 'max:255'],
         ]);
 
         $validator->after(function ($validator) use ($request, $assetType, $media, $videoSource): void {
-            if ($assetType === 'image' && ! $request->hasFile('image_file') && ! $media?->file_path) {
+            $pendingUpload = $this->pendingUploadForRequest($request);
+
+            if ($pendingUpload && $pendingUpload->asset_type !== $assetType) {
+                $validator->errors()->add('upload_token', 'The uploaded file does not match the selected media type.');
+            }
+
+            if ($assetType === 'image' && ! $request->hasFile('image_file') && ! $pendingUpload && ! $media?->file_path) {
                 $validator->errors()->add('image_file', 'An image file is required for image media.');
             }
 
@@ -229,11 +301,15 @@ class MediaAdminController extends Controller
                         && $media?->storage_type === 'upload'
                         && filled($media?->file_path);
 
-                    if (! $request->hasFile('video_file') && ! $hasExistingUpload) {
+                    if (! $request->hasFile('video_file') && ! $pendingUpload && ! $hasExistingUpload) {
                         $validator->errors()->add('video_file', 'An MP4 video file is required for uploaded video media.');
                     }
 
                     return;
+                }
+
+                if ($pendingUpload) {
+                    $validator->errors()->add('upload_token', 'Uploaded video files require "Uploaded file" as the selected video source.');
                 }
 
                 $url = trim((string) $request->input('external_url'));
@@ -264,7 +340,7 @@ class MediaAdminController extends Controller
         ];
 
         if ($assetType === 'image') {
-            $imageDisk = $request->hasFile('image_file')
+            $imageDisk = ($request->hasFile('image_file') || $this->pendingUploadForRequest($request))
                 ? $this->selectedUploadDisk($validated)
                 : ($media?->storage_disk ?: $this->defaultUploadDisk());
             $payload['storage_type'] = 'upload';
@@ -272,14 +348,16 @@ class MediaAdminController extends Controller
             $payload['external_url'] = null;
             $payload['file_path'] = $request->hasFile('image_file')
                 ? $request->file('image_file')->store('lotg-media/images', $imageDisk)
-                : $media?->file_path;
+                : ($this->pendingUploadForRequest($request)
+                    ? $this->pendingUploads->promote($this->pendingUploadForRequest($request), $imageDisk)
+                    : $media?->file_path);
         }
 
         if ($assetType === 'video') {
             $videoSource = (string) ($validated['video_source'] ?? 'youtube');
 
             if ($videoSource === 'upload') {
-                $selectedDisk = $request->hasFile('video_file')
+                $selectedDisk = ($request->hasFile('video_file') || $this->pendingUploadForRequest($request))
                     ? $this->selectedUploadDisk($validated)
                     : ($media?->storage_disk ?: $this->defaultUploadDisk());
 
@@ -287,7 +365,9 @@ class MediaAdminController extends Controller
                 $payload['storage_disk'] = $selectedDisk;
                 $payload['file_path'] = $request->hasFile('video_file')
                     ? $request->file('video_file')->store('lotg-media/videos', $selectedDisk)
-                    : $media?->file_path;
+                    : ($this->pendingUploadForRequest($request)
+                        ? $this->pendingUploads->promote($this->pendingUploadForRequest($request), $selectedDisk)
+                        : $media?->file_path);
                 $payload['external_url'] = null;
             } else {
                 $payload['storage_type'] = 'youtube';
@@ -413,6 +493,10 @@ class MediaAdminController extends Controller
             return true;
         }
 
+        if (trim((string) ($itemData['upload_token'] ?? '')) !== '') {
+            return true;
+        }
+
         if (trim((string) ($itemData['external_url'] ?? '')) !== '') {
             return true;
         }
@@ -432,8 +516,7 @@ class MediaAdminController extends Controller
         $itemFiles = data_get($request->allFiles(), 'items.'.$index, []);
         $server = $request->server->all();
         $server['REQUEST_METHOD'] = 'POST';
-
-        return Request::create(
+        $itemRequest = Request::create(
             $request->url(),
             'POST',
             $itemData,
@@ -441,6 +524,10 @@ class MediaAdminController extends Controller
             is_array($itemFiles) ? $itemFiles : [],
             $server
         );
+
+        $itemRequest->setUserResolver(fn () => $request->user());
+
+        return $itemRequest;
     }
 
     protected function validationExceptionForBulkItem(ValidationException $exception, int $index): ValidationException
@@ -455,5 +542,31 @@ class MediaAdminController extends Controller
         }
 
         return ValidationException::withMessages($prefixedErrors);
+    }
+
+    protected function pendingUploadForRequest(Request $request): ?PendingMediaUpload
+    {
+        if ($request->attributes->has('pending_upload_resolved')) {
+            return $request->attributes->get('pending_upload');
+        }
+
+        $request->attributes->set('pending_upload_resolved', true);
+
+        $token = trim((string) $request->input('upload_token', ''));
+
+        if ($token === '' || ! $request->user()) {
+            $request->attributes->set('pending_upload', null);
+
+            return null;
+        }
+
+        $upload = PendingMediaUpload::query()
+            ->where('uuid', $token)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        $request->attributes->set('pending_upload', $upload);
+
+        return $upload;
     }
 }

@@ -38,7 +38,15 @@
             <h2>Add media</h2>
         </summary>
         <div class="collapse-body">
-            <form action="{{ route('admin.media.store') }}" method="post" enctype="multipart/form-data" class="stack-form" data-media-bulk-editor>
+            <form
+                action="{{ route('admin.media.store') }}"
+                method="post"
+                enctype="multipart/form-data"
+                class="stack-form"
+                data-media-bulk-editor
+                data-media-upload-url="{{ route('admin.media.uploads.store') }}"
+                data-media-upload-delete-template="{{ route('admin.media.uploads.destroy', ['upload' => '__UUID__']) }}"
+            >
                 @csrf
                 <div class="media-add-card-body">
                     <div class="media-bulk-list" data-media-bulk-list>

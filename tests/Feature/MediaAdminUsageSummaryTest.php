@@ -8,6 +8,7 @@ use App\Models\DocumentPage;
 use App\Models\Edition;
 use App\Models\Law;
 use App\Models\MediaAsset;
+use App\Models\PendingMediaUpload;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RbacSeeder;
@@ -242,6 +243,88 @@ class MediaAdminUsageSummaryTest extends TestCase
         $this->assertSame('video', $videoMedia->asset_type);
         $this->assertSame('youtube', $videoMedia->storage_type);
         $this->assertSame('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $videoMedia->external_url);
+    }
+
+    public function test_media_admin_can_upload_pending_media_file(): void
+    {
+        $this->actingAsSuperAdmin();
+        Storage::fake('public');
+
+        $response = $this->post(
+            route('admin.media.uploads.store'),
+            [
+                'upload_disk' => 'public',
+                'file' => UploadedFile::fake()->image('pending-image.png'),
+            ],
+            [
+                'Accept' => 'application/json',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('asset_type', 'image')
+            ->assertJsonPath('storage_disk', 'public')
+            ->assertJsonPath('original_name', 'pending-image.png');
+
+        $token = (string) $response->json('token');
+        $this->assertNotSame('', $token);
+
+        $upload = PendingMediaUpload::query()->where('uuid', $token)->first();
+
+        $this->assertNotNull($upload);
+        Storage::disk('public')->assertExists($upload->temp_path);
+    }
+
+    public function test_media_admin_can_create_media_from_pending_upload_token(): void
+    {
+        $this->actingAsSuperAdmin();
+        Storage::fake('public');
+
+        $uploadResponse = $this->post(
+            route('admin.media.uploads.store'),
+            [
+                'upload_disk' => 'public',
+                'file' => UploadedFile::fake()->image('deferred-image.png'),
+            ],
+            [
+                'Accept' => 'application/json',
+                'X-Requested-With' => 'XMLHttpRequest',
+            ]
+        );
+
+        $uploadResponse->assertOk();
+        $token = (string) $uploadResponse->json('token');
+
+        $response = $this->post(route('admin.media.store'), [
+            'items' => [
+                [
+                    'asset_type' => 'image',
+                    'upload_disk' => 'public',
+                    'upload_token' => $token,
+                    'caption' => 'Deferred image',
+                    'credit' => 'IFAB',
+                ],
+            ],
+        ]);
+
+        $response
+            ->assertRedirect(route('admin.media.index'))
+            ->assertSessionHas('status', '1 media created.');
+
+        $media = MediaAsset::query()->where('caption', 'Deferred image')->first();
+
+        $this->assertNotNull($media);
+        $this->assertSame('image', $media->asset_type);
+        $this->assertSame('upload', $media->storage_type);
+        $this->assertSame('public', $media->storage_disk);
+        $this->assertNotNull($media->file_path);
+        $this->assertStringStartsWith('lotg-media/images/', $media->file_path);
+        Storage::disk('public')->assertExists($media->file_path);
+        $this->assertDatabaseMissing('pending_media_uploads', [
+            'uuid' => $token,
+        ]);
     }
 
     public function test_media_admin_can_filter_by_usage_state(): void

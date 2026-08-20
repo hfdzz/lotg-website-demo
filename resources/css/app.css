@@ -758,6 +758,10 @@ button:hover {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+.media-bulk-item[aria-busy="true"] {
+    opacity: 0.8;
+}
+
 .media-bulk-item-header,
 .media-bulk-actions {
     display: flex;
@@ -768,6 +772,22 @@ button:hover {
 
 .media-bulk-item-header h3 {
     margin: 0;
+}
+
+.media-bulk-upload-status {
+    margin: -0.2rem 0 0;
+}
+
+.media-bulk-upload-status.is-uploading {
+    color: var(--accent);
+}
+
+.media-bulk-upload-status.is-success {
+    color: #17653d;
+}
+
+.media-bulk-upload-status.is-error {
+    color: #9f1239;
 }
 
 .status-badge {

@@ -30,6 +30,13 @@
             <option value="video" @selected($assetType === 'video')>Video</option>
         </select>
     </label>
+
+    <input type="hidden" name="{{ $fieldName('upload_token') }}" value="{{ $fieldValue('upload_token') }}" data-media-bulk-upload-token>
+    <p class="nav-meta media-bulk-upload-status" data-media-bulk-upload-status @if (! filled($fieldValue('upload_token'))) hidden @endif>
+        @if (filled($fieldValue('upload_token')))
+            Uploaded file ready for save.
+        @endif
+    </p>
 @else
     <label>
         <div class="law-meta">Media type</div>
@@ -45,7 +52,7 @@
 
     <label>
         <div class="law-meta">Upload disk</div>
-        <select name="{{ $fieldName('upload_disk') }}">
+        <select name="{{ $fieldName('upload_disk') }}" data-media-bulk-upload-disk>
             @foreach ($uploadDisks as $uploadDisk)
                 <option value="{{ $uploadDisk }}" @selected($selectedUploadDisk === $uploadDisk)>{{ strtoupper($uploadDisk) }}</option>
             @endforeach
@@ -84,7 +91,7 @@
 
         <label>
             <div class="law-meta">Upload disk</div>
-            <select name="{{ $fieldName('upload_disk') }}">
+            <select name="{{ $fieldName('upload_disk') }}" data-media-bulk-upload-disk>
                 @foreach ($uploadDisks as $uploadDisk)
                     <option value="{{ $uploadDisk }}" @selected($selectedUploadDisk === $uploadDisk)>{{ strtoupper($uploadDisk) }}</option>
                 @endforeach

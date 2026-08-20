@@ -49,6 +49,8 @@ Route::middleware(['auth', 'can:access-admin'])->prefix('admin')->name('admin.')
     Route::get('/qas', [LawQaAdminController::class, 'home'])->name('qas.home');
     Route::get('/media', [MediaAdminController::class, 'index'])->name('media.index');
     Route::post('/media', [MediaAdminController::class, 'store'])->name('media.store');
+    Route::post('/media/uploads', [MediaAdminController::class, 'upload'])->name('media.uploads.store');
+    Route::delete('/media/uploads/{upload}', [MediaAdminController::class, 'destroyUpload'])->name('media.uploads.destroy');
     Route::get('/media/{media}/edit', [MediaAdminController::class, 'edit'])->name('media.edit');
     Route::patch('/media/{media}', [MediaAdminController::class, 'update'])->name('media.update');
     Route::delete('/media/{media}', [MediaAdminController::class, 'destroy'])->name('media.destroy');

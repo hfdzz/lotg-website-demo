@@ -607,13 +607,50 @@ function setupBulkMediaEditor() {
         input.dispatchEvent(new Event('change', { bubbles: true }));
     };
 
-    const clearFileInput = (input) => {
+    const clearFileInput = (input, shouldDispatch = true) => {
         if (!(input instanceof HTMLInputElement) || input.type !== 'file') {
             return;
         }
 
         input.value = '';
-        input.dispatchEvent(new Event('change', { bubbles: true }));
+
+        if (shouldDispatch) {
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    };
+
+    const uploadTokenInputFor = (item) => item?.querySelector('[data-media-bulk-upload-token]');
+    const uploadStatusFor = (item) => item?.querySelector('[data-media-bulk-upload-status]');
+    const uploadDiskSelectFor = (item) => {
+        if (!(item instanceof HTMLElement)) {
+            return null;
+        }
+
+        return Array.from(item.querySelectorAll('[data-media-bulk-upload-disk]')).find(
+            (field) => field instanceof HTMLSelectElement && !field.disabled,
+        ) ?? null;
+    };
+
+    const mediaTypeSelectFor = (item) => item?.querySelector('[data-media-type-select]');
+    const videoSourceSelectFor = (item) => item?.querySelector('[data-video-source-select]');
+    const imageInputFor = (item) => item?.querySelector('[data-media-bulk-image-input]');
+    const videoInputFor = (item) => item?.querySelector('[data-media-bulk-video-input]');
+    const externalUrlInputFor = (item) => item?.querySelector('[data-media-bulk-external-url]');
+
+    const setUploadStatus = (item, state, message) => {
+        const status = uploadStatusFor(item);
+
+        if (!(status instanceof HTMLElement)) {
+            return;
+        }
+
+        status.hidden = !message;
+        status.textContent = message || '';
+        status.classList.remove('is-uploading', 'is-success', 'is-error');
+
+        if (state) {
+            status.classList.add(`is-${state}`);
+        }
     };
 
     const itemIsBlank = (item) => {
@@ -626,10 +663,12 @@ function setupBulkMediaEditor() {
         const externalUrlInput = item.querySelector('[data-media-bulk-external-url]');
         const imageInput = item.querySelector('[data-media-bulk-image-input]');
         const videoInput = item.querySelector('[data-media-bulk-video-input]');
+        const uploadTokenInput = uploadTokenInputFor(item);
 
         return (captionInput instanceof HTMLInputElement ? captionInput.value.trim() === '' : true)
             && (creditInput instanceof HTMLInputElement ? creditInput.value.trim() === '' : true)
             && (externalUrlInput instanceof HTMLInputElement ? externalUrlInput.value.trim() === '' : true)
+            && (uploadTokenInput instanceof HTMLInputElement ? uploadTokenInput.value.trim() === '' : true)
             && (imageInput instanceof HTMLInputElement ? imageInput.files?.length !== 1 : true)
             && (videoInput instanceof HTMLInputElement ? videoInput.files?.length !== 1 : true);
     };
@@ -667,6 +706,11 @@ function setupBulkMediaEditor() {
         const list = editor.querySelector('[data-media-bulk-list]');
         const template = editor.querySelector('[data-media-bulk-template]');
         const addButton = editor.querySelector('[data-media-bulk-add]');
+        const submitButton = editor.querySelector('button[type="submit"]');
+        const dropSurface = editor.querySelector('.media-add-card-body');
+        const uploadUrl = editor.dataset.mediaUploadUrl;
+        const deleteUrlTemplate = editor.dataset.mediaUploadDeleteTemplate;
+        const csrfToken = editor.querySelector('input[name="_token"]')?.value || '';
 
         if (!(list instanceof HTMLElement) || !(template instanceof HTMLTemplateElement) || !(addButton instanceof HTMLButtonElement)) {
             return;
@@ -674,13 +718,229 @@ function setupBulkMediaEditor() {
 
         let activeDropTarget = null;
 
+        const updateEditorSubmitState = () => {
+            if (!(submitButton instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            const items = Array.from(list.querySelectorAll('[data-media-bulk-item]'));
+            const hasUploadingItem = items.some(
+                (item) => item instanceof HTMLElement && item.dataset.mediaBulkUploading === 'true',
+            );
+            const hasPendingRawFile = items.some((item) => {
+                if (!(item instanceof HTMLElement)) {
+                    return false;
+                }
+
+                const imageInput = imageInputFor(item);
+                const videoInput = videoInputFor(item);
+
+                return (imageInput instanceof HTMLInputElement && (imageInput.files?.length || 0) > 0)
+                    || (videoInput instanceof HTMLInputElement && (videoInput.files?.length || 0) > 0);
+            });
+
+            submitButton.disabled = hasUploadingItem || hasPendingRawFile;
+        };
+
         const clearDropTarget = () => {
             if (activeDropTarget instanceof HTMLElement) {
                 activeDropTarget.classList.remove('is-dragover');
             }
 
             activeDropTarget = null;
-            list.classList.remove('is-dragover');
+            if (dropSurface instanceof HTMLElement) {
+                dropSurface.classList.remove('is-dragover');
+            }
+        };
+
+        const deletePendingUploadToken = async (token) => {
+            if (!token || !deleteUrlTemplate || !csrfToken) {
+                return;
+            }
+
+            try {
+                await fetch(deleteUrlTemplate.replace('__UUID__', encodeURIComponent(token)), {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+            } catch {
+                // Ignore cleanup failures for temporary uploads.
+            }
+        };
+
+        const clearPendingUpload = async (item, options = {}) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const {
+                deleteRemote = true,
+                statusState = null,
+                statusMessage = '',
+                clearFiles = false,
+            } = options;
+            const tokenInput = uploadTokenInputFor(item);
+            const existingToken = tokenInput instanceof HTMLInputElement ? tokenInput.value.trim() : '';
+
+            if (deleteRemote && existingToken) {
+                await deletePendingUploadToken(existingToken);
+            }
+
+            if (tokenInput instanceof HTMLInputElement) {
+                tokenInput.value = '';
+                delete tokenInput.dataset.assetType;
+            }
+
+            if (clearFiles) {
+                clearFileInput(imageInputFor(item), false);
+                clearFileInput(videoInputFor(item), false);
+            }
+
+            setUploadStatus(item, statusState, statusMessage);
+            updateEditorSubmitState();
+        };
+
+        const syncExistingUploadToken = (item) => {
+            const tokenInput = uploadTokenInputFor(item);
+
+            if (!(tokenInput instanceof HTMLInputElement) || tokenInput.value.trim() === '') {
+                return;
+            }
+
+            if (!tokenInput.dataset.assetType) {
+                const mediaTypeSelect = mediaTypeSelectFor(item);
+                tokenInput.dataset.assetType = mediaTypeSelect instanceof HTMLSelectElement
+                    ? mediaTypeSelect.value
+                    : 'image';
+            }
+
+            setUploadStatus(item, 'success', 'Uploaded file ready for save.');
+        };
+
+        const clearPendingUploadIfSelectionChanged = async (item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const tokenInput = uploadTokenInputFor(item);
+
+            if (!(tokenInput instanceof HTMLInputElement) || tokenInput.value.trim() === '') {
+                return;
+            }
+
+            const tokenAssetType = tokenInput.dataset.assetType || '';
+            const mediaTypeSelect = mediaTypeSelectFor(item);
+            const videoSourceSelect = videoSourceSelectFor(item);
+            const selectedMediaType = mediaTypeSelect instanceof HTMLSelectElement ? mediaTypeSelect.value : '';
+            const selectedVideoSource = videoSourceSelect instanceof HTMLSelectElement ? videoSourceSelect.value : '';
+
+            if (tokenAssetType && tokenAssetType !== selectedMediaType) {
+                await clearPendingUpload(item, {
+                    statusState: null,
+                    statusMessage: '',
+                });
+
+                return;
+            }
+
+            if (tokenAssetType === 'video' && selectedVideoSource === 'youtube') {
+                await clearPendingUpload(item, {
+                    statusState: null,
+                    statusMessage: '',
+                });
+            }
+        };
+
+        const uploadSelectedFile = async (item, input, file) => {
+            if (!(item instanceof HTMLElement) || !(input instanceof HTMLInputElement) || !(file instanceof File)) {
+                return;
+            }
+
+            if (!uploadUrl || !csrfToken) {
+                setUploadStatus(item, 'error', 'Upload endpoint is not configured.');
+                clearFileInput(input, false);
+                updateEditorSubmitState();
+                return;
+            }
+
+            await clearPendingUpload(item, {
+                deleteRemote: true,
+                statusState: null,
+                statusMessage: '',
+            });
+
+            item.dataset.mediaBulkUploading = 'true';
+            item.setAttribute('aria-busy', 'true');
+            setUploadStatus(item, 'uploading', `Uploading ${file.name}...`);
+            updateEditorSubmitState();
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const uploadDiskSelect = uploadDiskSelectFor(item);
+            if (uploadDiskSelect instanceof HTMLSelectElement && uploadDiskSelect.value !== '') {
+                formData.append('upload_disk', uploadDiskSelect.value);
+            }
+
+            try {
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                const payload = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    const message = payload?.message
+                        || Object.values(payload?.errors || {}).flat()[0]
+                        || 'Upload failed.';
+                    throw new Error(message);
+                }
+
+                if (!item.isConnected) {
+                    if (payload?.token) {
+                        await deletePendingUploadToken(payload.token);
+                    }
+
+                    return;
+                }
+
+                const tokenInput = uploadTokenInputFor(item);
+                if (tokenInput instanceof HTMLInputElement) {
+                    tokenInput.value = payload.token || '';
+                    tokenInput.dataset.assetType = payload.asset_type || '';
+                }
+
+                clearFileInput(input, false);
+                setUploadStatus(item, 'success', `${payload.original_name || file.name} uploaded. Ready to save.`);
+            } catch (error) {
+                if (item.isConnected) {
+                    clearFileInput(input, false);
+                    setUploadStatus(
+                        item,
+                        'error',
+                        error instanceof Error ? error.message : 'Upload failed.',
+                    );
+                }
+            } finally {
+                if (item.isConnected) {
+                    item.dataset.mediaBulkUploading = 'false';
+                    item.removeAttribute('aria-busy');
+                }
+
+                updateEditorSubmitState();
+            }
         };
 
         const renumberItems = () => {
@@ -712,7 +972,10 @@ function setupBulkMediaEditor() {
                 }
 
                 syncItem(item);
+                syncExistingUploadToken(item);
             });
+
+            updateEditorSubmitState();
         };
 
         const createItem = () => {
@@ -762,12 +1025,12 @@ function setupBulkMediaEditor() {
             }
 
             if (kind === 'image') {
-                clearFileInput(videoInput);
+                clearFileInput(videoInput, false);
                 setInputFile(imageInput, file);
                 return;
             }
 
-            clearFileInput(imageInput);
+            clearFileInput(imageInput, false);
             setInputFile(videoInput, file);
         };
 
@@ -829,11 +1092,19 @@ function setupBulkMediaEditor() {
                 return;
             }
 
-            item.remove();
-            renumberItems();
+            const finishRemoval = () => {
+                item.remove();
+                renumberItems();
+            };
+
+            void clearPendingUpload(item, {
+                deleteRemote: true,
+                statusState: null,
+                statusMessage: '',
+            }).finally(finishRemoval);
         });
 
-        editor.addEventListener('change', (event) => {
+        editor.addEventListener('change', async (event) => {
             const target = event.target;
 
             if (!(target instanceof HTMLElement)) {
@@ -847,6 +1118,40 @@ function setupBulkMediaEditor() {
             }
 
             syncItem(item);
+
+            if (target.matches('[data-media-type-select], [data-video-source-select]')) {
+                await clearPendingUploadIfSelectionChanged(item);
+                updateEditorSubmitState();
+                return;
+            }
+
+            if (target.matches('[data-media-bulk-image-input], [data-media-bulk-video-input]')) {
+                const input = target;
+
+                if (!(input instanceof HTMLInputElement) || (input.files?.length || 0) !== 1) {
+                    updateEditorSubmitState();
+                    return;
+                }
+
+                const file = input.files[0];
+                const kind = fileKind(file);
+                const mediaTypeSelect = mediaTypeSelectFor(item);
+                const videoSourceSelect = videoSourceSelectFor(item);
+
+                if (mediaTypeSelect instanceof HTMLSelectElement && kind) {
+                    mediaTypeSelect.value = kind;
+                }
+
+                if (kind === 'video' && videoSourceSelect instanceof HTMLSelectElement) {
+                    videoSourceSelect.value = 'upload';
+                }
+
+                syncItem(item);
+                await uploadSelectedFile(item, input, file);
+                return;
+            }
+
+            updateEditorSubmitState();
         });
 
         editor.addEventListener('dragover', (event) => {
@@ -873,8 +1178,8 @@ function setupBulkMediaEditor() {
                 if (hoveredItem instanceof HTMLElement) {
                     hoveredItem.classList.add('is-dragover');
                     activeDropTarget = hoveredItem;
-                } else {
-                    list.classList.add('is-dragover');
+                } else if (dropSurface instanceof HTMLElement) {
+                    dropSurface.classList.add('is-dragover');
                 }
             }
         });
@@ -912,6 +1217,37 @@ function setupBulkMediaEditor() {
 
             clearDropTarget();
             handleDroppedFiles(dataTransfer.files, targetItem);
+        });
+
+        editor.addEventListener('submit', (event) => {
+            const items = Array.from(list.querySelectorAll('[data-media-bulk-item]'));
+            const hasUploadingItem = items.some(
+                (item) => item instanceof HTMLElement && item.dataset.mediaBulkUploading === 'true',
+            );
+            const hasPendingRawFile = items.some((item) => {
+                if (!(item instanceof HTMLElement)) {
+                    return false;
+                }
+
+                const imageInput = imageInputFor(item);
+                const videoInput = videoInputFor(item);
+
+                return (imageInput instanceof HTMLInputElement && (imageInput.files?.length || 0) > 0)
+                    || (videoInput instanceof HTMLInputElement && (videoInput.files?.length || 0) > 0);
+            });
+
+            if (!hasUploadingItem && !hasPendingRawFile) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (hasUploadingItem) {
+                window.alert('Wait for all media uploads to finish before creating media.');
+                return;
+            }
+
+            window.alert('A selected file has not finished uploading. Re-select the file or wait for the upload to complete.');
         });
 
         renumberItems();
