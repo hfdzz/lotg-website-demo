@@ -40,7 +40,7 @@
 <div @if (! $isEditing) data-media-type-section="image" @elseif($media->asset_type !== 'image') hidden @endif>
     <label>
         <div class="law-meta">{{ $isEditing && $media->asset_type === 'image' ? 'Replace image file' : 'Image file' }}</div>
-        <input type="file" name="{{ $fieldName('image_file') }}" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/webp,image/avif,image/svg+xml">
+        <input type="file" name="{{ $fieldName('image_file') }}" data-media-bulk-image-input accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/webp,image/avif,image/svg+xml">
     </label>
 
     <label>
@@ -79,7 +79,7 @@
     <div data-video-source-section="upload" @if($videoSource !== 'upload') hidden @endif>
         <label>
             <div class="law-meta">{{ $isEditing && $media?->asset_type === 'video' && $media?->storage_type === 'upload' ? 'Replace MP4 file' : 'MP4 file' }}</div>
-            <input type="file" name="{{ $fieldName('video_file') }}" accept=".mp4,video/mp4">
+            <input type="file" name="{{ $fieldName('video_file') }}" data-media-bulk-video-input accept=".mp4,video/mp4">
         </label>
 
         <label>
@@ -112,6 +112,7 @@
             <input
                 type="url"
                 name="{{ $fieldName('external_url') }}"
+                data-media-bulk-external-url
                 value="{{ $fieldValue('external_url', $media?->external_url) }}"
                 placeholder="https://www.youtube.com/watch?v=..."
             >

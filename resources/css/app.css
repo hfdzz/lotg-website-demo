@@ -748,6 +748,16 @@ button:hover {
     margin: 0;
 }
 
+.media-add-card-body.is-dragover {
+    outline: 2px dashed var(--accent);
+    outline-offset: 0.35rem;
+}
+
+.media-bulk-item.is-dragover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
 .media-bulk-item-header,
 .media-bulk-actions {
     display: flex;

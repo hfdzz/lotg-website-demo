@@ -559,6 +559,7 @@ function setupVideoSourceSections() {
 
 function setupBulkMediaEditor() {
     const editors = Array.from(document.querySelectorAll('[data-media-bulk-editor]'));
+    const desktopDropEnabled = () => window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches;
 
     const setSectionState = (section, enabled) => {
         if (!(section instanceof HTMLElement)) {
@@ -574,6 +575,63 @@ function setupBulkMediaEditor() {
 
             field.disabled = !enabled;
         });
+    };
+
+    const fileKind = (file) => {
+        if (!(file instanceof File)) {
+            return null;
+        }
+
+        const type = (file.type || '').toLowerCase();
+        const name = (file.name || '').toLowerCase();
+
+        if (type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|avif|svg)$/i.test(name)) {
+            return 'image';
+        }
+
+        if (type === 'video/mp4' || /\.mp4$/i.test(name)) {
+            return 'video';
+        }
+
+        return null;
+    };
+
+    const setInputFile = (input, file) => {
+        if (!(input instanceof HTMLInputElement) || input.type !== 'file' || !(file instanceof File)) {
+            return;
+        }
+
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    const clearFileInput = (input) => {
+        if (!(input instanceof HTMLInputElement) || input.type !== 'file') {
+            return;
+        }
+
+        input.value = '';
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    const itemIsBlank = (item) => {
+        if (!(item instanceof HTMLElement)) {
+            return false;
+        }
+
+        const captionInput = item.querySelector('input[name$="[caption]"]');
+        const creditInput = item.querySelector('input[name$="[credit]"]');
+        const externalUrlInput = item.querySelector('[data-media-bulk-external-url]');
+        const imageInput = item.querySelector('[data-media-bulk-image-input]');
+        const videoInput = item.querySelector('[data-media-bulk-video-input]');
+
+        return (captionInput instanceof HTMLInputElement ? captionInput.value.trim() === '' : true)
+            && (creditInput instanceof HTMLInputElement ? creditInput.value.trim() === '' : true)
+            && (externalUrlInput instanceof HTMLInputElement ? externalUrlInput.value.trim() === '' : true)
+            && (imageInput instanceof HTMLInputElement ? imageInput.files?.length !== 1 : true)
+            && (videoInput instanceof HTMLInputElement ? videoInput.files?.length !== 1 : true);
     };
 
     const syncItem = (item) => {
@@ -614,6 +672,17 @@ function setupBulkMediaEditor() {
             return;
         }
 
+        let activeDropTarget = null;
+
+        const clearDropTarget = () => {
+            if (activeDropTarget instanceof HTMLElement) {
+                activeDropTarget.classList.remove('is-dragover');
+            }
+
+            activeDropTarget = null;
+            list.classList.remove('is-dragover');
+        };
+
         const renumberItems = () => {
             const items = Array.from(list.querySelectorAll('[data-media-bulk-item]'));
             const canRemove = items.length > 1;
@@ -646,19 +715,100 @@ function setupBulkMediaEditor() {
             });
         };
 
-        addButton.addEventListener('click', () => {
+        const createItem = () => {
             const nextIndex = list.querySelectorAll('[data-media-bulk-item]').length;
             const wrapper = document.createElement('div');
             wrapper.innerHTML = template.innerHTML.replace(/__INDEX__/g, `${nextIndex}`);
             const item = wrapper.firstElementChild;
 
             if (!(item instanceof HTMLElement)) {
-                return;
+                return null;
             }
 
             list.appendChild(item);
             renumberItems();
+            return item;
+        };
+
+        const assignFileToItem = (item, file) => {
+            if (!(item instanceof HTMLElement) || !(file instanceof File)) {
+                return;
+            }
+
+            const kind = fileKind(file);
+
+            if (!kind) {
+                return;
+            }
+
+            const mediaTypeSelect = item.querySelector('[data-media-type-select]');
+            const videoSourceSelect = item.querySelector('[data-video-source-select]');
+            const imageInput = item.querySelector('[data-media-bulk-image-input]');
+            const videoInput = item.querySelector('[data-media-bulk-video-input]');
+            const externalUrlInput = item.querySelector('[data-media-bulk-external-url]');
+
+            if (mediaTypeSelect instanceof HTMLSelectElement) {
+                mediaTypeSelect.value = kind;
+            }
+
+            if (kind === 'video' && videoSourceSelect instanceof HTMLSelectElement) {
+                videoSourceSelect.value = 'upload';
+            }
+
+            syncItem(item);
+
+            if (externalUrlInput instanceof HTMLInputElement) {
+                externalUrlInput.value = '';
+            }
+
+            if (kind === 'image') {
+                clearFileInput(videoInput);
+                setInputFile(imageInput, file);
+                return;
+            }
+
+            clearFileInput(imageInput);
+            setInputFile(videoInput, file);
+        };
+
+        const firstReusableItem = () => {
+            const items = Array.from(list.querySelectorAll('[data-media-bulk-item]'));
+
+            if (items.length !== 1) {
+                return null;
+            }
+
+            return itemIsBlank(items[0]) ? items[0] : null;
+        };
+
+        addButton.addEventListener('click', () => {
+            createItem();
         });
+
+        const handleDroppedFiles = (files, targetItem = null) => {
+            const supportedFiles = Array.from(files).filter((file) => fileKind(file));
+
+            if (!supportedFiles.length) {
+                return;
+            }
+
+            if (supportedFiles.length === 1 && targetItem instanceof HTMLElement) {
+                assignFileToItem(targetItem, supportedFiles[0]);
+                return;
+            }
+
+            const baseItem = targetItem instanceof HTMLElement ? targetItem : firstReusableItem();
+
+            supportedFiles.forEach((file, index) => {
+                const item = index === 0 && baseItem instanceof HTMLElement
+                    ? baseItem
+                    : createItem();
+
+                if (item instanceof HTMLElement) {
+                    assignFileToItem(item, file);
+                }
+            });
+        };
 
         editor.addEventListener('click', (event) => {
             const target = event.target;
@@ -697,6 +847,71 @@ function setupBulkMediaEditor() {
             }
 
             syncItem(item);
+        });
+
+        editor.addEventListener('dragover', (event) => {
+            if (!desktopDropEnabled()) {
+                return;
+            }
+
+            const dataTransfer = event.dataTransfer;
+
+            if (!dataTransfer || !Array.from(dataTransfer.items || []).some((item) => item.kind === 'file')) {
+                return;
+            }
+
+            event.preventDefault();
+            dataTransfer.dropEffect = 'copy';
+
+            const hoveredItem = event.target instanceof HTMLElement
+                ? event.target.closest('[data-media-bulk-item]')
+                : null;
+
+            if (activeDropTarget !== hoveredItem) {
+                clearDropTarget();
+
+                if (hoveredItem instanceof HTMLElement) {
+                    hoveredItem.classList.add('is-dragover');
+                    activeDropTarget = hoveredItem;
+                } else {
+                    list.classList.add('is-dragover');
+                }
+            }
+        });
+
+        editor.addEventListener('dragleave', (event) => {
+            if (!desktopDropEnabled()) {
+                return;
+            }
+
+            const relatedTarget = event.relatedTarget;
+
+            if (relatedTarget instanceof Node && editor.contains(relatedTarget)) {
+                return;
+            }
+
+            clearDropTarget();
+        });
+
+        editor.addEventListener('drop', (event) => {
+            if (!desktopDropEnabled()) {
+                return;
+            }
+
+            const dataTransfer = event.dataTransfer;
+
+            if (!dataTransfer?.files?.length) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const targetItem = event.target instanceof HTMLElement
+                ? event.target.closest('[data-media-bulk-item]')
+                : null;
+
+            clearDropTarget();
+            handleDroppedFiles(dataTransfer.files, targetItem);
         });
 
         renumberItems();
