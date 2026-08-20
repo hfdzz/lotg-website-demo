@@ -1,13 +1,19 @@
 @php
     $isEditing = isset($media) && $media;
-    $assetType = old('asset_type', $media?->asset_type ?? 'image');
-    $videoSource = old('video_source', $media?->asset_type === 'video' && $media?->storage_type === 'upload' ? 'upload' : 'youtube');
+    $fieldPrefix = $fieldPrefix ?? null;
+    $oldPrefix = $oldPrefix ?? null;
+    $fieldValues = $fieldValues ?? [];
+    $fieldName = fn (string $field): string => $fieldPrefix ? $fieldPrefix.'['.$field.']' : $field;
+    $oldKey = fn (string $field): string => $oldPrefix ? $oldPrefix.'.'.$field : $field;
+    $fieldValue = fn (string $field, mixed $default = null): mixed => old($oldKey($field), $fieldValues[$field] ?? $default);
+    $assetType = $fieldValue('asset_type', $media?->asset_type ?? 'image');
+    $videoSource = $fieldValue('video_source', $media?->asset_type === 'video' && $media?->storage_type === 'upload' ? 'upload' : 'youtube');
     $uploadDisks = collect(config('lotg.media_upload_disks', ['public', 's3']))
         ->map(fn ($disk) => trim((string) $disk))
         ->filter(fn ($disk) => $disk !== '' && config('filesystems.disks.'.$disk))
         ->unique()
         ->values();
-    $selectedUploadDisk = old(
+    $selectedUploadDisk = $fieldValue(
         'upload_disk',
         $media?->storage_type === 'upload'
             ? ($media->storage_disk ?: config('lotg.media_default_upload_disk', 'public'))
@@ -19,7 +25,7 @@
 @if (! $isEditing)
     <label>
         <div class="law-meta">Media type</div>
-        <select name="asset_type" data-media-type-select>
+        <select name="{{ $fieldName('asset_type') }}" data-media-type-select>
             <option value="image" @selected($assetType === 'image')>Image</option>
             <option value="video" @selected($assetType === 'video')>Video</option>
         </select>
@@ -34,12 +40,12 @@
 <div @if (! $isEditing) data-media-type-section="image" @elseif($media->asset_type !== 'image') hidden @endif>
     <label>
         <div class="law-meta">{{ $isEditing && $media->asset_type === 'image' ? 'Replace image file' : 'Image file' }}</div>
-        <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/webp,image/avif,image/svg+xml">
+        <input type="file" name="{{ $fieldName('image_file') }}" accept=".jpg,.jpeg,.png,.gif,.webp,.avif,.svg,image/jpeg,image/png,image/gif,image/webp,image/avif,image/svg+xml">
     </label>
 
     <label>
         <div class="law-meta">Upload disk</div>
-        <select name="upload_disk">
+        <select name="{{ $fieldName('upload_disk') }}">
             @foreach ($uploadDisks as $uploadDisk)
                 <option value="{{ $uploadDisk }}" @selected($selectedUploadDisk === $uploadDisk)>{{ strtoupper($uploadDisk) }}</option>
             @endforeach
@@ -64,7 +70,7 @@
 <div @if (! $isEditing) data-media-type-section="video" @elseif($media->asset_type !== 'video') hidden @endif>
     <label>
         <div class="law-meta">Video source</div>
-        <select name="video_source" data-video-source-select>
+        <select name="{{ $fieldName('video_source') }}" data-video-source-select>
             <option value="upload" @selected($videoSource === 'upload')>Uploaded file</option>
             <option value="youtube" @selected($videoSource === 'youtube')>YouTube URL</option>
         </select>
@@ -73,12 +79,12 @@
     <div data-video-source-section="upload" @if($videoSource !== 'upload') hidden @endif>
         <label>
             <div class="law-meta">{{ $isEditing && $media?->asset_type === 'video' && $media?->storage_type === 'upload' ? 'Replace MP4 file' : 'MP4 file' }}</div>
-            <input type="file" name="video_file" accept=".mp4,video/mp4">
+            <input type="file" name="{{ $fieldName('video_file') }}" accept=".mp4,video/mp4">
         </label>
 
         <label>
             <div class="law-meta">Upload disk</div>
-            <select name="upload_disk">
+            <select name="{{ $fieldName('upload_disk') }}">
                 @foreach ($uploadDisks as $uploadDisk)
                     <option value="{{ $uploadDisk }}" @selected($selectedUploadDisk === $uploadDisk)>{{ strtoupper($uploadDisk) }}</option>
                 @endforeach
@@ -105,8 +111,8 @@
             <div class="law-meta">YouTube URL</div>
             <input
                 type="url"
-                name="external_url"
-                value="{{ old('external_url', $media?->external_url) }}"
+                name="{{ $fieldName('external_url') }}"
+                value="{{ $fieldValue('external_url', $media?->external_url) }}"
                 placeholder="https://www.youtube.com/watch?v=..."
             >
         </label>
@@ -115,10 +121,10 @@
 
 <label>
     <div class="law-meta">Caption</div>
-    <input type="text" name="caption" value="{{ old('caption', $media?->caption) }}">
+    <input type="text" name="{{ $fieldName('caption') }}" value="{{ $fieldValue('caption', $media?->caption) }}">
 </label>
 
 <label>
     <div class="law-meta">Credit / attribution</div>
-    <input type="text" name="credit" value="{{ old('credit', $media?->credit) }}">
+    <input type="text" name="{{ $fieldName('credit') }}" value="{{ $fieldValue('credit', $media?->credit) }}">
 </label>

@@ -108,6 +108,18 @@ class MediaAsset extends Model
             : $this->contentNodes()->whereHas('law.edition', fn ($query) => $query->active())->count();
     }
 
+    public function publishedActiveEditionContentNodeUsageCount(): int
+    {
+        $count = $this->getAttribute('published_active_edition_content_nodes_count');
+
+        return $count !== null
+            ? (int) $count
+            : $this->contentNodes()
+                ->where('content_nodes.is_published', true)
+                ->whereHas('law.edition', fn ($query) => $query->active())
+                ->count();
+    }
+
     public function documentPageUsageCount(): int
     {
         $count = $this->getAttribute('document_pages_count');
@@ -123,6 +135,28 @@ class MediaAsset extends Model
         $publishedCount = $this->publishedContentNodeUsageCount();
 
         return 'Used in '.$nodeCount.' '.Str::plural('node', $nodeCount).', '.$publishedCount.' published';
+    }
+
+    public function activeEditionUsageBadgeLabel(): ?string
+    {
+        if ($this->activeEditionContentNodeUsageCount() < 1) {
+            return null;
+        }
+
+        return $this->publishedActiveEditionContentNodeUsageCount() > 0
+            ? 'Used in active edition'
+            : 'Used in active edition (draft only)';
+    }
+
+    public function activeEditionUsageBadgeClass(): ?string
+    {
+        if ($this->activeEditionContentNodeUsageCount() < 1) {
+            return null;
+        }
+
+        return $this->publishedActiveEditionContentNodeUsageCount() > 0
+            ? 'status-badge-success'
+            : 'status-badge-muted';
     }
 
     public function adminDocumentPageUsageSummary(): ?string

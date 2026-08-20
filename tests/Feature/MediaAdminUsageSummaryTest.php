@@ -13,6 +13,8 @@ use App\Models\User;
 use Database\Seeders\RbacSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MediaAdminUsageSummaryTest extends TestCase
@@ -114,6 +116,59 @@ class MediaAdminUsageSummaryTest extends TestCase
             ->assertSee('Added 21 Jul 2026 10:00 (updated 21 Jul 2026 12:15)');
     }
 
+    public function test_media_admin_shows_draft_only_active_usage_with_muted_badge(): void
+    {
+        $this->actingAsSuperAdmin();
+
+        $edition = Edition::create([
+            'name' => 'Edition 2025/26',
+            'code' => 'edition-2025-26',
+            'year_start' => 2025,
+            'year_end' => 2026,
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+
+        $law = Law::create([
+            'edition_id' => $edition->id,
+            'law_number' => '1',
+            'slug' => 'law-1',
+            'sort_order' => 1,
+            'status' => 'published',
+        ]);
+
+        $draftNode = ContentNode::create([
+            'law_id' => $law->id,
+            'parent_id' => null,
+            'node_type' => 'image',
+            'sort_order' => 1,
+            'is_published' => false,
+        ]);
+
+        $media = MediaAsset::create([
+            'asset_type' => 'image',
+            'storage_type' => 'upload',
+            'storage_disk' => 'public',
+            'is_library_item' => true,
+            'file_path' => 'lotg-media/images/draft-only.png',
+            'caption' => 'Draft-only active media',
+            'credit' => 'IFAB',
+        ]);
+
+        $draftNode->mediaAssets()->sync([$media->id => ['sort_order' => 1]]);
+
+        $this->get(route('admin.media.index'))
+            ->assertOk()
+            ->assertSee('Draft-only active media')
+            ->assertSee('status-badge status-badge-muted', false)
+            ->assertSee('Used in active edition (draft only)');
+
+        $this->get(route('admin.media.edit', ['media' => $media]))
+            ->assertOk()
+            ->assertSee('status-badge status-badge-muted', false)
+            ->assertSee('Used in active edition (draft only)');
+    }
+
     public function test_media_admin_can_filter_by_media_type(): void
     {
         $this->actingAsSuperAdmin();
@@ -143,6 +198,50 @@ class MediaAdminUsageSummaryTest extends TestCase
             ->assertOk()
             ->assertSee('Filter image')
             ->assertDontSee('Filter video');
+    }
+
+    public function test_media_admin_can_create_multiple_media_assets_in_one_submission(): void
+    {
+        $this->actingAsSuperAdmin();
+        Storage::fake('public');
+
+        $response = $this->post(route('admin.media.store'), [
+            'items' => [
+                [
+                    'asset_type' => 'image',
+                    'upload_disk' => 'public',
+                    'caption' => 'Bulk image',
+                    'credit' => 'IFAB',
+                    'image_file' => UploadedFile::fake()->image('bulk-image.png'),
+                ],
+                [
+                    'asset_type' => 'video',
+                    'video_source' => 'youtube',
+                    'external_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    'caption' => 'Bulk video',
+                    'credit' => 'IFAB',
+                ],
+            ],
+        ]);
+
+        $response
+            ->assertRedirect(route('admin.media.index'))
+            ->assertSessionHas('status', '2 media created.');
+
+        $imageMedia = MediaAsset::query()->where('caption', 'Bulk image')->first();
+        $videoMedia = MediaAsset::query()->where('caption', 'Bulk video')->first();
+
+        $this->assertNotNull($imageMedia);
+        $this->assertNotNull($videoMedia);
+        $this->assertSame('image', $imageMedia->asset_type);
+        $this->assertSame('upload', $imageMedia->storage_type);
+        $this->assertSame('public', $imageMedia->storage_disk);
+        $this->assertNotNull($imageMedia->file_path);
+        Storage::disk('public')->assertExists($imageMedia->file_path);
+
+        $this->assertSame('video', $videoMedia->asset_type);
+        $this->assertSame('youtube', $videoMedia->storage_type);
+        $this->assertSame('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $videoMedia->external_url);
     }
 
     public function test_media_admin_can_filter_by_usage_state(): void

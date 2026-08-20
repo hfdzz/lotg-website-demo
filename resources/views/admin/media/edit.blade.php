@@ -52,9 +52,9 @@
             $usedCount = $media->contentNodeUsageCount() + $media->documentPageUsageCount();
         @endphp
         <p class="law-meta">Usage: {{ \Illuminate\Support\Str::of($media->adminNodeUsageSummary())->after('Used in ') }}</p>
-        @if ($media->activeEditionContentNodeUsageCount() > 0)
+        @if ($media->activeEditionUsageBadgeLabel())
             <p class="stack-top">
-                <span class="status-badge status-badge-success">Used in active edition</span>
+                <span class="status-badge {{ $media->activeEditionUsageBadgeClass() }}">{{ $media->activeEditionUsageBadgeLabel() }}</span>
             </p>
         @endif
         @if ($media->documentPageUsageCount() > 0)

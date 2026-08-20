@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNodeSettingControls();
     setupMediaTypeSections();
     setupVideoSourceSections();
+    setupBulkMediaEditor();
     setupImageAssetPicker();
     setupVideoGroupEditor();
     setupQaEditor();
@@ -553,6 +554,152 @@ function setupVideoSourceSections() {
 
         select.addEventListener('change', updateSections);
         updateSections();
+    });
+}
+
+function setupBulkMediaEditor() {
+    const editors = Array.from(document.querySelectorAll('[data-media-bulk-editor]'));
+
+    const setSectionState = (section, enabled) => {
+        if (!(section instanceof HTMLElement)) {
+            return;
+        }
+
+        section.hidden = !enabled;
+
+        Array.from(section.querySelectorAll('input, select, textarea')).forEach((field) => {
+            if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) {
+                return;
+            }
+
+            field.disabled = !enabled;
+        });
+    };
+
+    const syncItem = (item) => {
+        if (!(item instanceof HTMLElement)) {
+            return;
+        }
+
+        const mediaTypeSelect = item.querySelector('[data-media-type-select]');
+        const videoSourceSelect = item.querySelector('[data-video-source-select]');
+
+        Array.from(item.querySelectorAll('[data-media-type-section]')).forEach((section) => {
+            if (!(section instanceof HTMLElement)) {
+                return;
+            }
+
+            setSectionState(section, section.dataset.mediaTypeSection === mediaTypeSelect?.value);
+        });
+
+        Array.from(item.querySelectorAll('[data-video-source-section]')).forEach((section) => {
+            if (!(section instanceof HTMLElement)) {
+                return;
+            }
+
+            setSectionState(section, section.dataset.videoSourceSection === videoSourceSelect?.value);
+        });
+    };
+
+    editors.forEach((editor) => {
+        if (!(editor instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const list = editor.querySelector('[data-media-bulk-list]');
+        const template = editor.querySelector('[data-media-bulk-template]');
+        const addButton = editor.querySelector('[data-media-bulk-add]');
+
+        if (!(list instanceof HTMLElement) || !(template instanceof HTMLTemplateElement) || !(addButton instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const renumberItems = () => {
+            const items = Array.from(list.querySelectorAll('[data-media-bulk-item]'));
+            const canRemove = items.length > 1;
+
+            items.forEach((item, index) => {
+                if (!(item instanceof HTMLElement)) {
+                    return;
+                }
+
+                Array.from(item.querySelectorAll('[data-media-bulk-number]')).forEach((number) => {
+                    number.textContent = `${index + 1}`;
+                });
+
+                Array.from(item.querySelectorAll('input, select, textarea')).forEach((field) => {
+                    if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) {
+                        return;
+                    }
+
+                    field.name = field.name.replace(/items\[(?:__INDEX__|\d+)\]/g, `items[${index}]`);
+                });
+
+                const removeButton = item.querySelector('[data-media-bulk-remove]');
+
+                if (removeButton instanceof HTMLButtonElement) {
+                    removeButton.hidden = !canRemove;
+                    removeButton.disabled = !canRemove;
+                }
+
+                syncItem(item);
+            });
+        };
+
+        addButton.addEventListener('click', () => {
+            const nextIndex = list.querySelectorAll('[data-media-bulk-item]').length;
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = template.innerHTML.replace(/__INDEX__/g, `${nextIndex}`);
+            const item = wrapper.firstElementChild;
+
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            list.appendChild(item);
+            renumberItems();
+        });
+
+        editor.addEventListener('click', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const removeButton = target.closest('[data-media-bulk-remove]');
+
+            if (!(removeButton instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            const item = removeButton.closest('[data-media-bulk-item]');
+
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            item.remove();
+            renumberItems();
+        });
+
+        editor.addEventListener('change', (event) => {
+            const target = event.target;
+
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const item = target.closest('[data-media-bulk-item]');
+
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            syncItem(item);
+        });
+
+        renumberItems();
     });
 }
 

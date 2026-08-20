@@ -8,9 +8,12 @@ use App\Services\LotgPublicCache;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class MediaAdminController extends Controller
 {
@@ -56,6 +59,9 @@ class MediaAdminController extends Controller
                     'documentPages',
                     'contentNodes as published_content_nodes_count' => fn ($query) => $query->where('content_nodes.is_published', true),
                     'contentNodes as active_edition_content_nodes_count' => fn ($query) => $query->whereHas('law.edition', fn ($editionQuery) => $editionQuery->active()),
+                    'contentNodes as published_active_edition_content_nodes_count' => fn ($query) => $query
+                        ->where('content_nodes.is_published', true)
+                        ->whereHas('law.edition', fn ($editionQuery) => $editionQuery->active()),
                 ])
                 ->orderByRaw("case when asset_type = 'image' then 1 else 2 end")
                 ->orderByDesc('updated_at')
@@ -69,6 +75,37 @@ class MediaAdminController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('create', MediaAsset::class);
+
+        if (is_array($request->input('items'))) {
+            $bulkItems = $this->normalizedBulkItems($request);
+
+            if ($bulkItems === []) {
+                return back()
+                    ->withErrors(['media' => 'Add at least one media item before creating media.'])
+                    ->withInput();
+            }
+
+            $createdCount = 0;
+
+            DB::transaction(function () use ($request, $bulkItems, &$createdCount): void {
+                foreach ($bulkItems as $index => $itemData) {
+                    $itemRequest = $this->mediaItemRequest($request, (int) $index, $itemData);
+
+                    try {
+                        $validated = $this->validateMedia($itemRequest);
+                    } catch (ValidationException $exception) {
+                        throw $this->validationExceptionForBulkItem($exception, (int) $index);
+                    }
+
+                    MediaAsset::create($this->payloadFromRequest($itemRequest, $validated));
+                    $createdCount++;
+                }
+            });
+
+            return redirect()
+                ->route('admin.media.index')
+                ->with('status', $createdCount.' '.Str::plural('media', $createdCount).' created.');
+        }
 
         $validated = $this->validateMedia($request);
 
@@ -89,6 +126,9 @@ class MediaAdminController extends Controller
             'documentPages',
             'contentNodes as published_content_nodes_count' => fn ($query) => $query->where('content_nodes.is_published', true),
             'contentNodes as active_edition_content_nodes_count' => fn ($query) => $query->whereHas('law.edition', fn ($editionQuery) => $editionQuery->active()),
+            'contentNodes as published_active_edition_content_nodes_count' => fn ($query) => $query
+                ->where('content_nodes.is_published', true)
+                ->whereHas('law.edition', fn ($editionQuery) => $editionQuery->active()),
         ]);
         $media->load([
             'contentNodes' => fn ($query) => $query
@@ -327,5 +367,93 @@ class MediaAdminController extends Controller
     protected function videoUploadMaxKb(): int
     {
         return max((int) config('lotg.video_upload_max_kb', 51200), 1);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function normalizedBulkItems(Request $request): array
+    {
+        $items = $request->input('items');
+
+        if (! is_array($items)) {
+            return [];
+        }
+
+        $files = $request->allFiles();
+        $normalized = [];
+
+        foreach ($items as $index => $itemData) {
+            if (! is_array($itemData)) {
+                continue;
+            }
+
+            $itemFiles = data_get($files, 'items.'.$index, []);
+
+            if (! $this->bulkItemHasInput($itemData, is_array($itemFiles) ? $itemFiles : [])) {
+                continue;
+            }
+
+            $normalized[(int) $index] = $itemData;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $itemData
+     * @param  array<string, mixed>  $itemFiles
+     */
+    protected function bulkItemHasInput(array $itemData, array $itemFiles): bool
+    {
+        if (
+            data_get($itemFiles, 'image_file')
+            || data_get($itemFiles, 'video_file')
+        ) {
+            return true;
+        }
+
+        if (trim((string) ($itemData['external_url'] ?? '')) !== '') {
+            return true;
+        }
+
+        if (trim((string) ($itemData['caption'] ?? '')) !== '' || trim((string) ($itemData['credit'] ?? '')) !== '') {
+            return true;
+        }
+
+        return ($itemData['asset_type'] ?? 'image') === 'video';
+    }
+
+    /**
+     * @param  array<string, mixed>  $itemData
+     */
+    protected function mediaItemRequest(Request $request, int $index, array $itemData): Request
+    {
+        $itemFiles = data_get($request->allFiles(), 'items.'.$index, []);
+        $server = $request->server->all();
+        $server['REQUEST_METHOD'] = 'POST';
+
+        return Request::create(
+            $request->url(),
+            'POST',
+            $itemData,
+            [],
+            is_array($itemFiles) ? $itemFiles : [],
+            $server
+        );
+    }
+
+    protected function validationExceptionForBulkItem(ValidationException $exception, int $index): ValidationException
+    {
+        $prefixedErrors = [];
+
+        foreach ($exception->errors() as $field => $messages) {
+            $prefixedErrors['items.'.$index.'.'.$field] = array_map(
+                fn (string $message) => 'Media item '.($index + 1).': '.$message,
+                $messages
+            );
+        }
+
+        return ValidationException::withMessages($prefixedErrors);
     }
 }

@@ -232,6 +232,12 @@ button:hover {
     margin-top: 1rem;
 }
 
+.media-add-card-body {
+    max-height: min(75vh, 42rem);
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
 .stack-form {
     display: grid;
     gap: 1rem;
@@ -733,6 +739,27 @@ button:hover {
     min-width: min(100%, 14rem);
 }
 
+.media-bulk-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.media-bulk-item {
+    margin: 0;
+}
+
+.media-bulk-item-header,
+.media-bulk-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.media-bulk-item-header h3 {
+    margin: 0;
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;
@@ -747,6 +774,12 @@ button:hover {
     color: #17653d;
     background: #daf5e7;
     border: 1px solid #9bd6b5;
+}
+
+.status-badge-muted {
+    color: #555f6d;
+    background: #eef1f4;
+    border: 1px solid #d3d8de;
 }
 
 .document-inline-media {
