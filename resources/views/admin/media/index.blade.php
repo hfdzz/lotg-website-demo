@@ -82,7 +82,7 @@
                 </template>
                 <div class="media-bulk-actions">
                     <button type="button" data-media-bulk-add>Add another media</button>
-                    <button type="submit">Create media</button>
+                    <button type="submit" data-media-bulk-submit data-default-label="Create media" data-uploading-label="Uploading media...">Create media</button>
                 </div>
             </form>
         </div>

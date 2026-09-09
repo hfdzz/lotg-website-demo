@@ -706,7 +706,7 @@ function setupBulkMediaEditor() {
         const list = editor.querySelector('[data-media-bulk-list]');
         const template = editor.querySelector('[data-media-bulk-template]');
         const addButton = editor.querySelector('[data-media-bulk-add]');
-        const submitButton = editor.querySelector('button[type="submit"]');
+        const submitButton = editor.querySelector('[data-media-bulk-submit]');
         const dropSurface = editor.querySelector('.media-add-card-body');
         const uploadUrl = editor.dataset.mediaUploadUrl;
         const deleteUrlTemplate = editor.dataset.mediaUploadDeleteTemplate;
@@ -739,7 +739,13 @@ function setupBulkMediaEditor() {
                     || (videoInput instanceof HTMLInputElement && (videoInput.files?.length || 0) > 0);
             });
 
-            submitButton.disabled = hasUploadingItem || hasPendingRawFile;
+            const isBlocked = hasUploadingItem || hasPendingRawFile;
+            submitButton.disabled = isBlocked;
+            submitButton.setAttribute('aria-disabled', isBlocked ? 'true' : 'false');
+            submitButton.classList.toggle('is-disabled', isBlocked);
+            submitButton.textContent = isBlocked
+                ? (submitButton.dataset.uploadingLabel || 'Uploading media...')
+                : (submitButton.dataset.defaultLabel || 'Create media');
         };
 
         const clearDropTarget = () => {
@@ -805,7 +811,7 @@ function setupBulkMediaEditor() {
             updateEditorSubmitState();
         };
 
-        const syncExistingUploadToken = (item) => {
+        const initializeItemUploadState = (item) => {
             const tokenInput = uploadTokenInputFor(item);
 
             if (!(tokenInput instanceof HTMLInputElement) || tokenInput.value.trim() === '') {
@@ -817,6 +823,13 @@ function setupBulkMediaEditor() {
                 tokenInput.dataset.assetType = mediaTypeSelect instanceof HTMLSelectElement
                     ? mediaTypeSelect.value
                     : 'image';
+            }
+
+            const status = uploadStatusFor(item);
+
+            if (status instanceof HTMLElement && status.textContent.trim() !== '') {
+                status.hidden = false;
+                return;
             }
 
             setUploadStatus(item, 'success', 'Uploaded file ready for save.');
@@ -972,7 +985,6 @@ function setupBulkMediaEditor() {
                 }
 
                 syncItem(item);
-                syncExistingUploadToken(item);
             });
 
             updateEditorSubmitState();
@@ -990,6 +1002,7 @@ function setupBulkMediaEditor() {
 
             list.appendChild(item);
             renumberItems();
+            initializeItemUploadState(item);
             return item;
         };
 
@@ -1251,6 +1264,11 @@ function setupBulkMediaEditor() {
         });
 
         renumberItems();
+        Array.from(list.querySelectorAll('[data-media-bulk-item]')).forEach((item) => {
+            if (item instanceof HTMLElement) {
+                initializeItemUploadState(item);
+            }
+        });
     });
 }
 
