@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('title', $page?->displayTitle($language) ? $page->displayTitle($language).' | '.$document->displayTitle($language) : $document->displayTitle($language))
+@section('meta_description', __('site.seo.documents_description', ['title' => $page?->displayTitle($language) ?: $document->displayTitle($language)]))
+@section('og_type', 'article')
 @section('mobile_header_title', $document->displayTitle($language))
 
 @section('content')

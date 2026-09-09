@@ -2,6 +2,18 @@
 
 return [
     'brand' => 'Laws of the Game',
+    'seo' => [
+        'default_description' => 'Access the football Laws of the Game to help referees, coaches, players, and competition stakeholders in Indonesia apply LotG consistently.',
+        'laws_description' => 'Browse Laws 1-17 in the active edition as a practical LotG reference for Indonesia, with supporting documents, law changes, and Q&A.',
+        'law_description' => 'Study :law: :title to support consistent LotG application in matches, training, and football education across Indonesia.',
+        'editions_description' => 'Compare published Laws of the Game editions so LotG changes can be understood and applied clearly in Indonesia.',
+        'archive_description' => 'Read the :edition archive to understand how LotG applied in that edition and how it differs from newer editions.',
+        'documents_description' => 'Study :title as supporting LotG material for principles, protocols, glossary terms, and match-official guidance in Indonesia.',
+        'qas_description' => 'Browse LotG Q&A to help align understanding among referees, coaches, players, and football educators in Indonesia.',
+        'qa_law_description' => 'Browse Q&A for :law: :title to understand match situations more practically and consistently.',
+        'updates_description' => 'Follow published LotG changes so Indonesia’s football ecosystem can understand rule adjustments more quickly.',
+        'search_description' => 'Search law numbers, section titles, terms, and LotG text to find the needed reference for Indonesian football contexts.',
+    ],
     'nav' => [
         'laws' => 'Laws',
         'updates' => 'Law Changes',
@@ -14,6 +26,15 @@ return [
         'search_submit' => 'Search',
         'go_home' => 'Go to Laws home',
         'open_menu' => 'Open menu',
+        'skip_to_content' => 'Skip to main content',
+    ],
+    'footer' => [
+        'description' => 'Helping Indonesia’s football ecosystem read, navigate, and apply LotG with more consistent understanding.',
+        'edition' => 'Active edition: :edition',
+        'no_edition' => 'No active published edition is available yet.',
+        'browse' => 'Browse',
+        'system' => 'System',
+        'sitemap' => 'Sitemap',
     ],
     'editions' => [
         'title' => 'Published editions',

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $selectedEdition?->name ? $selectedEdition->name.' | '.__('site.laws.index_title') : __('site.laws.index_title'))
+@section('meta_description', __('site.seo.archive_description', ['edition' => $selectedEdition?->name ?? __('site.editions.title')]))
 
 @section('content')
     <div class="lotg-hub-layout">

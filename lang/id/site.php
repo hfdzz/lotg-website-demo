@@ -2,6 +2,18 @@
 
 return [
     'brand' => 'Aturan Permainan',
+    'seo' => [
+        'default_description' => 'Akses Aturan Permainan sepak bola untuk membantu wasit, pelatih, pemain, dan pemangku kompetisi di Indonesia memahami penerapan LotG secara konsisten.',
+        'laws_description' => 'Telusuri Aturan 1-17 edisi aktif sebagai rujukan penerapan LotG di Indonesia, dilengkapi dokumen pendukung, perubahan aturan, dan tanya jawab.',
+        'law_description' => 'Pelajari :law: :title untuk membantu penerapan LotG yang konsisten dalam pertandingan, pelatihan, dan edukasi sepak bola di Indonesia.',
+        'editions_description' => 'Bandingkan edisi Aturan Permainan yang telah dipublikasikan agar perubahan LotG dapat dipahami dan diterapkan dengan jelas di Indonesia.',
+        'archive_description' => 'Baca arsip :edition untuk menelusuri penerapan LotG pada edisi tersebut dan memahami perbedaannya dengan edisi yang lebih baru.',
+        'documents_description' => 'Pelajari :title sebagai dokumen pendukung LotG untuk memperjelas prinsip, protokol, glosarium, dan pedoman pertandingan di Indonesia.',
+        'qas_description' => 'Lihat tanya jawab LotG untuk membantu menyamakan pemahaman wasit, pelatih, pemain, dan pembina sepak bola di Indonesia.',
+        'qa_law_description' => 'Lihat tanya jawab untuk :law: :title agar situasi pertandingan dapat dipahami dengan lebih praktis dan konsisten.',
+        'updates_description' => 'Ikuti perubahan LotG yang dipublikasikan agar penyesuaian aturan dapat dipahami lebih cepat oleh ekosistem sepak bola Indonesia.',
+        'search_description' => 'Cari nomor aturan, judul bagian, istilah, dan isi LotG untuk menemukan rujukan yang dibutuhkan dalam konteks sepak bola Indonesia.',
+    ],
     'nav' => [
         'laws' => 'Aturan Permainan',
         'updates' => 'Perubahan Aturan',
@@ -14,6 +26,15 @@ return [
         'search_submit' => 'Cari',
         'go_home' => 'Kembali ke halaman utama',
         'open_menu' => 'Buka menu',
+        'skip_to_content' => 'Lewati ke konten utama',
+    ],
+    'footer' => [
+        'description' => 'Membantu ekosistem sepak bola Indonesia membaca, menelusuri, dan menerapkan LotG dengan pemahaman yang lebih konsisten.',
+        'edition' => 'Edisi aktif: :edition',
+        'no_edition' => 'Belum ada edisi aktif yang dipublikasikan.',
+        'browse' => 'Jelajahi',
+        'system' => 'Sistem',
+        'sitemap' => 'Sitemap',
     ],
     'editions' => [
         'title' => 'Edisi yang dipublikasikan',

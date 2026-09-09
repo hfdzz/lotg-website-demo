@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Admin Login')
+@section('robots', 'noindex, nofollow')
 
 @section('content')
     <div class="auth-shell">

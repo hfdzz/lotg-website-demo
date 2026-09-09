@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('title', __('site.search.title'))
+@section('meta_description', __('site.seo.search_description'))
+@section('robots', 'noindex, follow')
 
 @section('content')
     <section class="hero">

@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
-@section('title', __('site.laws.law_number', ['number' => $law->law_number]))
+@section('title', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
+@section('meta_description', __('site.seo.law_description', [
+    'law' => __('site.laws.law_number', ['number' => $law->law_number]),
+    'title' => $law->displayTitle($language),
+]))
+@section('og_type', 'article')
+@section('og_image', $law->cardBackgroundImageUrl())
 @section('body_class', 'has-mobile-law-context')
 @section('mobile_header_title', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
 @section('mobile_law_context', __('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))

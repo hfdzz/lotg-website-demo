@@ -4,16 +4,55 @@
     $publicFeatureNav = $publicFeatureNav ?? [];
     $showUpdatesNav = (bool) ($publicFeatureNav['legacy_updates'] ?? true);
     $showQasNav = (bool) ($publicFeatureNav['qas'] ?? true);
+    $rawPageTitle = trim($__env->yieldContent('title', __('site.brand')));
+    $siteName = config('app.name') && config('app.name') !== 'Laravel' ? config('app.name') : __('site.brand');
+    $pageTitle = str_contains($rawPageTitle, $siteName) ? $rawPageTitle : $rawPageTitle.' | '.$siteName;
+    $metaDescription = trim($__env->yieldContent('meta_description', __('site.seo.default_description')));
+    $canonicalUrl = trim($__env->yieldContent('canonical_url', request()->fullUrlWithQuery(['lang' => $currentLanguage])));
+    $robotsMeta = trim($__env->yieldContent('robots', 'index, follow'));
+    $ogImageUrl = trim($__env->yieldContent('og_image', asset('statics/logo_pssi_tulisan.png')));
+    $layoutActiveEdition = \App\Models\Edition::current();
+    $structuredData = [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => $siteName,
+        'url' => url('/'),
+        'inLanguage' => array_keys($languageOptions),
+        'potentialAction' => [
+            '@type' => 'SearchAction',
+            'target' => url('/search').'?q={search_term_string}&lang='.$currentLanguage,
+            'query-input' => 'required name=search_term_string',
+        ],
+    ];
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>@yield('title', 'LotG')</title>
+        <title>{{ $pageTitle }}</title>
+        <meta name="description" content="{{ $metaDescription }}">
+        <meta name="robots" content="{{ $robotsMeta }}">
+        <link rel="canonical" href="{{ $canonicalUrl }}">
+        @foreach ($languageOptions as $languageCode => $languageLabel)
+            <link rel="alternate" hreflang="{{ $languageCode }}" href="{{ request()->fullUrlWithQuery(['lang' => $languageCode]) }}">
+        @endforeach
+        <link rel="alternate" hreflang="x-default" href="{{ request()->fullUrlWithQuery(['lang' => \App\Support\LotgLanguage::default()]) }}">
+        <meta property="og:site_name" content="{{ $siteName }}">
+        <meta property="og:type" content="@yield('og_type', 'website')">
+        <meta property="og:title" content="{{ $rawPageTitle }}">
+        <meta property="og:description" content="{{ $metaDescription }}">
+        <meta property="og:url" content="{{ $canonicalUrl }}">
+        <meta property="og:image" content="{{ $ogImageUrl }}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $rawPageTitle }}">
+        <meta name="twitter:description" content="{{ $metaDescription }}">
+        <meta name="twitter:image" content="{{ $ogImageUrl }}">
+        <script type="application/ld+json">{!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="@yield('body_class')">
+        <a class="skip-link" href="#main-content">{{ __('site.nav.skip_to_content') }}</a>
         <div class="mobile-header" aria-hidden="false">
             <div class="mobile-header-shell" data-mobile-header>
                 <div class="mobile-header-bar">
@@ -158,7 +197,36 @@
                 </div>
             </nav>
 
-            @yield('content')
+            <main id="main-content" class="main-content" tabindex="-1">
+                @yield('content')
+            </main>
+
+            <footer class="site-footer">
+                <div class="site-footer-primary">
+                    <a href="{{ route('laws.index', ['lang' => $currentLanguage]) }}" class="site-footer-brand" aria-label="{{ __('site.nav.go_home') }}">
+                        <img src="{{ asset('statics/logo_pssi_tulisan.png') }}" alt="PSSI">
+                        <span>{{ __('site.brand') }}</span>
+                    </a>
+                    <p>{{ __('site.footer.description') }}</p>
+                    <p class="site-footer-edition">
+                        @if ($layoutActiveEdition)
+                            {{ __('site.footer.edition', ['edition' => $layoutActiveEdition->name]) }}
+                        @else
+                            {{ __('site.footer.no_edition') }}
+                        @endif
+                    </p>
+                </div>
+                <nav class="site-footer-nav" aria-label="{{ __('site.footer.browse') }}">
+                    <a href="{{ route('laws.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.laws') }}</a>
+                    <a href="{{ route('editions.index', ['lang' => $currentLanguage]) }}">{{ __('site.editions.title') }}</a>
+                    @if ($showUpdatesNav)
+                        <a href="{{ route('updates.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.updates') }}</a>
+                    @endif
+                    @if ($showQasNav)
+                        <a href="{{ route('qas.index', ['lang' => $currentLanguage]) }}">{{ __('site.nav.qas') }}</a>
+                    @endif
+                </nav>
+            </footer>
         </div>
     </body>
 </html>

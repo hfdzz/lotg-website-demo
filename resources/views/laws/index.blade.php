@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', __('site.laws.index_title'))
+@section('meta_description', __('site.seo.laws_description'))
 
 @section('content')
     <section class="hero">

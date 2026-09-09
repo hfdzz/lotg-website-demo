@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
-@section('title', __('site.qas.title').' | '.__('site.laws.law_number', ['number' => $law->law_number]))
+@section('title', __('site.qas.title').' | '.__('site.laws.law_number', ['number' => $law->law_number]).': '.$law->displayTitle($language))
+@section('meta_description', __('site.seo.qa_law_description', [
+    'law' => __('site.laws.law_number', ['number' => $law->law_number]),
+    'title' => $law->displayTitle($language),
+]))
+@section('og_type', 'article')
 
 @section('content')
     <a class="back-link" href="{{ route('qas.index', ['lang' => $language]) }}">{{ __('site.qas.back_to_law_picker') }}</a>

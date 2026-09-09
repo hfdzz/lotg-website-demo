@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', __('site.hub.laws_entry'))
+@section('meta_description', __('site.seo.laws_description'))
 
 @section('content')
     <a class="back-link" href="{{ route('laws.index', ['lang' => $language]) }}">{{ __('site.hub.back_to_hub') }}</a>
