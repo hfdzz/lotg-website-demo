@@ -15,6 +15,7 @@ class FeatureVisibility extends Model
         'scope_type',
         'edition_id',
         'is_enabled',
+        'redirect_url',
     ];
 
     protected $casts = [

@@ -231,6 +231,85 @@ class PublicFeatureVisibilityTest extends TestCase
         $this->assertSame([$archiveEdition->id], $response->getData()['publishedEditions']->pluck('id')->all());
     }
 
+    public function test_law_changes_feature_can_redirect_to_an_internal_document_path(): void
+    {
+        $this->actingAsSuperAdmin();
+
+        $activeEdition = Edition::create([
+            'name' => 'Edition 2026/27',
+            'code' => 'edition-2026-27',
+            'year_start' => 2026,
+            'year_end' => 2027,
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+
+        $document = Document::create([
+            'edition_id' => $activeEdition->id,
+            'slug' => 'perubahan-peraturan-permainan',
+            'title' => 'Perubahan Peraturan Permainan',
+            'type' => 'single',
+            'sort_order' => 1,
+            'status' => 'published',
+        ]);
+
+        DocumentPage::create([
+            'document_id' => $document->id,
+            'slug' => 'overview',
+            'title' => 'Perubahan Peraturan Permainan',
+            'body_html' => '<p>Law changes.</p>',
+            'sort_order' => 1,
+            'status' => 'published',
+        ]);
+
+        $this->patch(route('admin.editions.public-features.update-edition', $activeEdition), [
+            'features' => [
+                LotgFeatureVisibility::FEATURE_DOCUMENTS => 'inherit',
+                LotgFeatureVisibility::FEATURE_QAS => 'inherit',
+                LotgFeatureVisibility::FEATURE_LEGACY_UPDATES => 'redirect',
+            ],
+            'redirect_urls' => [
+                LotgFeatureVisibility::FEATURE_LEGACY_UPDATES => '/perubahan-peraturan-permainan',
+            ],
+        ])->assertRedirect(route('admin.editions.index', ['edition' => $activeEdition->id]));
+
+        $this->assertDatabaseHas('feature_visibilities', [
+            'feature_key' => LotgFeatureVisibility::FEATURE_LEGACY_UPDATES,
+            'scope_type' => FeatureVisibility::SCOPE_EDITION,
+            'edition_id' => $activeEdition->id,
+            'is_enabled' => true,
+            'redirect_url' => '/perubahan-peraturan-permainan',
+        ]);
+
+        $this->get(route('updates.index', ['lang' => 'en']))
+            ->assertRedirect('/perubahan-peraturan-permainan?lang=en');
+    }
+
+    public function test_law_changes_redirect_requires_an_internal_path(): void
+    {
+        $this->actingAsSuperAdmin();
+
+        $edition = Edition::create([
+            'name' => 'Edition 2026/27',
+            'code' => 'edition-2026-27',
+            'year_start' => 2026,
+            'year_end' => 2027,
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+
+        $this->patch(route('admin.editions.public-features.update-edition', $edition), [
+            'features' => [
+                LotgFeatureVisibility::FEATURE_DOCUMENTS => 'inherit',
+                LotgFeatureVisibility::FEATURE_QAS => 'inherit',
+                LotgFeatureVisibility::FEATURE_LEGACY_UPDATES => 'redirect',
+            ],
+            'redirect_urls' => [
+                LotgFeatureVisibility::FEATURE_LEGACY_UPDATES => '',
+            ],
+        ])->assertSessionHasErrors('redirect_urls.'.LotgFeatureVisibility::FEATURE_LEGACY_UPDATES);
+    }
+
     protected function actingAsSuperAdmin(): User
     {
         $this->seed(RbacSeeder::class);

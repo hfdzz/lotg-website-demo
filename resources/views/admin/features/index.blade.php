@@ -46,18 +46,39 @@
                 @endif
 
                 @foreach ($globalFeatureRows as $featureRow)
-                    <label class="card surface-note">
+                    <article class="card surface-note">
                         <div>
                             <strong>{{ $featureRow['label'] }}</strong>
                             <p class="law-meta">{{ $featureRow['description'] }}</p>
-                            <p class="law-meta">Default code state: {{ $featureRow['default_state'] ? 'Enabled' : 'Disabled' }} | Effective public state: {{ $featureRow['effective_state'] ? 'Enabled' : 'Disabled' }}</p>
+                            <p class="law-meta">
+                                Default code state: {{ $featureRow['default_state'] ? 'Enabled' : 'Disabled' }}
+                                | Effective public state: {{ $featureRow['effective_state'] ? 'Enabled' : 'Disabled' }}
+                                @if ($featureRow['effective_redirect_url'])
+                                    | Redirects to {{ $featureRow['effective_redirect_url'] }}
+                                @endif
+                            </p>
                         </div>
                         <select name="features[{{ $featureRow['key'] }}]">
                             <option value="default" @selected($featureRow['global_state'] === null)>Use default ({{ $featureRow['default_state'] ? 'enabled' : 'disabled' }})</option>
                             <option value="enabled" @selected($featureRow['global_state'] === true)>Enabled</option>
                             <option value="disabled" @selected($featureRow['global_state'] === false)>Disabled</option>
+                            @if ($featureRow['supports_redirect'])
+                                <option value="redirect" @selected($featureRow['global_state'] === true && filled($featureRow['global_redirect_url']))>Redirect</option>
+                            @endif
                         </select>
-                    </label>
+                        @if ($featureRow['supports_redirect'])
+                            <label>
+                                <div class="law-meta">Redirect path</div>
+                                <input
+                                    type="text"
+                                    name="redirect_urls[{{ $featureRow['key'] }}]"
+                                    value="{{ old('redirect_urls.'.$featureRow['key'], $featureRow['global_redirect_url']) }}"
+                                    placeholder="/perubahan-peraturan-permainan"
+                                >
+                                <p class="law-meta">Use an internal public path. Leave empty unless the selected state is Redirect.</p>
+                            </label>
+                        @endif
+                    </article>
                 @endforeach
 
                 <button type="submit">Save global public feature visibility</button>

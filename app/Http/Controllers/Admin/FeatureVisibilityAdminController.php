@@ -8,6 +8,7 @@ use App\Services\LotgFeatureVisibility;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class FeatureVisibilityAdminController extends Controller
 {
@@ -53,9 +54,14 @@ class FeatureVisibilityAdminController extends Controller
             'default',
             'enabled',
             'disabled',
+            'redirect',
         ]));
+        $this->assertRedirectPathsPresent($validated['features'] ?? [], $validated['redirect_urls'] ?? []);
 
-        $this->featureVisibility->storeGlobalStates($validated['features'] ?? []);
+        $this->featureVisibility->storeGlobalStates(
+            $validated['features'] ?? [],
+            $validated['redirect_urls'] ?? []
+        );
 
         return redirect()
             ->route('admin.public-features.index', array_filter([
@@ -72,12 +78,52 @@ class FeatureVisibilityAdminController extends Controller
     {
         $rules = [
             'features' => ['required', 'array'],
+            'redirect_urls' => ['nullable', 'array'],
         ];
 
         foreach ($this->featureVisibility->keys() as $featureKey) {
             $rules['features.'.$featureKey] = ['nullable', 'in:'.implode(',', $values)];
+            $rules['redirect_urls.'.$featureKey] = [
+                'nullable',
+                'string',
+                'max:2048',
+                function (string $attribute, mixed $value, \Closure $fail) use ($featureKey) {
+                    if (! filled($value)) {
+                        return;
+                    }
+
+                    $url = trim((string) $value);
+
+                    if ($featureKey !== LotgFeatureVisibility::FEATURE_LEGACY_UPDATES) {
+                        $fail('Redirects are only supported for Law Changes.');
+                    }
+
+                    if (! str_starts_with($url, '/') || str_starts_with($url, '//')) {
+                        $fail('Redirect paths must be internal paths starting with /.');
+                    }
+
+                    if (rtrim(parse_url($url, PHP_URL_PATH) ?: '', '/') === '/updates') {
+                        $fail('Law Changes cannot redirect to itself.');
+                    }
+                },
+            ];
         }
 
         return $rules;
+    }
+
+    protected function assertRedirectPathsPresent(array $states, array $redirectUrls): void
+    {
+        if (($states[LotgFeatureVisibility::FEATURE_LEGACY_UPDATES] ?? null) !== 'redirect') {
+            return;
+        }
+
+        if (filled($redirectUrls[LotgFeatureVisibility::FEATURE_LEGACY_UPDATES] ?? null)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'redirect_urls.'.LotgFeatureVisibility::FEATURE_LEGACY_UPDATES => 'Enter a redirect path for Law Changes.',
+        ]);
     }
 }

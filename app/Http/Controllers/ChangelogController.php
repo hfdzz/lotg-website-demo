@@ -33,6 +33,10 @@ class ChangelogController extends Controller
                 ? $activeEdition
                 : $availableEditions->first());
 
+        if ($selectedEdition && $redirectUrl = $this->featureVisibility->redirectUrl(LotgFeatureVisibility::FEATURE_LEGACY_UPDATES, $selectedEdition)) {
+            return redirect()->to($this->localizedRedirectUrl($redirectUrl, $language));
+        }
+
         if ($requestedEditionId && ! $selectedEdition) {
             return $this->redirectToLawListing(
                 $language,
@@ -68,5 +72,16 @@ class ChangelogController extends Controller
         }
 
         return redirect()->route('laws.index', ['lang' => $language]);
+    }
+
+    protected function localizedRedirectUrl(string $redirectUrl, string $language): string
+    {
+        if (str_contains($redirectUrl, 'lang=')) {
+            return $redirectUrl;
+        }
+
+        $separator = str_contains($redirectUrl, '?') ? '&' : '?';
+
+        return $redirectUrl.$separator.'lang='.$language;
     }
 }
