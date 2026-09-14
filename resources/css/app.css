@@ -233,17 +233,73 @@ button.is-disabled:hover {
 }
 
 .site-footer {
-    display: grid;
-    gap: 1.25rem;
     margin-top: 3rem;
-    padding-top: 1.5rem;
     border-top: 1px solid var(--line);
     color: var(--muted);
+}
+
+.site-footer-row {
+    width: min(1160px, calc(100% - 2rem));
+    margin: 0 auto;
+}
+
+.site-footer-row-primary {
+    display: none;
+}
+
+.site-footer-row-secondary {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 3rem;
+    padding: 1rem 0;
+}
+
+.site-footer-copyright p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.site-footer-social ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.site-footer-social a {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.site-footer-social svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.site-footer-social-logo {
+    display: block;
+    width: 1.45rem;
+    height: 1.45rem;
+    object-fit: contain;
+}
+
+.site-footer-social a:hover {
+    color: var(--accent);
 }
 
 .site-footer-primary {
     display: grid;
     gap: 0.65rem;
+    padding: 0.5rem 1rem;
 }
 
 .site-footer-primary p {
@@ -273,14 +329,17 @@ button.is-disabled:hover {
 
 .site-footer-nav {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.55rem 0.9rem;
+    flex-direction: column;
+    align-items: end;
+    align-content: start;
+    gap: 0.25rem;
 }
 
 .site-footer-nav a {
     color: var(--ink);
     font-weight: 700;
     text-decoration: none;
+    padding: 0.5rem;
 }
 
 .site-footer-nav a:hover {
@@ -2416,15 +2475,33 @@ body.has-mobile-law-context {
     }
 
     .site-footer {
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
         margin-top: 4rem;
-        padding-top: 2rem;
+    }
+
+    .site-footer-row-primary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: stretch;
+        gap: 2rem;
+        padding: 2rem 0;
     }
 
     .site-footer-nav {
+        max-width: none;
+        text-align: right;
+        padding: 0.5rem 1rem;
+    }
+
+    .site-footer-row-secondary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: center;
+        gap: 2rem;
+        border-top: 1px solid var(--line);
+    }
+
+    .site-footer-social ul {
         justify-content: flex-end;
-        max-width: 24rem;
     }
 
     .hero-edition-years {
