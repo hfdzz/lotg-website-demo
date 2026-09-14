@@ -38,6 +38,7 @@
             <link rel="alternate" hreflang="{{ $languageCode }}" href="{{ request()->fullUrlWithQuery(['lang' => $languageCode]) }}">
         @endforeach
         <link rel="alternate" hreflang="x-default" href="{{ request()->fullUrlWithQuery(['lang' => \App\Support\LotgLanguage::default()]) }}">
+        <link rel="icon" href="{{ asset('favicon.ico') }}">
         <meta property="og:site_name" content="{{ $siteName }}">
         <meta property="og:type" content="@yield('og_type', 'website')">
         <meta property="og:title" content="{{ $rawPageTitle }}">
