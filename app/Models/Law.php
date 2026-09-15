@@ -147,11 +147,14 @@ class Law extends Model
 
     public function cardBackgroundImageUrl(): string
     {
-        $relativePath = 'statics/law-images/law'.$this->law_number.'.jpg';
+        foreach (['avif', 'webp', 'jpg'] as $extension) {
+            $relativePath = 'statics/law-images/law'.$this->law_number.'.'.$extension;
 
-        if (file_exists(public_path($relativePath))) {
-            return asset($relativePath);
+            if (file_exists(public_path($relativePath))) {
+                return asset($relativePath);
+            }
         }
-        return 'statics/law-images/law'.$this->law_number.'.webp';
+
+        return asset('statics/law-images/law'.$this->law_number.'.avif');
     }
 }

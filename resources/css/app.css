@@ -713,26 +713,34 @@ button.is-disabled:hover {
     padding: 0;
     border: 0;
     border-radius: 0.5rem;
-    background:
-        linear-gradient(140deg, rgba(6, 37, 69, 0.92) 0%, rgba(0, 87, 168, 0.68) 100%),
-        var(--law-card-image);
-    background-position: center, center;
-    background-repeat: no-repeat, no-repeat;
-    background-size: cover, cover;
+    background: #062545;
     box-shadow: 0 12px 28px rgba(22, 24, 29, 0.14);
+}
+
+.law-row-card-image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .law-row-card::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(5, 21, 40, 0.12) 0%, rgba(5, 21, 40, 0.34) 100%);
+    z-index: 1;
+    background:
+        linear-gradient(140deg, rgba(6, 37, 69, 0.92) 0%, rgba(0, 87, 168, 0.68) 100%),
+        linear-gradient(180deg, rgba(5, 21, 40, 0.12) 0%, rgba(5, 21, 40, 0.34) 100%);
     pointer-events: none;
 }
 
-.law-row-card > * {
+.law-row-main,
+.law-link-cta {
     position: relative;
-    z-index: 1;
+    z-index: 2;
 }
 
 .law-row-main {
