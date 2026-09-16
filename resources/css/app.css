@@ -641,7 +641,7 @@ button.is-disabled:hover {
 
 .law-grid {
     display: grid;
-    gap: 1rem;
+    gap: 10px;
     grid-template-columns: 1fr;
     margin-bottom: 1rem;
 }
@@ -712,9 +712,10 @@ button.is-disabled:hover {
     overflow: hidden;
     padding: 0;
     border: 0;
-    border-radius: 0.5rem;
+    border-radius: 0;
     background: #062545;
     box-shadow: 0 12px 28px rgba(22, 24, 29, 0.14);
+    min-height: 150px;
 }
 
 .law-row-card-image {
@@ -1060,6 +1061,21 @@ button.is-disabled:hover {
     gap: 0.35rem;
 }
 
+.hub-nav-item {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.hub-nav-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
 .hub-nav-link,
 .hub-nav-law-link,
 .document-page-link {
@@ -1072,6 +1088,46 @@ button.is-disabled:hover {
     line-height: 1.4;
 }
 
+.hub-nav-row .hub-nav-link {
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.hub-nav-expand-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.45rem;
+    min-width: 2.45rem;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    color: var(--accent);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.hub-nav-expand-button:hover {
+    background: var(--accent-soft);
+}
+
+.hub-nav-expand-button[aria-expanded="true"] {
+    background: var(--accent-soft);
+}
+
+.hub-nav-row:has(.hub-nav-link:hover),
+.hub-nav-row:has(.hub-nav-expand-button:hover),
+.hub-nav-row:has(.hub-nav-link.is-active),
+.hub-nav-row:has(.hub-nav-expand-button[aria-expanded="true"]) {
+    border-color: rgba(0, 87, 168, 0.22);
+}
+
 .hub-nav-link:hover,
 .hub-nav-law-link:hover,
 .document-page-link:hover {
@@ -1080,6 +1136,7 @@ button.is-disabled:hover {
 }
 
 .hub-nav-link.is-active,
+.hub-nav-law-link.is-active,
 .document-page-link.is-active {
     border-color: rgba(0, 87, 168, 0.22);
     background: var(--accent-soft);
@@ -1102,10 +1159,25 @@ button.is-disabled:hover {
     letter-spacing: 0.04em;
 }
 
+.hub-nav-children,
 .hub-nav-law-list,
 .document-page-links {
     display: grid;
     gap: 0.45rem;
+}
+
+.hub-nav-children {
+    padding-left: 0.65rem;
+}
+
+.hub-nav-children[hidden] {
+    display: none;
+}
+
+.hub-nav-children .hub-nav-law-link {
+    padding: 0.45rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.94rem;
 }
 
 .document-page-nav {
@@ -1901,24 +1973,25 @@ h5.node-title {
 
 .nav {
     display: none;
-    margin-bottom: 1rem;
+    /* margin-bottom: 1rem; */
     position: fixed;
     top: 0;
-    left: 50%;
-    width: min(1160px, calc(100% - 2rem));
+    /* left: 50%; */
+    /* width: min(1160px, calc(100% - 2rem)); */
+    width: 100%;
     margin: 0;
-    transform: translateX(-50%);
+    /* transform: translateX(-50%); */
     z-index: 40;
-    padding: 0.75rem 0 1rem;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(10px);
+    /* padding: 0.75rem 0 1rem; */
+    /* background: rgba(255, 255, 255, 0.96); */
+    /* backdrop-filter: blur(10px); */
 }
 
 .nav-panel {
     display: block;
     padding: 0.8rem 1rem;
     border: 1px solid var(--line);
-    border-radius: 18px;
+    /* border-radius: 18px; */
     background: rgba(255, 255, 255, 0.96);
     box-shadow: var(--shadow-soft);
 }
@@ -1928,6 +2001,8 @@ h5.node-title {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 1rem;
     align-items: center;
+    max-width: 1160px;
+    margin: 0 auto;
 }
 
 .nav-brand-area,
@@ -2527,7 +2602,7 @@ body.has-mobile-law-context {
     }
 
     .law-row-main {
-        justify-content: center;
+        justify-content: start;
         padding: 0 1.25rem 0 0;
     }
 
@@ -2541,7 +2616,7 @@ body.has-mobile-law-context {
     }
 
     .law-link-cta {
-        align-items: center;
+        align-items: end;
         width: auto;
         padding: 0;
     }

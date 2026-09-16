@@ -2,6 +2,7 @@ import './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
     setupMobileHeader();
+    setupHubNavExpansions();
     setupSearchPopover();
     setupConfirmForms();
     setupTableOfContentsTracking();
@@ -113,6 +114,60 @@ function setupMobileHeader() {
         },
         { passive: true },
     );
+}
+
+function setupHubNavExpansions() {
+    const toggleButtons = Array.from(document.querySelectorAll('[data-hub-nav-toggle]'));
+
+    toggleButtons.forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const item = button.closest('.hub-nav-item');
+        const panel = item?.querySelector('[data-hub-nav-panel]');
+        const icon = button.querySelector('[aria-hidden="true"]');
+
+        if (!(panel instanceof HTMLElement)) {
+            return;
+        }
+
+        button.addEventListener('click', () => {
+            const expanded = button.getAttribute('aria-expanded') === 'true';
+            const nextExpanded = !expanded;
+
+            if (nextExpanded) {
+                const list = button.closest('.hub-nav-list');
+
+                list?.querySelectorAll('[data-hub-nav-toggle]').forEach((otherButton) => {
+                    if (!(otherButton instanceof HTMLButtonElement) || otherButton === button) {
+                        return;
+                    }
+
+                    const otherItem = otherButton.closest('.hub-nav-item');
+                    const otherPanel = otherItem?.querySelector('[data-hub-nav-panel]');
+                    const otherIcon = otherButton.querySelector('[aria-hidden="true"]');
+
+                    otherButton.setAttribute('aria-expanded', 'false');
+
+                    if (otherPanel instanceof HTMLElement) {
+                        otherPanel.hidden = true;
+                    }
+
+                    if (otherIcon instanceof HTMLElement) {
+                        otherIcon.textContent = '+';
+                    }
+                });
+            }
+
+            button.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+            panel.hidden = !nextExpanded;
+
+            if (icon instanceof HTMLElement) {
+                icon.textContent = nextExpanded ? '-' : '+';
+            }
+        });
+    });
 }
 
 function setupTableOfContentsTracking() {

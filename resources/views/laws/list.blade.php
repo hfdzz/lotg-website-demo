@@ -4,11 +4,12 @@
 @section('meta_description', __('site.seo.laws_description'))
 
 @section('content')
-    <a class="back-link" href="{{ route('laws.index', ['lang' => $language]) }}">{{ __('site.hub.back_to_hub') }}</a>
+    <!-- <a class="back-link" href="{{ route('laws.index', ['lang' => $language]) }}">{{ __('site.hub.back_to_hub') }}</a> -->
 
     <div class="lotg-hub-layout">
         @include('laws.partials.hub-nav', [
             'hubDocuments' => $hubDocuments,
+            'hubLaws' => $laws,
             'language' => $language,
             'lawsEditionQueryId' => null,
             'documentEditionQueryId' => $documentEditionQueryId ?? null,

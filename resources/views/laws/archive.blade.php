@@ -7,6 +7,7 @@
     <div class="lotg-hub-layout">
         @include('laws.partials.hub-nav', [
             'hubDocuments' => $hubDocuments,
+            'hubLaws' => $laws,
             'language' => $language,
             'lawsEditionQueryId' => $selectedEdition?->id,
             'documentEditionQueryId' => $documentEditionQueryId ?? null,

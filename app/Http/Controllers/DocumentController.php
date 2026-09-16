@@ -118,6 +118,7 @@ class DocumentController extends Controller
             'hubDocuments' => $this->featureVisibility->enabled(LotgFeatureVisibility::FEATURE_DOCUMENTS, $edition)
                 ? $this->publicCache->orderedPublishedDocuments($edition->id, ['translations', 'publishedPages.translations'])
                 : collect(),
+            'hubLaws' => $this->publicCache->orderedPublishedLaws($edition->id, ['translations']),
         ];
     }
 

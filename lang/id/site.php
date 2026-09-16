@@ -80,6 +80,7 @@ return [
         'laws_entry' => 'Aturan 1-17',
         'laws_intro' => 'Baca keseluruhan Aturan 1 sampai 17 pada edisi aktif saat ini.',
         'back_to_hub' => 'Kembali ke beranda Aturan',
+        'expand_section' => 'Buka :title',
     ],
     'documents' => [
         'eyebrow' => 'Dokumen',

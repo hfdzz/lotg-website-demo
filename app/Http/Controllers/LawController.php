@@ -49,12 +49,15 @@ class LawController extends Controller
         $isArchiveEdition = (bool) $selectedEdition && (! $activeEdition || $selectedEdition->id !== $activeEdition->id);
 
         if ($isArchiveEdition) {
+            $laws = $this->publicCache->orderedPublishedLaws($selectedEdition?->id, ['translations']);
+
             return view('laws.archive', [
-                'laws' => $this->publicCache->orderedPublishedLaws($selectedEdition?->id, ['translations']),
+                'laws' => $laws,
                 'hasActiveEdition' => (bool) $activeEdition,
                 'activeEdition' => $activeEdition,
                 'selectedEdition' => $selectedEdition,
                 'hubDocuments' => $this->hubDocuments($selectedEdition),
+                'hubLaws' => $laws,
                 'documentEditionQueryId' => $selectedEdition?->id,
                 'language' => $language,
             ]);
@@ -67,6 +70,7 @@ class LawController extends Controller
             'hasActiveEdition' => (bool) $activeEdition,
             'activeEdition' => $activeEdition,
             'hubDocuments' => $this->hubDocuments($activeEdition),
+            'hubLaws' => $laws,
             'documentEditionQueryId' => null,
             'otherPublishedEditions' => $publishedEditions
                 ->reject(fn (Edition $edition) => $activeEdition && $edition->id === $activeEdition->id)

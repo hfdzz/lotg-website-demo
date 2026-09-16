@@ -80,6 +80,7 @@ return [
         'laws_entry' => 'Laws 1-17',
         'laws_intro' => 'Read the full set of Laws 1 through 17 in the current active edition.',
         'back_to_hub' => 'Back to LotG home',
+        'expand_section' => 'Expand :title',
     ],
     'documents' => [
         'eyebrow' => 'Document',

@@ -11,10 +11,12 @@
     <div class="lotg-hub-layout">
         @include('laws.partials.hub-nav', [
             'hubDocuments' => $hubDocuments,
+            'hubLaws' => $hubLaws ?? collect(),
             'language' => $language,
             'lawsEditionQueryId' => $editionQueryId ?? null,
             'documentEditionQueryId' => $editionQueryId ?? null,
             'currentKey' => 'document-'.$document->slug,
+            'currentDocumentPageSlug' => $page?->slug,
         ])
 
         <div class="lotg-hub-main">
