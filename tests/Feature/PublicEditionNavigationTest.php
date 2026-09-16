@@ -33,7 +33,7 @@ class PublicEditionNavigationTest extends TestCase
         $response = $this->get(route('editions.index', ['lang' => 'id']));
 
         $response->assertOk();
-        $response->assertSee('/laws?edition='.$archiveEdition->id.'&amp;lang=id', false);
-        $response->assertDontSee('/?edition='.$archiveEdition->id.'&amp;lang=id', false);
+        $response->assertSee('?edition='.$archiveEdition->id.'&amp;lang=id', false);
+        $response->assertDontSee('/laws?edition='.$archiveEdition->id.'&amp;lang=id', false);
     }
 }

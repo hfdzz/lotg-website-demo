@@ -65,7 +65,7 @@ class ChangelogController extends Controller
         $activeEditionId = Edition::current()?->id;
 
         if ($edition && (! $activeEditionId || (int) $edition->id !== (int) $activeEditionId)) {
-            return redirect()->route('laws.list', [
+            return redirect()->route('laws.index', [
                 'lang' => $language,
                 'edition' => $edition->id,
             ]);

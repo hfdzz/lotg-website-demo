@@ -126,7 +126,7 @@ class LawController extends Controller
         ], fn ($value) => $value !== null && $value !== '');
 
         if (! $lawId) {
-            return redirect()->route('laws.list', $fallbackParameters);
+            return redirect()->route('laws.index', $fallbackParameters);
         }
 
         $law = Law::query()
@@ -137,7 +137,7 @@ class LawController extends Controller
             ->first();
 
         if (! $law) {
-            return redirect()->route('laws.list', $fallbackParameters);
+            return redirect()->route('laws.index', $fallbackParameters);
         }
 
         return redirect()->route('laws.show', array_filter([

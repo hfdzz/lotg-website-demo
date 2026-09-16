@@ -24,7 +24,7 @@
         ], fn ($value) => $value !== null && $value !== '');
     @endphp
 
-    <a class="back-link" href="{{ route('laws.list', $lawListRouteParameters) }}">{{ __('site.laws.back') }}</a>
+    <a class="back-link" href="{{ route('laws.index', $lawListRouteParameters) }}">{{ __('site.laws.back') }}</a>
 
     @section('mobile_law_prev')
         @if ($previousLaw)

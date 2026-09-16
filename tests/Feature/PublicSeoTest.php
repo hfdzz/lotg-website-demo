@@ -14,6 +14,19 @@ class PublicSeoTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_root_renders_public_laws_index(): void
+    {
+        $this->get('/?lang=en')
+            ->assertOk()
+            ->assertViewIs('laws.list');
+    }
+
+    public function test_laws_path_redirects_to_root_laws_index(): void
+    {
+        $this->get('/laws?edition=3&lang=en')
+            ->assertRedirect(route('laws.index', ['edition' => 3, 'lang' => 'en']));
+    }
+
     public function test_public_law_page_renders_core_seo_metadata(): void
     {
         $edition = Edition::create([

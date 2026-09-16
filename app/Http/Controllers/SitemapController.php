@@ -25,7 +25,7 @@ class SitemapController extends Controller
 
         foreach (array_keys(LotgLanguage::supported()) as $language) {
             $urls->push($this->url(route('laws.index', ['lang' => $language]), 'daily', '1.0'));
-            $urls->push($this->url(route('laws.list', ['lang' => $language]), 'daily', '0.9'));
+            $urls->push($this->url(route('laws.index', ['lang' => $language]), 'daily', '0.9'));
             $urls->push($this->url(route('editions.index', ['lang' => $language]), 'weekly', '0.5'));
         }
 
@@ -35,7 +35,7 @@ class SitemapController extends Controller
         foreach ($publishedEditions as $edition) {
             foreach (array_keys(LotgLanguage::supported()) as $language) {
                 if ((int) $edition->id !== (int) $activeEditionId) {
-                    $urls->push($this->url(route('laws.list', [
+                    $urls->push($this->url(route('laws.index', [
                         'edition' => $edition->id,
                         'lang' => $language,
                     ]), 'weekly', '0.6'));

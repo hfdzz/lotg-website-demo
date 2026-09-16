@@ -22,7 +22,7 @@
                 <p class="law-meta">{{ __('site.laws.unavailable_body') }}</p>
             </div>
         @else
-            <a class="card lotg-landing-link" href="{{ route('laws.list', ['lang' => $language]) }}">
+            <a class="card lotg-landing-link" href="{{ route('laws.index', ['lang' => $language]) }}">
                 <h2>{{ __('site.hub.laws_entry') }}</h2>
                 <p class="law-meta">{{ __('site.hub.laws_intro') }}</p>
             </a>

@@ -19,10 +19,10 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [LawController::class, 'hub'])->name('laws.index');
+Route::get('/', [LawController::class, 'index'])->name('laws.index');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/editions', [LawController::class, 'editions'])->name('editions.index');
-Route::get('/laws', [LawController::class, 'index'])->name('laws.list');
+Route::get('/laws', fn () => redirect()->route('laws.index', request()->query()))->name('laws.list');
 Route::get('/laws/jump', [LawController::class, 'jump'])->name('laws.jump');
 Route::get('/laws/{law:slug}', [LawController::class, 'show'])->name('laws.show');
 Route::get('/updates', [ChangelogController::class, 'index'])->name('updates.index');
