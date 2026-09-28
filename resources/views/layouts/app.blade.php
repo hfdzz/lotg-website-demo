@@ -40,7 +40,7 @@
         <meta name="description" content="{{ $metaDescription }}">
         <meta name="robots" content="{{ $robotsMeta }}">
         @if ($googleSiteVerification !== '')
-            <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
+            <meta name="google-site-verification" content="{{ $googleSiteVerification }}" />
         @endif
         <link rel="canonical" href="{{ $canonicalUrl }}">
         @foreach ($languageOptions as $languageCode => $languageLabel)
