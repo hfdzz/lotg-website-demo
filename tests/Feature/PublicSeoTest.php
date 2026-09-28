@@ -118,4 +118,21 @@ class PublicSeoTest extends TestCase
             ->assertOk()
             ->assertSee('<meta name="robots" content="noindex, nofollow">', false);
     }
+
+    public function test_search_page_is_not_indexable_but_links_can_be_followed(): void
+    {
+        $this->get('/search')
+            ->assertOk()
+            ->assertSee('<meta name="robots" content="noindex, follow">', false);
+    }
+
+    public function test_robots_file_blocks_admin_and_jump_routes(): void
+    {
+        $robots = file_get_contents(public_path('robots.txt'));
+
+        $this->assertStringContainsString("Disallow: /lotg/admin/\n", $robots);
+        $this->assertStringContainsString("Disallow: /lotg/laws/jump\n", $robots);
+        $this->assertStringNotContainsString('Disallow: /lotg/search', $robots);
+        $this->assertStringContainsString('Sitemap: /lotg/sitemap.xml', $robots);
+    }
 }

@@ -9,7 +9,12 @@
     $pageTitle = str_contains($rawPageTitle, $siteName) ? $rawPageTitle : $rawPageTitle.' | '.$siteName;
     $metaDescription = trim($__env->yieldContent('meta_description', __('site.seo.default_description')));
     $canonicalUrl = trim($__env->yieldContent('canonical_url', request()->fullUrlWithQuery(['lang' => $currentLanguage])));
-    $robotsMeta = trim($__env->yieldContent('robots', 'index, follow'));
+    $defaultRobotsMeta = match (true) {
+        request()->routeIs('admin.*') => 'noindex, nofollow',
+        request()->routeIs('search.index') => 'noindex, follow',
+        default => 'index, follow',
+    };
+    $robotsMeta = trim($__env->yieldContent('robots', $defaultRobotsMeta));
     $ogImageUrl = trim($__env->yieldContent('og_image', asset('statics/logo_pssi_tulisan.png')));
     $layoutActiveEdition = \App\Models\Edition::current();
     $structuredData = [

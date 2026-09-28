@@ -1,4 +1,5 @@
 User-agent: *
-Disallow:
+Disallow: /lotg/admin/
+Disallow: /lotg/laws/jump
 
-Sitemap: /sitemap.xml
+Sitemap: /lotg/sitemap.xml
