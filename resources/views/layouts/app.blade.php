@@ -15,6 +15,7 @@
         default => 'index, follow',
     };
     $robotsMeta = trim($__env->yieldContent('robots', $defaultRobotsMeta));
+    $googleSiteVerification = trim((string) config('services.google.site_verification'));
     $ogImageUrl = trim($__env->yieldContent('og_image', asset('statics/logo_pssi_tulisan.png')));
     $layoutActiveEdition = \App\Models\Edition::current();
     $structuredData = [
@@ -38,6 +39,9 @@
         <title>{{ $pageTitle }}</title>
         <meta name="description" content="{{ $metaDescription }}">
         <meta name="robots" content="{{ $robotsMeta }}">
+        @if ($googleSiteVerification !== '')
+            <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
+        @endif
         <link rel="canonical" href="{{ $canonicalUrl }}">
         @foreach ($languageOptions as $languageCode => $languageLabel)
             <link rel="alternate" hreflang="{{ $languageCode }}" href="{{ request()->fullUrlWithQuery(['lang' => $languageCode]) }}">

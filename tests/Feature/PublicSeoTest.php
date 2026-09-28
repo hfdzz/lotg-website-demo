@@ -119,6 +119,15 @@ class PublicSeoTest extends TestCase
             ->assertSee('<meta name="robots" content="noindex, nofollow">', false);
     }
 
+    public function test_google_site_verification_meta_is_rendered_when_configured(): void
+    {
+        config()->set('services.google.site_verification', 'search-console-token');
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('<meta name="google-site-verification" content="search-console-token">', false);
+    }
+
     public function test_search_page_is_not_indexable_but_links_can_be_followed(): void
     {
         $this->get('/search')
