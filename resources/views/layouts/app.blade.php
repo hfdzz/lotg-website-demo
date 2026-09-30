@@ -16,6 +16,11 @@
     };
     $robotsMeta = trim($__env->yieldContent('robots', $defaultRobotsMeta));
     $googleSiteVerification = trim((string) config('services.google.site_verification'));
+    $umamiScriptUrl = trim((string) config('services.umami.script_url'));
+    $umamiWebsiteId = trim((string) config('services.umami.website_id'));
+    $shouldTrackWithUmami = $umamiScriptUrl !== ''
+        && $umamiWebsiteId !== ''
+        && ! request()->routeIs('admin.*', 'login');
     $ogImageUrl = trim($__env->yieldContent('og_image', asset('statics/logo_pssi_tulisan.png')));
     $layoutActiveEdition = \App\Models\Edition::current();
     $structuredData = [
@@ -59,6 +64,9 @@
         <meta name="twitter:description" content="{{ $metaDescription }}">
         <meta name="twitter:image" content="{{ $ogImageUrl }}">
         <script type="application/ld+json">{!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @if ($shouldTrackWithUmami)
+            <script defer src="{{ $umamiScriptUrl }}" data-website-id="{{ $umamiWebsiteId }}"></script>
+        @endif
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="@yield('body_class')">

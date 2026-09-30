@@ -128,6 +128,37 @@ class PublicSeoTest extends TestCase
             ->assertSee('<meta name="google-site-verification" content="search-console-token">', false);
     }
 
+    public function test_umami_tracker_is_rendered_on_public_pages_when_configured(): void
+    {
+        config()->set('services.umami.script_url', 'https://analytics.example.com/script.js');
+        config()->set('services.umami.website_id', 'website-id');
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee(
+                '<script defer src="https://analytics.example.com/script.js" data-website-id="website-id"></script>',
+                false,
+            );
+    }
+
+    public function test_umami_tracker_is_not_rendered_without_a_website_id(): void
+    {
+        config()->set('services.umami.website_id', null);
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertDontSee('cloud.umami.is/script.js');
+    }
+
+    public function test_umami_tracker_is_not_rendered_on_the_login_page(): void
+    {
+        config()->set('services.umami.website_id', 'website-id');
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertDontSee('data-website-id');
+    }
+
     public function test_search_page_is_not_indexable_but_links_can_be_followed(): void
     {
         $this->get('/search')

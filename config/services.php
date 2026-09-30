@@ -39,4 +39,9 @@ return [
         'site_verification' => env('GOOGLE_SITE_VERIFICATION'),
     ],
 
+    'umami' => [
+        'script_url' => env('UMAMI_SCRIPT_URL', 'https://cloud.umami.is/script.js'),
+        'website_id' => env('UMAMI_WEBSITE_ID'),
+    ],
+
 ];
